@@ -1,0 +1,9 @@
+ignore:
+  - "tests"
+  - "benchmark_tests"
+
+coverage:
+  status:
+    patch:
+      default:
+        target: 90%
