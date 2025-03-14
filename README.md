@@ -4,9 +4,6 @@ A repository for LLM tools in Deltares
 
 
 
-Below is the updated Markdown version for your README. It now includes a section on using docstrings with type annotations for functions and specifies that we are using GitHub for hosting our repositories.
-
-```markdown
 # Software Development Guide
 
 This guide is intended to help you when developing a new feature. It walks you through the process of creating a new branch, writing unit tests with pytest, adding docstrings with type annotations to your functions, and creating a pull request on GitHub.
@@ -39,7 +36,6 @@ Creating a dedicated branch for a feature allows you to isolate your changes fro
    git branch
    ```
 
----
 
 ## 2. Writing Unit Tests with pytest
 
