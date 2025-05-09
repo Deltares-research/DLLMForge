@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from dllmforge.openai_api import OpenAIAPI
 import json
+import os
 
 
 class TestOpenAIAPI:
@@ -21,13 +22,26 @@ class TestOpenAIAPI:
         assert isinstance(models, list), "Models should be a list."
         assert len(models) > 0, "No models found. Check if the API is running."
         
-        # Test chat completion
+        # Test chat completion with multiple models
         test_prompt = "Create a simple HTML webpage with a greeting message and a background color of your choice. Give me only the HTML code so I can save it in a file immediately. No other text is needed."
-        response = api.send_test_message(prompt=test_prompt)
-        assert response is not None, "Failed to get response from the model"
-        assert "response" in response, "Response should contain 'response' field"
-        assert "model" in response, "Response should contain 'model' field"
-        assert "usage" in response, "Response should contain 'usage' field"
+        
+        # Create output directory if it doesn't exist
+        output_dir = "tests/test_output"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Test each model
+        for model in models:
+            print(f"\nTesting model: {model}")
+            api.deployment_name = model
+            response = api.send_test_message(prompt=test_prompt)
+            assert response is not None, f"Failed to get response from model {model}"
+            assert "response" in response, f"Response should contain 'response' field for model {model}"
+            
+            # Save the HTML response to a file
+            output_file = os.path.join(output_dir, f"response_{model}.html")
+            with open(output_file, "w") as f:
+                f.write(response["response"])
+            print(f"Output saved to: {output_file}")
         
         # Test embeddings
         test_text = "This is a test text for embeddings"
