@@ -1,83 +1,203 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import os
-from dllmforge.langchain_api import LangchainLLMCreator
+from dllmforge.langchain_api import LangchainAPI
 
-@pytest.fixture
-def mock_env_vars():
-    """Fixture to set up mock environment variables"""
-    env_vars = {
-        "AZURE_OPENAI_ENDPOINT": "https://test-azure-endpoint",
-        "AZURE_OPENAI_API_KEY": "test-azure-key",
-        "AZURE_OPENAI_DEPLOYMENT_NAME": "test-deployment",
-        "AZURE_OPENAI_API_VERSION": "2023-05-15",
-        "OPENAI_API_KEY": "test-openai-key",
-        "OPENAI_MODEL_NAME": "gpt-3.5-turbo",
-        "MISTRAL_API_KEY": "test-mistral-key",
-        "MISTRAL_MODEL_NAME": "mistral-small"
-    }
-    with patch.dict(os.environ, env_vars):
-        yield env_vars
 
-@pytest.fixture
-def mock_llm_response():
-    """Fixture to create a mock LLM response"""
-    mock_response = MagicMock()
-    mock_response.content = "I am doing well, thank you for asking!"
-    return mock_response
+class TestLangchainAPI:
 
-def test_init_azure_openai(mock_env_vars):
-    """Test initialization with Azure OpenAI provider"""
-    creator = LangchainLLMCreator(model_provider="azure-openai")
-    assert creator.model_provider == "azure-openai"
-    assert creator.temperature == 0.0
+    # skip if the test is run on github
+    @pytest.mark.skip(reason="Skip test on GitHub Actions, you can run it locally.")
+    def test_local(self):
+        """Test the API locally with actual LLM services."""
+        # Test Azure OpenAI
+        api = LangchainAPI(model_provider="azure-openai")
+        assert api.check_server_status() is True, "Azure OpenAI service should be accessible"
+        
+        # Test OpenAI
+        api = LangchainAPI(model_provider="openai")
+        assert api.check_server_status() is True, "OpenAI service should be accessible"
+        
+        # Test Mistral
+        api = LangchainAPI(model_provider="mistral")
+        assert api.check_server_status() is True, "Mistral service should be accessible"
+        
+        # Test chat completion with Azure OpenAI
+        test_prompt = "Create a simple HTML webpage with a greeting message and a background color of your choice. Give me only the HTML code so I can save it in a file immediately. No other text is needed."
+        
+        # Create output directory if it doesn't exist
+        output_dir = "tests/test_output"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Test each provider
+        providers = ["azure-openai", "openai", "mistral"]
+        for provider in providers:
+            print(f"\nTesting provider: {provider}")
+            api = LangchainAPI(model_provider=provider)
+            response = api.send_test_message(prompt=test_prompt)
+            assert response is not None, f"Failed to get response from {provider}"
+            assert "response" in response, f"Response should contain 'response' field for {provider}"
+            
+            # Save the HTML response to a file
+            output_file = os.path.join(output_dir, f"response_{provider}.html")
+            with open(output_file, "w") as f:
+                f.write(response["response"])
+            print(f"Output saved to: {output_file}")
 
-def test_init_openai(mock_env_vars):
-    """Test initialization with OpenAI provider"""
-    creator = LangchainLLMCreator(model_provider="openai", temperature=0.5)
-    assert creator.model_provider == "openai"
-    assert creator.temperature == 0.5
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_check_server_status_azure(self, mock_azure):
+        """Test server status check with mocked Azure client."""
+        # Mock successful server status check
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="Test response")
+        mock_azure.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="azure-openai")
+        assert api.check_server_status() is True
 
-def test_init_mistral(mock_env_vars):
-    """Test initialization with Mistral provider"""
-    creator = LangchainLLMCreator(model_provider="mistral")
-    assert creator.model_provider == "mistral"
-    assert creator.temperature == 0.0
+        # Mock failed server status check
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.check_server_status() is False
 
-def test_init_invalid_provider():
-    """Test initialization with invalid provider"""
-    with pytest.raises(ValueError, match="Unsupported model provider"):
-        LangchainLLMCreator(model_provider="invalid")
+    @patch("dllmforge.langchain_api.ChatOpenAI")
+    def test_check_server_status_openai(self, mock_openai):
+        """Test server status check with mocked OpenAI client."""
+        # Mock successful server status check
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="Test response")
+        mock_openai.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="openai")
+        assert api.check_server_status() is True
 
-@patch('dllmforge.langchain_api.AzureChatOpenAI')
-def test_send_test_message_azure(mock_azure_chat, mock_env_vars, mock_llm_response):
-    """Test sending test message with Azure OpenAI"""
-    mock_azure_chat.return_value.invoke.return_value = mock_llm_response
-    creator = LangchainLLMCreator(model_provider="azure-openai")
-    response = creator.send_test_message("Hello, how are you?")
-    assert response == "I am doing well, thank you for asking!"
+        # Mock failed server status check
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.check_server_status() is False
 
-@patch('dllmforge.langchain_api.ChatOpenAI')
-def test_send_test_message_openai(mock_openai_chat, mock_env_vars, mock_llm_response):
-    """Test sending test message with OpenAI"""
-    mock_openai_chat.return_value.invoke.return_value = mock_llm_response
-    creator = LangchainLLMCreator(model_provider="openai")
-    response = creator.send_test_message("Hello, how are you?")
-    assert response == "I am doing well, thank you for asking!"
+    @patch("dllmforge.langchain_api.ChatMistralAI")
+    def test_check_server_status_mistral(self, mock_mistral):
+        """Test server status check with mocked Mistral client."""
+        # Mock successful server status check
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="Test response")
+        mock_mistral.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="mistral")
+        assert api.check_server_status() is True
 
-@patch('dllmforge.langchain_api.ChatMistralAI')
-def test_send_test_message_mistral(mock_mistral_chat, mock_env_vars, mock_llm_response):
-    """Test sending test message with Mistral"""
-    mock_mistral_chat.return_value.invoke.return_value = mock_llm_response
-    creator = LangchainLLMCreator(model_provider="mistral")
-    response = creator.send_test_message("Hello, how are you?")
-    assert response == "I am doing well, thank you for asking!"
+        # Mock failed server status check
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.check_server_status() is False
 
-@patch('dllmforge.langchain_api.ChatOpenAI')
-def test_send_test_message_error(mock_openai_chat, mock_env_vars):
-    """Test error handling in send_test_message"""
-    # Set up the mock to raise an exception on invoke
-    mock_openai_chat.return_value.invoke.side_effect = Exception("API Error")
-    creator = LangchainLLMCreator(model_provider="openai")
-    response = creator.send_test_message("Hello")
-    assert response is None 
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_send_test_message_azure(self, mock_azure):
+        """Test sending test message with mocked Azure client."""
+        # Mock successful message sending
+        mock_instance = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Test response"
+        mock_response.usage = MagicMock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 20
+        mock_response.usage.total_tokens = 30
+        mock_instance.invoke.return_value = mock_response
+        mock_azure.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="azure-openai")
+        response = api.send_test_message(prompt="Test prompt")
+        assert response["response"] == "Test response"
+        assert response["model"] == "azure-openai"
+        assert response["usage"]["prompt_tokens"] == 10
+        assert response["usage"]["completion_tokens"] == 20
+        assert response["usage"]["total_tokens"] == 30
+
+        # Mock failed message sending
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.send_test_message(prompt="Test prompt") is None
+
+    @patch("dllmforge.langchain_api.ChatOpenAI")
+    def test_send_test_message_openai(self, mock_openai):
+        """Test sending test message with mocked OpenAI client."""
+        # Mock successful message sending
+        mock_instance = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Test response"
+        mock_response.usage = MagicMock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 20
+        mock_response.usage.total_tokens = 30
+        mock_instance.invoke.return_value = mock_response
+        mock_openai.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="openai")
+        response = api.send_test_message(prompt="Test prompt")
+        assert response["response"] == "Test response"
+        assert response["model"] == "openai"
+        assert response["usage"]["prompt_tokens"] == 10
+        assert response["usage"]["completion_tokens"] == 20
+        assert response["usage"]["total_tokens"] == 30
+
+        # Mock failed message sending
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.send_test_message(prompt="Test prompt") is None
+
+    @patch("dllmforge.langchain_api.ChatMistralAI")
+    def test_send_test_message_mistral(self, mock_mistral):
+        """Test sending test message with mocked Mistral client."""
+        # Mock successful message sending
+        mock_instance = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Test response"
+        mock_response.usage = MagicMock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 20
+        mock_response.usage.total_tokens = 30
+        mock_instance.invoke.return_value = mock_response
+        mock_mistral.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="mistral")
+        response = api.send_test_message(prompt="Test prompt")
+        assert response["response"] == "Test response"
+        assert response["model"] == "mistral"
+        assert response["usage"]["prompt_tokens"] == 10
+        assert response["usage"]["completion_tokens"] == 20
+        assert response["usage"]["total_tokens"] == 30
+
+        # Mock failed message sending
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.send_test_message(prompt="Test prompt") is None
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_chat_completion_azure(self, mock_azure):
+        """Test chat completion with mocked Azure client."""
+        # Mock successful chat completion
+        mock_instance = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Test response"
+        mock_response.usage = MagicMock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 20
+        mock_response.usage.total_tokens = 30
+        mock_instance.invoke.return_value = mock_response
+        mock_azure.return_value = mock_instance
+        
+        api = LangchainAPI(model_provider="azure-openai")
+        messages = [
+            ("system", "You are a helpful assistant."),
+            ("human", "Test prompt")
+        ]
+        response = api.chat_completion(messages)
+        assert response["response"] == "Test response"
+        assert response["model"] == "azure-openai"
+        assert response["usage"]["prompt_tokens"] == 10
+        assert response["usage"]["completion_tokens"] == 20
+        assert response["usage"]["total_tokens"] == 30
+
+        # Mock failed chat completion
+        mock_instance.invoke.side_effect = Exception("API Error")
+        assert api.chat_completion(messages) is None
+
+    def test_init_invalid_provider(self):
+        """Test initialization with invalid provider"""
+        with pytest.raises(ValueError, match="Unsupported model provider"):
+            LangchainAPI(model_provider="invalid") 
