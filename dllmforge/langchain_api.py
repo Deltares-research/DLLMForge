@@ -9,57 +9,85 @@ from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_mistralai import ChatMistralAI
 
 
-load_dotenv()
+class LangchainAPI:
+    """Class to interact with various LLM providers using Langchain."""
 
-class LangchainLLMCreator():
-    def __init__(self, model_provider: str = "openai", temperature: float = 0.0):
+    def __init__(self, 
+                 model_provider: str = "azure-openai",
+                 temperature: float = 0.0,
+                 api_key=None,
+                 api_base=None,
+                 api_version=None,
+                 deployment_name=None,
+                 model_name=None):
         """
-        Initialize the LLM creator using langchain with specified model provider and temperature.
+        Initialize the Langchain API client with specified configuration.
         
         Args:
             model_provider (str): Provider of model to use. Options are:
-                - "azure" (default): Use Azure OpenAI
+                - "azure-openai": Use Azure OpenAI
                 - "openai": Use OpenAI
                 - "mistral": Use Mistral
-            temperature (float): Temperature setting for the model (0.0 to 1.0).
-                               Higher values make the output more random/creative.
-                               Default is 0.0 for most deterministic output.
+            temperature (float): Temperature setting for the model (0.0 to 1.0)
+            api_key (str): API key for the provider
+            api_base (str): API base URL (for Azure)
+            api_version (str): API version (for Azure)
+            deployment_name (str): Deployment name (for Azure)
+            model_name (str): Model name (for OpenAI/Mistral)
         """
+        # Load environment variables if not provided
+        load_dotenv()
+        
         self.model_provider = model_provider.lower()
         self.temperature = temperature
         
         # Initialize the appropriate LLM based on model_provider
         if self.model_provider == "azure-openai":
             self.llm = AzureChatOpenAI(
-                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-                azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                azure_endpoint=api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
+                api_key=api_key or os.getenv("AZURE_OPENAI_API_KEY"),
+                azure_deployment=deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
                 temperature=self.temperature
             )
         elif self.model_provider == "openai":
             self.llm = ChatOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
-                model=os.getenv("OPENAI_MODEL_NAME"),
+                api_key=api_key or os.getenv("OPENAI_API_KEY"),
+                model=model_name or os.getenv("OPENAI_MODEL_NAME"),
                 temperature=self.temperature
             )
         elif self.model_provider == "mistral":
             self.llm = ChatMistralAI(
-                api_key=os.getenv("MISTRAL_API_KEY"),
-                model=os.getenv("MISTRAL_MODEL_NAME"),
+                api_key=api_key or os.getenv("MISTRAL_API_KEY"),
+                model=model_name or os.getenv("MISTRAL_MODEL_NAME"),
                 temperature=self.temperature
             )
         else:
-            raise ValueError(f"Unsupported model provider: {model_provider}. Choose from 'azure', 'openai', or 'mistral'")
+            raise ValueError(f"Unsupported model provider: {model_provider}. Choose from 'azure-openai', 'openai', or 'mistral'")
 
+    def check_server_status(self):
+        """Check if the LLM service is accessible."""
+        try:
+            response = self.send_test_message("Hello")
+            if response:
+                print(f"{self.model_provider} service is up!")
+                return True
+            else:
+                print(f"{self.model_provider} service is down!")
+                return False
+        except Exception as e:
+            print(f"Error checking server status: {e}")
+            return False
 
     def send_test_message(self, prompt="Hello, how are you?"):
         """
-        Send a simple message to the model using the .invoke() method.
+        Send a test message to the model and get a response.
+        
         Args:
             prompt (str): The prompt string to send.
+            
         Returns:
-            str: The content of the AI's response.
+            dict: Dictionary containing the response and metadata.
         """
         try:
             messages = [
@@ -67,8 +95,47 @@ class LangchainLLMCreator():
                 ("human", prompt)
             ]
             response = self.llm.invoke(messages)
-            return response.content
+            return {
+                "response": response.content,
+                "model": self.model_provider,
+                "usage": {
+                    "prompt_tokens": response.usage.prompt_tokens if hasattr(response, 'usage') else None,
+                    "completion_tokens": response.usage.completion_tokens if hasattr(response, 'usage') else None,
+                    "total_tokens": response.usage.total_tokens if hasattr(response, 'usage') else None
+                }
+            }
         except Exception as e:
             print(f"Error sending test message: {e}")
+            return None
+
+    def chat_completion(self, messages, temperature=None, max_tokens=None):
+        """
+        Get a chat completion from the model.
+        
+        Args:
+            messages (list): List of message tuples (role, content)
+            temperature (float): Optional temperature override
+            max_tokens (int): Optional max tokens override
+            
+        Returns:
+            dict: Dictionary containing the response and metadata.
+        """
+        try:
+            response = self.llm.invoke(
+                messages,
+                temperature=temperature or self.temperature,
+                max_tokens=max_tokens
+            )
+            return {
+                "response": response.content,
+                "model": self.model_provider,
+                "usage": {
+                    "prompt_tokens": response.usage.prompt_tokens if hasattr(response, 'usage') else None,
+                    "completion_tokens": response.usage.completion_tokens if hasattr(response, 'usage') else None,
+                    "total_tokens": response.usage.total_tokens if hasattr(response, 'usage') else None
+                }
+            }
+        except Exception as e:
+            print(f"Error getting chat completion: {e}")
             return None
 
