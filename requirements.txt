@@ -1,3 +1,9 @@
 python-dotenv
 langchain-openai
 langchain-mistralai
+llama-index
+llama-index-core
+llama-index-llms-azure-openai
+llama-index-llms-openai
+llama-index-llms-mistralai
+

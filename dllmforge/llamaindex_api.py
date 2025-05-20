@@ -70,7 +70,7 @@ class LlamaIndexAPI:
         """Check if the LLM service is accessible."""
         try:
             response = self.send_test_message("Hello")
-            if response:
+            if response is not None and response.get("response"):
                 print(f"{self.model_provider} service is up!")
                 return True
             else:

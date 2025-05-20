@@ -51,13 +51,14 @@ class TestLlamaIndexAPI:
         mock_instance = MagicMock()
         mock_instance.chat.return_value = MagicMock(message=MagicMock(content="Test response"))
         mock_azure.return_value = mock_instance
-        
-        api = LlamaIndexAPI(model_provider="azure-openai")
-        assert api.check_server_status() is True
 
-        # Mock failed server status check
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.check_server_status() is False
+        api = LlamaIndexAPI(model_provider="azure-openai")
+        with patch.object(api, 'llm', mock_instance):
+            assert api.check_server_status() is True
+
+            # Mock failed server status check
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.check_server_status() is False
 
     @patch("llama_index.llms.openai.OpenAI")
     def test_check_server_status_openai(self, mock_openai):
@@ -66,13 +67,14 @@ class TestLlamaIndexAPI:
         mock_instance = MagicMock()
         mock_instance.chat.return_value = MagicMock(message=MagicMock(content="Test response"))
         mock_openai.return_value = mock_instance
-        
-        api = LlamaIndexAPI(model_provider="openai")
-        assert api.check_server_status() is True
 
-        # Mock failed server status check
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.check_server_status() is False
+        api = LlamaIndexAPI(model_provider="openai")
+        with patch.object(api, 'llm', mock_instance):
+            assert api.check_server_status() is True
+
+            # Mock failed server status check
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.check_server_status() is False
 
     @patch("llama_index.llms.mistralai.MistralAI")
     def test_check_server_status_mistral(self, mock_mistral):
@@ -81,13 +83,14 @@ class TestLlamaIndexAPI:
         mock_instance = MagicMock()
         mock_instance.chat.return_value = MagicMock(message=MagicMock(content="Test response"))
         mock_mistral.return_value = mock_instance
-        
-        api = LlamaIndexAPI(model_provider="mistral")
-        assert api.check_server_status() is True
 
-        # Mock failed server status check
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.check_server_status() is False
+        api = LlamaIndexAPI(model_provider="mistral")
+        with patch.object(api, 'llm', mock_instance):
+            assert api.check_server_status() is True
+
+            # Mock failed server status check
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.check_server_status() is False
 
     @patch("llama_index.llms.azure_openai.AzureOpenAI")
     def test_send_test_message_azure(self, mock_azure):
@@ -104,16 +107,17 @@ class TestLlamaIndexAPI:
         mock_azure.return_value = mock_instance
         
         api = LlamaIndexAPI(model_provider="azure-openai")
-        response = api.send_test_message(prompt="Test prompt")
-        assert response["response"] == "Test response"
-        assert response["model"] == "azure-openai"
-        assert response["usage"].prompt_tokens == 10
-        assert response["usage"].completion_tokens == 20
-        assert response["usage"].total_tokens == 30
+        with patch.object(api, 'llm', mock_instance):
+            response = api.send_test_message(prompt="Test prompt")
+            assert response["response"] == "Test response"
+            assert response["model"] == "azure-openai"
+            assert response["usage"].prompt_tokens == 10
+            assert response["usage"].completion_tokens == 20
+            assert response["usage"].total_tokens == 30
 
-        # Mock failed message sending
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.send_test_message(prompt="Test prompt") is None
+            # Mock failed message sending
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.send_test_message(prompt="Test prompt") is None
 
     @patch("llama_index.llms.openai.OpenAI")
     def test_send_test_message_openai(self, mock_openai):
@@ -130,16 +134,17 @@ class TestLlamaIndexAPI:
         mock_openai.return_value = mock_instance
         
         api = LlamaIndexAPI(model_provider="openai")
-        response = api.send_test_message(prompt="Test prompt")
-        assert response["response"] == "Test response"
-        assert response["model"] == "openai"
-        assert response["usage"].prompt_tokens == 10
-        assert response["usage"].completion_tokens == 20
-        assert response["usage"].total_tokens == 30
+        with patch.object(api, 'llm', mock_instance):
+            response = api.send_test_message(prompt="Test prompt")
+            assert response["response"] == "Test response"
+            assert response["model"] == "openai"
+            assert response["usage"].prompt_tokens == 10
+            assert response["usage"].completion_tokens == 20
+            assert response["usage"].total_tokens == 30
 
-        # Mock failed message sending
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.send_test_message(prompt="Test prompt") is None
+            # Mock failed message sending
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.send_test_message(prompt="Test prompt") is None
 
     @patch("llama_index.llms.mistralai.MistralAI")
     def test_send_test_message_mistral(self, mock_mistral):
@@ -156,16 +161,17 @@ class TestLlamaIndexAPI:
         mock_mistral.return_value = mock_instance
         
         api = LlamaIndexAPI(model_provider="mistral")
-        response = api.send_test_message(prompt="Test prompt")
-        assert response["response"] == "Test response"
-        assert response["model"] == "mistral"
-        assert response["usage"].prompt_tokens == 10
-        assert response["usage"].completion_tokens == 20
-        assert response["usage"].total_tokens == 30
+        with patch.object(api, 'llm', mock_instance):
+            response = api.send_test_message(prompt="Test prompt")
+            assert response["response"] == "Test response"
+            assert response["model"] == "mistral"
+            assert response["usage"].prompt_tokens == 10
+            assert response["usage"].completion_tokens == 20
+            assert response["usage"].total_tokens == 30
 
-        # Mock failed message sending
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.send_test_message(prompt="Test prompt") is None
+            # Mock failed message sending
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.send_test_message(prompt="Test prompt") is None
 
     @patch("llama_index.llms.azure_openai.AzureOpenAI")
     def test_chat_completion_azure(self, mock_azure):
@@ -182,20 +188,21 @@ class TestLlamaIndexAPI:
         mock_azure.return_value = mock_instance
         
         api = LlamaIndexAPI(model_provider="azure-openai")
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Test prompt"}
-        ]
-        response = api.chat_completion(messages)
-        assert response["response"] == "Test response"
-        assert response["model"] == "azure-openai"
-        assert response["usage"].prompt_tokens == 10
-        assert response["usage"].completion_tokens == 20
-        assert response["usage"].total_tokens == 30
+        with patch.object(api, 'llm', mock_instance):
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Test prompt"}
+            ]
+            response = api.chat_completion(messages)
+            assert response["response"] == "Test response"
+            assert response["model"] == "azure-openai"
+            assert response["usage"].prompt_tokens == 10
+            assert response["usage"].completion_tokens == 20
+            assert response["usage"].total_tokens == 30
 
-        # Mock failed chat completion
-        mock_instance.chat.side_effect = Exception("API Error")
-        assert api.chat_completion(messages) is None
+            # Mock failed chat completion
+            mock_instance.chat.side_effect = Exception("API Error")
+            assert api.chat_completion(messages) is None
 
     def test_init_invalid_provider(self):
         """Test initialization with invalid provider"""
