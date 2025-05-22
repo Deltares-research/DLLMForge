@@ -11,11 +11,11 @@ repos:
         name: mypy
         language: python
         entry: mypy
-        files: "^stem/"
+        files: "^dllmforge/"
         args: [ --config-file, "pyproject.toml" ]
         types: [python]
       - id: flake8
         name: flake8
         language: python
         entry: flake8
-        files: "^stem/"
+        files: "^dllmforge/"
