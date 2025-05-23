@@ -1,6 +1,7 @@
 import requests
 import json
 
+
 class OllamaAPI:
     """Class to interact with the Ollama API through a reverse proxy."""
 
@@ -38,11 +39,7 @@ class OllamaAPI:
     def send_test_message(self, prompt="Hello, how are you?"):
         """Send a test message to the model and get a response."""
         try:
-            data = {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False
-            }
+            data = {"model": self.model, "prompt": prompt, "stream": False}
             response = requests.post(f"{self.url}/api/generate", json=data, verify=False)
             if response.status_code == 200:
                 return json.loads((response.text))
