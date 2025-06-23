@@ -1,6 +1,6 @@
 """
 This module provides document preprocessing functionality for RAG (Retrieval-Augmented Generation) pipelines.
-It includes document loading and text chunking capabilities for various file formats.
+It includes document loading and text chunking for PDF files.
 """
 
 from pathlib import Path
