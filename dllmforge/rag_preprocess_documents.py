@@ -2,13 +2,13 @@
 This module provides document preprocessing functionality for RAG (Retrieval-Augmented Generation) pipelines.
 It includes document loading and text chunking for PDF files.
 """
-
+import os
 from pathlib import Path
 from typing import List, Tuple, Dict, Any
 from abc import ABC, abstractmethod
 import re
 
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 
 
 class DocumentLoader(ABC):
@@ -29,14 +29,16 @@ class DocumentLoader(ABC):
 class PDFLoader(DocumentLoader):
     """Loader for PDF documents using PyPDF2."""
 
-    def load(self, file_path: Path) -> List[Tuple[int, str]]:
+    def load(self, file_path: Path) -> Tuple[List[Tuple[int, str]], str]:
         """
         Load a PDF document and extract text from its pages.
         Args:
             file_path: Path to the PDF file
         Returns:
-            List of tuples containing (page_number, text) pairs
+            Tuple containing (pages_with_text, file_name) where pages_with_text is a list of (page_number, text) pairs
         """
+        file_name = os.path.basename(file_path)
+
         pages_with_text = []
         with open(file_path, "rb") as pdf_file:
             pdf_reader = PdfReader(pdf_file)
@@ -44,7 +46,7 @@ class PDFLoader(DocumentLoader):
                 text = page.extract_text()
                 if text.strip():  # Skip empty pages
                     pages_with_text.append((page_number, text))
-        return pages_with_text
+        return pages_with_text, file_name
 
 
 class TextChunker:
@@ -67,18 +69,20 @@ class TextChunker:
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
 
-    def chunk_text(self, pages_with_text: List[Tuple[int, str]]) -> List[Dict[str, Any]]:
+    def chunk_text(self, pages_with_text: List[Tuple[int, str]], file_name: str = None) -> List[Dict[str, Any]]:
         """
         Split text into chunks while preserving sentence boundaries.
         Args:
             pages_with_text: List of tuples containing (page_number, text) pairs
+            file_name: Name of the source file (optional)
         Returns:
             List of dictionaries containing chunks with metadata:
             {
                 'text': str,           # The chunk text
                 'page_number': int,    # Source page number
                 'chunk_index': int,    # Index of the chunk
-                'total_chunks': int    # Total number of chunks from this document
+                'total_chunks': int,   # Total number of chunks from this document
+                'file_name': str       # Name of the source file
             }
         """
         chunks: List[Dict[str, Any]] = []
@@ -97,7 +101,8 @@ class TextChunker:
                             'text': current_chunk.strip(),
                             'page_number': page_number,
                             'chunk_index': len(chunks),
-                            'total_chunks': None  # Will be updated after all chunks are created
+                            'total_chunks': None,  # Will be updated after all chunks are created
+                            'file_name': file_name
                         })
 
                     # Start a new chunk with overlap
@@ -109,7 +114,8 @@ class TextChunker:
                     'text': current_chunk.strip(),
                     'page_number': page_number,
                     'chunk_index': len(chunks),
-                    'total_chunks': None
+                    'total_chunks': None,
+                    'file_name': file_name
                 })
 
         # Update total_chunks in all chunks
@@ -127,16 +133,17 @@ if __name__ == "__main__":
 
     # Load the PDF document
     loader = PDFLoader()
-    pages = loader.load(pdf_path)
+    pages, file_name = loader.load(pdf_path)
 
     # Create chunks with custom settings
     chunker = TextChunker(chunk_size=1000, overlap_size=200)
-    chunks = chunker.chunk_text(pages)
+    chunks = chunker.chunk_text(pages, file_name)
 
     # Print some information about the chunks
-    print(f"Generated {len(chunks)} chunks")
+    print(f"Generated {len(chunks)} chunks from file: {file_name}")
     for i, chunk in enumerate(chunks[:2]):  # Print first two chunks as example
         print(f"\nChunk {i+1}:")
+        print(f"File: {chunk['file_name']}")
         print(f"Page: {chunk['page_number']}")
         print(f"Index: {chunk['chunk_index']} of {chunk['total_chunks']}")
         print(f"Text preview: {chunk['text'][:100]}...")
