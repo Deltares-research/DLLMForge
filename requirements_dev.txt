@@ -7,3 +7,4 @@ flake8==7.0.0
 pre-commit==3.6.2
 requests==2.32.3
 types-requests
+PyPDF2
