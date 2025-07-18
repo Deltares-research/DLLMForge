@@ -7,7 +7,12 @@ flake8==7.0.0
 pre-commit==3.6.2
 requests==2.32.3
 sphinx==8.1.3
+langchain-community==0.3.27
+transformers==4.53.2
+sentence-transformers==5.0.0
+langchain-huggingface==0.3.0
 types-requests
 sphinxcontrib.bibtex
 types-requests
 pypdf
+faiss-cpu
