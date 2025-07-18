@@ -68,7 +68,7 @@ class AzureOpenAIEmbeddingModel:
                 if not self.validate_embedding(embedding):
                     raise ValueError(f"Invalid embedding generated for chunk: {chunk}")
                 vectorized_chunks.append({
-                    "chunk_id": f"{chunk['file_name']}_p{chunk['page_number']}",
+                    "chunk_id": f"{chunk['file_name']}_i{chunk['chunk_index']}",
                     "chunk": chunk["text"],
                     "page_number": chunk["page_number"],
                     "file_name": chunk["file_name"],
