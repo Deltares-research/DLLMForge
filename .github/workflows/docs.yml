@@ -32,11 +32,8 @@ jobs:
         run: sphinx-build -M html . ./build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: ad-m/github-push-action@master
         with:
-          github_token: ${{ secrets.PAGES_TOKEN }}
-          publish_dir: docs/build
-          # optional settings:
-          #publish_branch: gh-pages
-          # user_name: 'github-actions[bot]'
-          # user_email: 'github-actions[bot]@users.noreply.github.com'
+          branch: gh-pages
+          directory: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
