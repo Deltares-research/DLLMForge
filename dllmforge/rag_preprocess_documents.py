@@ -13,15 +13,13 @@ from PyPDF2 import PdfReader
 
 class DocumentLoader(ABC):
     """Abstract base class for document loaders."""
-    
+
     @abstractmethod
     def load(self, file_path: Path) -> List[Tuple[int, str]]:
         """
         Load a document and return its contents as a list of (page_number, text) tuples.
-        
         Args:
             file_path: Path to the document file
-            
         Returns:
             List of tuples containing (page_number, text) pairs
         """
@@ -30,14 +28,12 @@ class DocumentLoader(ABC):
 
 class PDFLoader(DocumentLoader):
     """Loader for PDF documents using PyPDF2."""
-    
+
     def load(self, file_path: Path) -> List[Tuple[int, str]]:
         """
         Load a PDF document and extract text from its pages.
-        
         Args:
             file_path: Path to the PDF file
-            
         Returns:
             List of tuples containing (page_number, text) pairs
         """
@@ -53,20 +49,17 @@ class PDFLoader(DocumentLoader):
 
 class TextChunker:
     """Class for chunking text into smaller segments with overlap.
-    
     For detailed information about chunking strategies in RAG applications, including:
     - Why chunking is important
     - How to choose chunk size and overlap
     - Different splitting techniques
     - Evaluation methods
-    
     See: https://www.mongodb.com/developer/products/atlas/choosing-chunking-strategy-rag/
     """
-    
+
     def __init__(self, chunk_size: int = 1000, overlap_size: int = 200):
         """
         Initialize the TextChunker.
-        
         Args:
             chunk_size: Maximum size of each chunk in characters
             overlap_size: Number of characters to overlap between chunks (recommended: 5-20% of chunk_size)
@@ -77,10 +70,8 @@ class TextChunker:
     def chunk_text(self, pages_with_text: List[Tuple[int, str]]) -> List[Dict[str, Any]]:
         """
         Split text into chunks while preserving sentence boundaries.
-        
         Args:
             pages_with_text: List of tuples containing (page_number, text) pairs
-            
         Returns:
             List of dictionaries containing chunks with metadata:
             {
@@ -90,12 +81,12 @@ class TextChunker:
                 'total_chunks': int    # Total number of chunks from this document
             }
         """
-        chunks = []
-        
+        chunks: List[Dict[str, Any]] = []
+
         for page_number, text in pages_with_text:
             sentences = re.split(r'(?<=[.!?]) +', text)
             current_chunk = ""
-            
+
             for sentence in sentences:
                 if len(current_chunk) + len(sentence) <= self.chunk_size:
                     current_chunk += sentence + " "
@@ -108,10 +99,10 @@ class TextChunker:
                             'chunk_index': len(chunks),
                             'total_chunks': None  # Will be updated after all chunks are created
                         })
-                    
+
                     # Start a new chunk with overlap
                     current_chunk = current_chunk[-self.overlap_size:].strip() + " " + sentence + " "
-            
+
             # Add any remaining text as a chunk
             if current_chunk.strip():
                 chunks.append({
@@ -120,12 +111,12 @@ class TextChunker:
                     'chunk_index': len(chunks),
                     'total_chunks': None
                 })
-        
+
         # Update total_chunks in all chunks
         total_chunks = len(chunks)
         for chunk in chunks:
             chunk['total_chunks'] = total_chunks
-        
+
         return chunks
 
 
@@ -133,15 +124,15 @@ if __name__ == "__main__":
     # Example usage
     data_dir = Path(r'c:\Users\deng_jg\work\16centralized_agents\test_data')
     pdf_path = data_dir / "lstm_low_flow.pdf"
-    
+
     # Load the PDF document
     loader = PDFLoader()
     pages = loader.load(pdf_path)
-    
+
     # Create chunks with custom settings
     chunker = TextChunker(chunk_size=1000, overlap_size=200)
     chunks = chunker.chunk_text(pages)
-    
+
     # Print some information about the chunks
     print(f"Generated {len(chunks)} chunks")
     for i, chunk in enumerate(chunks[:2]):  # Print first two chunks as example
@@ -149,10 +140,3 @@ if __name__ == "__main__":
         print(f"Page: {chunk['page_number']}")
         print(f"Index: {chunk['chunk_index']} of {chunk['total_chunks']}")
         print(f"Text preview: {chunk['text'][:100]}...")
-
-
-
-
-
-
-

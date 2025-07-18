@@ -47,10 +47,7 @@ def test_text_chunker_long_sentence():
 
 def test_text_chunker_multiple_pages():
     chunker = TextChunker(chunk_size=20, overlap_size=5)
-    test_pages = [
-        (1, "Page one. More text."),
-        (2, "Page two. Even more text here.")
-    ]
+    test_pages = [(1, "Page one. More text."), (2, "Page two. Even more text here.")]
     chunks = chunker.chunk_text(test_pages)
     assert all("page_number" in chunk for chunk in chunks)
-    assert set(chunk["page_number"] for chunk in chunks) == {1, 2} 
+    assert set(chunk["page_number"] for chunk in chunks) == {1, 2}
