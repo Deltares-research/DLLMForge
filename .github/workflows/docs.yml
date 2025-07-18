@@ -24,7 +24,7 @@ jobs:
         run: |
           pip install sphinx sphinx-rtd-theme
           # plus any of your own requirements, e.g.:
-          pip install -r requirements-dev.txt
+          pip install -r requirements_dev.txt
 
       - name: Build HTML docs
         working-directory: docs
