@@ -1,0 +1,41 @@
+name: Publish Python docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main    # or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # required for gh-pages deployment
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install sphinx sphinx-rtd-theme
+          # plus any of your own requirements, e.g.:
+          pip install -r requirements-dev.txt
+
+      - name: Build HTML docs
+        working-directory: docs
+        run: make html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          # optional settings:
+          #publish_branch: gh-pages
+          # user_name: 'github-actions[bot]'
+          # user_email: 'github-actions[bot]@users.noreply.github.com'
