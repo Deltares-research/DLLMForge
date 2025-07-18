@@ -8,7 +8,7 @@ from typing import List, Tuple, Dict, Any
 from abc import ABC, abstractmethod
 import re
 
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 
 
 class DocumentLoader(ABC):
