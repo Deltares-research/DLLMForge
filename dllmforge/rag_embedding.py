@@ -5,7 +5,7 @@ The module uses Azure OpenAI embeddings model as an example of using hosted embe
 Azure OpenAI service and a deployed embedding model on Azure to use this module.
 """
 
-from typing import List, Any
+from typing import List, Any, Union, Dict
 import os
 from dotenv import load_dotenv
 from langchain_openai import AzureOpenAIEmbeddings
@@ -34,23 +34,39 @@ class AzureOpenAIEmbeddingModel:
             openai_api_version=api_version
         )
 
-    def embed(self, query_or_chunks: Any) -> Any:
+    @staticmethod
+    def validate_embedding(embedding: List[float]) -> bool:
+        """Validate that the embedding is not empty."""
+        if not embedding:
+            return False
+        if not all(isinstance(x, (int, float)) for x in embedding):
+            return False
+        return True
+
+    def embed(self, query_or_chunks: Union[str, List[Dict[str, Any]]]) -> Union[List[float], List[Dict[str, Any]]]:
         """
         Embed a single query string or a list of document chunks.
         Args:
-            query_or_chunks: A string (query) or a list of strings (document chunks)
+            query_or_chunks: A string (query) or a list of dictionaries (document chunks)
+                            Each dictionary should have keys: "text", "file_name", "page_number"
         Returns:
-            Embedding vector(s): list of floats for a single string, or list of list of floats for a list of strings
+            For a string query: list of floats (embedding vector)
+            For document chunks: list of dictionaries with keys: "chunk_id", "chunk", "page_number", 
+                                "file_name", "text_vector"
         """
         if isinstance(query_or_chunks, str):
             query_text = query_or_chunks
             vectorized_query = self.embeddings.embed_query(query_text)
+            if not self.validate_embedding(vectorized_query):
+                raise ValueError("Invalid embedding generated for query.")
             return vectorized_query
-        elif isinstance(query_or_chunks, list) and all(isinstance(t, str) for t in query_or_chunks):
+        elif isinstance(query_or_chunks, list) and all(isinstance(t, dict) for t in query_or_chunks):
             chunks = query_or_chunks
             vectorized_chunks = []
             for chunk in chunks:
                 embedding = self.embeddings.embed_query(chunk["text"])
+                if not self.validate_embedding(embedding):
+                    raise ValueError(f"Invalid embedding generated for chunk: {chunk}")
                 vectorized_chunks.append({
                     "chunk_id": f"{chunk['file_name']}_p{chunk['page_number']}",
                     "chunk": chunk["text"],
@@ -60,7 +76,7 @@ class AzureOpenAIEmbeddingModel:
                 })
             return vectorized_chunks
         else:
-            raise ValueError("Input must be a string or a list of strings.")
+            raise ValueError("Input must be a string or a list of dictionaries.")
 
 
 if __name__ == "__main__":
@@ -91,7 +107,10 @@ if __name__ == "__main__":
     chunk_embeddings = model.embed(chunks)
     print(f"Generated {len(chunk_embeddings)} embeddings for document chunks.")
     for i, emb in enumerate(chunk_embeddings):
-        print(f"Chunk {i+1} - File: {emb['file_name']}, Page: {emb['page_number']}")
-        print(f"  Text preview: {emb['chunk'][:100]}...")
-        print(f"  Embedding (first 5 values): {emb['text_vector'][:5]}")
-        print()
+        if i < 4:
+            print(f"Chunk {i+1} - File: {emb['file_name']}, Page: {emb['page_number']}")
+            print(f"  Text preview: {emb['chunk'][:100]}...")
+            print(f"  Embedding (first 5 values): {emb['text_vector'][:5]}")
+            print()
+        else:
+            break
