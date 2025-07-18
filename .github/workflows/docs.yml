@@ -23,6 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx sphinx-rtd-theme
+          pip install .
           # plus any of your own requirements, e.g.:
           pip install -r requirements_dev.txt
 
