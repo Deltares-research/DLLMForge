@@ -1,19 +1,17 @@
 """
-This module provides "search" and "response" functionality for RAG (Retrieval-Augmented Generation) pipelines.
-Two steps are involved:
-1. Search: use search service to retrieve relevant chunks from the vector database.
+This module provides "create index/vector-database", "search" and "response" functionality for RAG (Retrieval-Augmented Generation) pipelines.
+Three steps are involved:
+1. Create index/vector-database: create an index/vector-database on Azure AI search service.
+1. Search: use Azure AI search service to retrieve relevant chunks from the vector database .
 2. Response: use LLMs to generate a response to the user query based on the retrieved chunks.
 
-The search module uses Azure AI search service as an example of using hosted search APIs. Note you need
-Azure AI search service and a deployed search index (vector database) on Azure to use this module.
-
-The response module uses Azure OpenAI service as an example of using hosted LLMs APIs. Note you need
-Azure OpenAI service and a deployed LLM model on Azure to use this module.
+The module uses Azure AI search service and Azure OpenAI service as an example of using hosted search APIs and LLMs APIs. Note you need
+Azure AI search service, Azure OpenAI service and a deployed LLM model on Azure to use this module.
 
 The example demonstrates the whole pipeline of RAG, including:
 1. Preprocess the documents to chunks.
 2. Vectorize the chunks.
-3. Store the chunks in the vector database.
+3. Create vector index and store the chunks in the vector database.
 4. Search the vector database for relevant chunks.
 5. Generate a response to the user query based on the retrieved chunks.
 """
@@ -46,7 +44,7 @@ api_base = os.getenv('AZURE_OPENAI_API_BASE')
 api_version = os.getenv('AZURE_OPENAI_API_VERSION')  
 search_client_endpoint = os.getenv('AZURE_SEARCH_ENDPOINT')  
 search_api_key = os.getenv('AZURE_SEARCH_API_KEY')  
-deployment_name_gpt4o = os.getenv('AZURE_OPENAI_DEPLOYMENT_GPT4')  
+deployment_name_gpt4o = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')  
 
 class IndexManager:
     def __init__(self, search_client_endpoint, search_api_key, index_name, embedding_dim):
@@ -149,7 +147,7 @@ class LLMResponder:
     def generate(self, query_text, retrieved_chunks):
         prompt = self.augment_prompt_with_context(query_text, retrieved_chunks)
         response = self.llm(prompt)
-        return response
+        return response.content.strip()
 
 
 if __name__ == "__main__":
@@ -186,25 +184,19 @@ if __name__ == "__main__":
 
     # Retrieval phase
     retriever = Retriever(model, index_name, search_client_endpoint, search_api_key)
-    query = "What is LSTM?"
+    query = "What is the area of the Rhine basin?"
     top_k = 5
     results = retriever.search(query, top_k=top_k)
     print(results)
 
-    responder = LLMResponder(model)
-    answer = responder.generate(query, results)
-    print(answer)
-
-   
-    from langchain.chat_models import AzureChatOpenAI
+    from langchain_openai import AzureChatOpenAI
     llm = AzureChatOpenAI(
         azure_endpoint=api_base,
         api_key=api_key,
-        api_version=api_version,
         azure_deployment=deployment_name_gpt4o,
-        temperature=0.2
+        api_version=api_version,
+        temperature=0.1
     )
-    llm = None  # Replace with actual LLM instance
     responder = LLMResponder(llm)
-
-     
+    answer = responder.generate(query, results)
+    print(answer)
