@@ -17,13 +17,24 @@ The example demonstrates the whole pipeline of RAG, including:
 4. Search the vector database for relevant chunks.
 5. Generate a response to the user query based on the retrieved chunks.
 """
-
+from azure.core.credentials import AzureKeyCredential 
 from azure.search.documents.models import VectorizedQuery  
 from azure.search.documents import SearchClient
-from rag_embedding import AzureOpenAIEmbeddingModel
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (  
+    SearchField,  
+    SearchFieldDataType,  
+    VectorSearch,  
+    HnswAlgorithmConfiguration,  
+    VectorSearchProfile,  
+    AzureOpenAIVectorizer,  
+    AzureOpenAIVectorizerParameters,  
+    SearchIndex  
+) 
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate  
 import os
 from dotenv import load_dotenv
+from rag_embedding import AzureOpenAIEmbeddingModel
 
 # Optionally load environment variables from a .env file
 load_dotenv()
@@ -36,24 +47,78 @@ api_version = os.getenv('AZURE_OPENAI_API_VERSION')
 search_client_endpoint = os.getenv('AZURE_SEARCH_ENDPOINT')  
 search_api_key = os.getenv('AZURE_SEARCH_API_KEY')  
 deployment_name_gpt4o = os.getenv('AZURE_OPENAI_DEPLOYMENT_GPT4')  
-  
-# Validate required environment variables  
-required_vars = [  
-    'AZURE_OPENAI_API_KEY',  
-    'AZURE_OPENAI_API_BASE',  
-    'AZURE_SEARCH_ENDPOINT',  
-    'AZURE_SEARCH_API_KEY'  
-]  
-for var in required_vars:  
-    if not os.getenv(var):  
-        raise ValueError(f"Missing required environment variable: {var}")  
-  
+
+class IndexManager:
+    def __init__(self, search_client_endpoint, search_api_key, index_name, embedding_dim):
+        self.endpoint = search_client_endpoint
+        self.search_api_key = search_api_key
+        self.index_name = index_name
+        self.embedding_dim = embedding_dim
+        self.index_client = SearchIndexClient(endpoint=search_client_endpoint, credential=AzureKeyCredential(search_api_key))
+
+    def create_index(self):
+        fields = [
+            SearchField(name="chunk_id", type=SearchFieldDataType.String, key=True, sortable=True, filterable=True),  
+            SearchField(name="chunk", type=SearchFieldDataType.String),
+            SearchField(name="page_number", type=SearchFieldDataType.Int32),
+            SearchField(name="file_name", type=SearchFieldDataType.String, filterable=True, searchable=True),
+            SearchField(  
+                name="text_vector",  
+                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),  
+                vector_search_dimensions=self.embedding_dim,  
+                vector_search_profile_name="myHnswProfile"
+            )
+        ]
+
+        # Configure vector search with Azure OpenAI credentials  
+        vector_search = VectorSearch(  
+            algorithms=[HnswAlgorithmConfiguration(name="myHnsw")],  
+            profiles=[VectorSearchProfile(name="myHnswProfile", algorithm_configuration_name="myHnsw", vectorizer_name="myOpenAI")],  
+            vectorizers=[AzureOpenAIVectorizer(  
+                vectorizer_name="myOpenAI",  
+                kind="azureOpenAI",  
+                parameters=AzureOpenAIVectorizerParameters(  
+                    resource_url=api_base,  
+                    deployment_name=deployment_name_embeddings,  
+                    model_name=deployment_name_embeddings,  
+                    api_key=api_key
+                )  
+            )]  
+        )    
+        
+        index = SearchIndex(
+            name=self.index_name,
+            fields=fields,
+            vector_search=vector_search
+        )
+        try:
+            self.index_client.create_or_update_index(index)
+            print(f"Index '{self.index_name}' created.")
+        except Exception as e:
+            print(f"Index creation error: {e}")
+
+    def upload_documents(self, vectorized_chunks):
+        search_client = SearchClient(
+            endpoint=self.endpoint,
+            index_name=self.index_name,
+            credential=AzureKeyCredential(self.search_api_key)
+        )
+        try:
+            search_client.upload_documents(documents=vectorized_chunks)
+            print(f"Uploaded {len(vectorized_chunks)}.")
+        except Exception as e:
+            print(f"Upload error: {e}")
 
 class Retriever:
-    def __init__(self, search_client, embedding_model):
-        self.search_client = search_client
+    def __init__(self, embedding_model, index_name, search_client_endpoint, search_api_key):
         self.embedding_model = embedding_model
-
+        self.index_name = index_name
+        self.search_client = SearchClient(
+            endpoint=search_client_endpoint,
+            index_name=index_name,
+            credential=AzureKeyCredential(search_api_key)
+        )
+    
     def get_embeddings(self, text):
         text_vectorized = self.embedding_model.embed(text)
         return text_vectorized
@@ -86,22 +151,51 @@ class LLMResponder:
         response = self.llm(prompt)
         return response
 
+
 if __name__ == "__main__":
     # Example demonstration RAGpipeline
-    # 
-
+    # step 1: preprocess the documents to chunks and embed the chunks
+    from pathlib import Path
+    from rag_preprocess_documents import *
+    data_dir = Path(r'c:\Users\deng_jg\work\16centralized_agents\test_data')
+    pdfs = list(data_dir.glob("*.pdf")) # find all PDF files in the directory
+    loader = PDFLoader() # Load the PDF document
+    chunker = TextChunker(chunk_size=1000, overlap_size=200) # Create chunks with custom settings
     
-    # Initialize the embeddings object  
-    embedding_model_name = "text-embedding-3-large"  
-    embedding_model = AzureOpenAIEmbeddingModel(model=embedding_model_name)
-    # 1. Initialize search client
-    search_client = SearchClient(
-        endpoint=search_client_endpoint,
-        index_name="your-index-name",  # Replace with your actual index name
-        credential=search_api_key
-    )
-    # 2. Initialize retriever and responder
-    retriever = Retriever(search_client, embedding_model)
+    # initialize the embedding model
+    model = AzureOpenAIEmbeddingModel()
+
+    # embed the chunks
+    global_embeddings = []
+    for pdf_path in pdfs:
+        pages, file_name = loader.load(pdf_path)
+        # Create chunks with custom settings
+        chunks = chunker.chunk_text(pages, file_name)
+        # Embed the document chunks
+        chunk_embeddings = model.embed(chunks)
+        global_embeddings.extend(chunk_embeddings)
+        print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
+    print(f"Total embeddings generated: {len(global_embeddings)}")
+
+    # Index and upload phase
+    embedding_dim = 3072  # Adjust if your embedding model uses a different dimension
+    index_name = "dllmforge_index"
+    index_manager = IndexManager(search_client_endpoint, search_api_key, index_name, embedding_dim)
+    index_manager.create_index()
+    index_manager.upload_documents(global_embeddings)
+
+    # Retrieval phase
+    retriever = Retriever(model, index_name, search_client_endpoint, search_api_key)
+    query = "What is LSTM?"
+    top_k = 5
+    results = retriever.search(query, top_k=top_k)
+    print(results)
+
+    responder = LLMResponder(model)
+    answer = responder.generate(query, results)
+    print(answer)
+
+   
     from langchain.chat_models import AzureChatOpenAI
     llm = AzureChatOpenAI(
         azure_endpoint=api_base,
@@ -112,12 +206,5 @@ if __name__ == "__main__":
     )
     llm = None  # Replace with actual LLM instance
     responder = LLMResponder(llm)
-    # 3. Run a query
-    query = "Your user query here"
-    top_k = 5
-    results = retriever.search(query, top_k=top_k)
-    answer = responder.generate(query, results)
-    print("Generated response:")
-    print(answer)
 
      
