@@ -32,7 +32,7 @@ from azure.search.documents.indexes.models import (
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate  
 import os
 from dotenv import load_dotenv
-from rag_embedding import AzureOpenAIEmbeddingModel
+from .rag_embedding import AzureOpenAIEmbeddingModel
 
 # Optionally load environment variables from a .env file
 load_dotenv()

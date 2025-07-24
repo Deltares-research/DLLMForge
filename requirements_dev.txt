@@ -11,3 +11,5 @@ types-requests
 sphinxcontrib.bibtex
 types-requests
 pypdf
+azure-search-documents
+langchain
