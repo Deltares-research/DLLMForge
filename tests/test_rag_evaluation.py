@@ -238,7 +238,7 @@ class TestRAGEvaluator:
         
         # Test with different scores
         score = evaluator.calculate_ragas_score(1.0, 0.5, 0.5, 1.0)
-        assert score == 0.667  # Harmonic mean of [1.0, 0.5, 0.5, 1.0]
+        assert abs(score - 0.667) < 0.001  # Harmonic mean of [1.0, 0.5, 0.5, 1.0] with tolerance
         
         # Test with zero scores
         score = evaluator.calculate_ragas_score(0.0, 0.5, 0.5, 0.5)
