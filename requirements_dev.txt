@@ -13,3 +13,5 @@ types-requests
 pypdf
 azure-search-documents
 langchain
+google-adk
+litellm

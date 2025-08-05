@@ -1,3 +1,6 @@
 pypdf
 azure-search-documents
 langchain
+google-adk
+litellm
+pandasai>=2.0.0
