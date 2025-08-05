@@ -21,7 +21,7 @@ class LangchainHFEmbeddingModel:
             model_name: Name or path of the Hugging Face model (default: "sentence-transformers/all-MiniLM-L6-v2").
         """
         # kwargs for encoder; adjust as needed
-        encode_kwargs = {"normalize_embeddings": False}
+        encode_kwargs = {"normalize_embeddings": False, "trust_remote_code": True}
         self.embeddings = HuggingFaceEmbeddings(model_name=model_name, encode_kwargs=encode_kwargs)
 
     @staticmethod
@@ -71,71 +71,3 @@ class LangchainHFEmbeddingModel:
             return vectorized_chunks
 
         raise ValueError("Input must be a string or a list of dictionaries.")
-
-
-if __name__ == "__main__":
-    # Example usage
-    model = LangchainHFEmbeddingModel(model_name="Linq-AI-Research/Linq-Embed-Mistral")  # Qwen/Qwen3-Embedding-8B
-
-    # Example: Embedding document chunks
-    from dllmforge.rag_preprocess_documents import *
-    from pathlib import Path
-
-    data_dir = Path(r'D:\\LLMs\\DLLMForge\\tests\\test_input\\piping_documents')
-    # find all PDF files in the directory
-    pdfs = list(data_dir.glob("*.pdf"))
-    # Load the PDF document
-    loader = PDFLoader()
-    # Create chunks with custom settings
-    chunker = TextChunker(chunk_size=1000, overlap_size=200)
-    global_embeddings = []
-    metadatas = []
-    for pdf_path in pdfs:
-        pages, file_name, metadata = loader.load(pdf_path)
-        # Create chunks with custom settings
-        chunks = chunker.chunk_text(pages, file_name, metadata)
-        # Embed the document chunks
-        chunk_embeddings = model.embed(chunks)
-        global_embeddings.extend(chunk_embeddings)
-        metadatas.extend([chunk["metadata"] for chunk in chunks])
-        print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
-    print(f"Total embeddings generated: {len(global_embeddings)}")
-    # now create the vector store
-    import faiss
-    from langchain_community.docstore.in_memory import InMemoryDocstore
-    from langchain_community.vectorstores import FAISS
-
-    # Dimension of embeddings
-    index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
-
-    vector_store = FAISS(
-        embedding_function=model.embeddings,
-        index=index,
-        docstore=InMemoryDocstore(),
-        index_to_docstore_id={},
-    )
-    # Add embeddings to the vector store
-    for chunk, meta in zip(global_embeddings, metadatas):
-
-        vector_store.add_texts(texts=[chunk["chunk"]],
-                               metadatas=[meta],
-                               ids=[chunk["chunk_id"]],
-                               embeddings=[chunk["text_vector"]])
-
-    # query the vector store directly to check wat is achterland in piping?
-    query_embedding = vector_store.similarity_search_with_score(query="kritisch stijghoogteverschil piping", k=5)
-    print("Query result:", query_embedding)
-
-    # now create the LLM
-    llm = DeltaresOllamaLLM(base_url="https://chat-api.directory.intra", model_name="qwen3:latest", temperature=0.8)
-
-    retriever = vector_store.as_retriever(
-        search_type="similarity_score_threshold",
-        search_kwargs={
-            "score_threshold": 0.5,
-            "k": 10
-        },
-    )
-
-    chat_result = llm.ask_with_retriever("Wat is de kritisch stijghoogteverschil piping?", retriever)
-    print("Answer:", chat_result.generations[0].message.content)

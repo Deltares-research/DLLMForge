@@ -11,6 +11,9 @@ from langchain.schema import (
     SystemMessage,
 )
 from pydantic import BaseModel
+import urllib3
+
+urllib3.disable_warnings()
 
 
 class Metadata(BaseModel):

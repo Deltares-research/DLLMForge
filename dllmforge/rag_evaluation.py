@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 from .openai_api import OpenAIAPI
 from .anthropic_api import AnthropicAPI
+from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 
 # Load environment variables
 load_dotenv()
@@ -60,21 +61,27 @@ class RAGEvaluator:
     - Answer Relevancy: Measures how relevant and to-the-point answers are
     """
 
-    def __init__(self, llm_provider: str = "auto"):
+    def __init__(self, llm_provider: str = "auto", deltares_llm: Optional[DeltaresOllamaLLM] = None):
         """
         Initialize the RAG evaluator.
 
         Args:
-            llm_provider: LLM provider to use ("openai", "anthropic", or "auto")
+            llm_provider: LLM provider to use ("openai", "anthropic", "deltares" or "auto")
         """
         self.llm_provider = llm_provider
 
         # Initialize LLM APIs
-        self.openai_api = OpenAIAPI()
-        self.anthropic_api = AnthropicAPI()
-
-        # Determine which LLM to use
-        self._setup_llm()
+        if self.llm_provider == "openai":
+            self.openai_api = OpenAIAPI()
+        elif self.llm_provider == "anthropic":
+            self.anthropic_api = AnthropicAPI()
+        elif self.llm_provider == "deltares":
+            if deltares_llm is None:
+                raise ValueError("Deltares LLM must be provided when using 'deltares' provider")
+            self.deltares_llm = deltares_llm
+        elif self.llm_provider == "auto":
+            # Automatically determine which LLM to use based on available credentials
+            self._setup_llm()
 
     def _setup_llm(self):
         """Setup the LLM provider based on available credentials."""
@@ -84,6 +91,8 @@ class RAGEvaluator:
                 self.llm_provider = "openai"
             elif os.getenv('ANTHROPIC_API_KEY'):
                 self.llm_provider = "anthropic"
+            elif self.deltares_llm is not None:
+                self.llm_provider = "deltares"
             else:
                 raise ValueError("No LLM API credentials found. Please set up OpenAI or Anthropic API keys.")
 
@@ -108,6 +117,8 @@ class RAGEvaluator:
                                                               temperature=temperature,
                                                               max_tokens=1000)
                 return response.get("response", "")
+            elif self.llm_provider == "deltares":
+                return self.deltares_llm.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
             else:
                 raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
         except Exception as e:
@@ -129,7 +140,7 @@ class RAGEvaluator:
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
 
-        prompt = f"""You are evaluating the relevancy of retrieved contexts for a question-answering system.
+        prompt = f"""/no_think You are evaluating the relevancy of retrieved contexts for a question-answering system.
 
 Question: {question}
 
@@ -166,6 +177,11 @@ Please respond in the following JSON format:
 
         try:
             # Try to parse JSON response
+            # check if this is arleady type dict
+            if isinstance(response, dict):
+                response = response['choices'][0]['message']['content']
+                # now remove the empty think
+                response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
             score = result.get("ratio", 0.0)
             explanation = result.get("explanation", "No explanation provided")
@@ -219,7 +235,7 @@ Please respond in the following JSON format:
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
 
-        prompt = f"""You are evaluating the recall of retrieved contexts for a question-answering system.
+        prompt = f""" /no_think You are evaluating the recall of retrieved contexts for a question-answering system.
 
 Question: {question}
 
@@ -259,6 +275,10 @@ Please respond in the following JSON format:
         response = self._call_llm(messages)
 
         try:
+            if isinstance(response, dict):
+                response = response['choices'][0]['message']['content']
+                # now remove the empty think
+                response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
             score = result.get("ratio", 0.0)
             explanation = result.get("explanation", "No explanation provided")
@@ -311,7 +331,7 @@ Please respond in the following JSON format:
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
 
-        prompt = f"""You are evaluating the faithfulness of a generated answer to the provided contexts.
+        prompt = f"""/no_think You are evaluating the faithfulness of a generated answer to the provided contexts.
 
 Question: {question}
 
@@ -353,6 +373,10 @@ Please respond in the following JSON format:
         response = self._call_llm(messages)
 
         try:
+            if isinstance(response, dict):
+                response = response['choices'][0]['message']['content']
+                # now remove the empty think
+                response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
             score = result.get("ratio", 0.0)
             explanation = result.get("explanation", "No explanation provided")
@@ -401,7 +425,7 @@ Please respond in the following JSON format:
         Returns:
             EvaluationResult with score and explanation
         """
-        prompt = f"""You are evaluating the relevancy of a generated answer to a question.
+        prompt = f"""/no_think You are evaluating the relevancy of a generated answer to a question.
 
 Original Question: {question}
 
@@ -436,6 +460,10 @@ Please respond in the following JSON format:
         response = self._call_llm(messages)
 
         try:
+            if isinstance(response, dict):
+                response = response['choices'][0]['message']['content']
+                # now remove the empty think
+                response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
             score = result.get("relevancy_score", 0.5)
             explanation = result.get("explanation", "No explanation provided")
