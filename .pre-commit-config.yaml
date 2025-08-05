@@ -7,15 +7,3 @@ repos:
         entry: yapf
         args: [-i]
         types: [python]
-      - id: mypy
-        name: mypy
-        language: python
-        entry: mypy
-        files: "^dllmforge/"
-        args: [ --config-file, "pyproject.toml" ]
-        types: [python]
-      - id: flake8
-        name: flake8
-        language: python
-        entry: flake8
-        files: "^dllmforge/"

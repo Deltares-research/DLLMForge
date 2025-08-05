@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import AzureOpenAIEmbeddings
 
+
 class AzureOpenAIEmbeddingModel:
     """Class for embedding queries and document chunks using Azure OpenAI Embeddings."""
 
@@ -19,7 +20,7 @@ class AzureOpenAIEmbeddingModel:
         """
         Initialize the embedding model using environment variables for Azure OpenAI.
         Args:
-            model: Name of the embedding model to use 
+            model: Name of the embedding model to use
             (default: "text-embedding-3-large", check Azure OpenAI for available models)
         """
         load_dotenv()
@@ -28,13 +29,11 @@ class AzureOpenAIEmbeddingModel:
         api_key = os.getenv('AZURE_OPENAI_API_KEY')
         api_version = os.getenv('AZURE_OPENAI_API_VERSION')
 
-        self.embeddings = AzureOpenAIEmbeddings(
-            model=model,
-            azure_endpoint=api_base,
-            azure_deployment=deployment_name_embeddings,
-            api_key=api_key,
-            openai_api_version=api_version
-        )
+        self.embeddings = AzureOpenAIEmbeddings(model=model,
+                                                azure_endpoint=api_base,
+                                                azure_deployment=deployment_name_embeddings,
+                                                api_key=api_key,
+                                                openai_api_version=api_version)
 
     @staticmethod
     def validate_embedding(embedding: List[float]) -> bool:
@@ -44,7 +43,7 @@ class AzureOpenAIEmbeddingModel:
         if not all(isinstance(x, (int, float)) for x in embedding):
             return False
         return True
-    
+
     @staticmethod
     def encode_filename(filename: str) -> str:
         """Encode filename to be safe for Azure Cognitive Search document keys."""
@@ -66,7 +65,7 @@ class AzureOpenAIEmbeddingModel:
                             Each dictionary should have keys: "text", "file_name", "page_number"
         Returns:
             For a string query: list of floats (embedding vector)
-            For document chunks: list of dictionaries with keys: "chunk_id", "chunk", "page_number", 
+            For document chunks: list of dictionaries with keys: "chunk_id", "chunk", "page_number",
                                 "file_name", "text_vector"
         """
         if isinstance(query_or_chunks, str):
@@ -82,7 +81,7 @@ class AzureOpenAIEmbeddingModel:
                 embedding = self.embeddings.embed_query(chunk["text"])
                 if not self.validate_embedding(embedding):
                     raise ValueError(f"Invalid embedding generated for chunk: {chunk}")
-                
+
                 # encode file_name to be safe for Azure Cognitive Search document keys.
                 safe_filename = self.encode_filename(chunk["file_name"])
 
@@ -110,7 +109,7 @@ if __name__ == "__main__":
     # Example: Embedding document chunks
     from rag_preprocess_documents import *
     from pathlib import Path
-    
+
     data_dir = Path(r'c:\Users\deng_jg\work\16centralized_agents\test_data')
     pdf_path = data_dir / "lstm_low_flow.pdf"
 

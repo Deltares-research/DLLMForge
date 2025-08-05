@@ -1,3 +1,16 @@
+langchain-community==0.3.27
+transformers==4.53.2
+sentence-transformers==5.0.0
+langchain-huggingface==0.3.0
+pypdf
+faiss-cpu
 pypdf
 azure-search-documents
 langchain
+openai
+langchain-openai
+anthropic
+llama-index
+langchain-mistralai
+llama-index-llms-azure-openai
+llama-index-llms-mistralai

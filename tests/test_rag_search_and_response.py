@@ -2,21 +2,25 @@ import pytest
 from unittest.mock import MagicMock, patch
 from dllmforge import rag_search_and_response as rag
 
+
 @pytest.fixture
 def mock_index_client():
     with patch('dllmforge.rag_search_and_response.SearchIndexClient') as mock:
         yield mock
+
 
 @pytest.fixture
 def mock_search_client():
     with patch('dllmforge.rag_search_and_response.SearchClient') as mock:
         yield mock
 
+
 @pytest.fixture
 def mock_embedding_model():
     model = MagicMock()
     model.embed.return_value = [0.1, 0.2, 0.3]
     return model
+
 
 @pytest.fixture
 def mock_llm():
@@ -41,7 +45,12 @@ def test_index_manager_upload_documents(mock_search_client):
 
 def test_retriever_search(mock_search_client, mock_embedding_model):
     # Mock search returns a list of dicts
-    mock_search_client.return_value.search.return_value = [{"chunk_id": "id1", "chunk": "text", "page_number": 1, "file_name": "file"}]
+    mock_search_client.return_value.search.return_value = [{
+        "chunk_id": "id1",
+        "chunk": "text",
+        "page_number": 1,
+        "file_name": "file"
+    }]
     retriever = rag.Retriever(mock_embedding_model, 'test_index', 'endpoint', 'key')
     results = retriever.search('query', top_k=1)
     assert isinstance(results, list)
@@ -56,4 +65,4 @@ def test_llm_responder_generate(mock_llm):
     query = "What is this?"
     response = responder.generate(query, chunks)
     assert response == 'Mocked LLM response.'
-    assert mock_llm.called 
+    assert mock_llm.called
