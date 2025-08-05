@@ -24,6 +24,7 @@ class DeltaresOllamaLLM(BaseChatModel):
     model_name: str  # e.g. "my‐finetuned‐gpt"
     metadata: Metadata = Metadata()
     headers: Optional[dict] = None  # e.g. {"Authorization": "Bearer ..."}
+    system_message: Optional[str] = "You are a helpful assistant that answers questions based on the provided context."
 
     def _generate(
         self,
@@ -80,3 +81,14 @@ class DeltaresOllamaLLM(BaseChatModel):
     def _llm_type(self) -> str:
         # this is the string by which LangChain will label/log your model
         return "ollama"
+
+    def ask_with_retriever(self, question: str, retriever, **kwargs) -> str:
+        """Ask a question using the retriever to get context."""
+        context = retriever.invoke(question)
+        prompt = [
+            SystemMessage(content=self.system_message),
+            HumanMessage(content=f"Question: {question} \nContext: {context}"),
+            SystemMessage(content="Please provide a concise answer.")
+        ]
+        chat_result = self._generate(prompt, **kwargs)
+        return chat_result

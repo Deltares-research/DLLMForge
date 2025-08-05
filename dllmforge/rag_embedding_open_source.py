@@ -79,12 +79,8 @@ class LangchainHFEmbeddingModel:
 
 if __name__ == "__main__":
     # Example usage
-    model = LangchainHFEmbeddingModel()
+    model = LangchainHFEmbeddingModel(model_name="Linq-AI-Research/Linq-Embed-Mistral") # Qwen/Qwen3-Embedding-8B
 
-    # Example: Embedding a query
-    query = "What is the capital of France?"
-    query_embedding = model.embed(query)
-    print("Query embedding (first 5 values):", query_embedding[:5])
 
     # Example: Embedding document chunks
     from dllmforge.rag_preprocess_documents import *
@@ -98,13 +94,15 @@ if __name__ == "__main__":
     # Create chunks with custom settings
     chunker = TextChunker(chunk_size=1000, overlap_size=200)
     global_embeddings = []
+    metadatas = []
     for pdf_path in pdfs:
-        pages, file_name = loader.load(pdf_path)
+        pages, file_name, metadata = loader.load(pdf_path)
         # Create chunks with custom settings
-        chunks = chunker.chunk_text(pages, file_name)
+        chunks = chunker.chunk_text(pages, file_name, metadata)
         # Embed the document chunks
         chunk_embeddings = model.embed(chunks)
         global_embeddings.extend(chunk_embeddings)
+        metadatas.extend([chunk["metadata"] for chunk in chunks])
         print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
     print(f"Total embeddings generated: {len(global_embeddings)}")
     # now create the vector store
@@ -114,7 +112,7 @@ if __name__ == "__main__":
 
 
     # Dimension of embeddings
-    index = faiss.IndexFlatL2(len(model.embeddings.embed_query("hello world")))
+    index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
 
     vector_store = FAISS(
         embedding_function=model.embeddings,
@@ -123,41 +121,31 @@ if __name__ == "__main__":
         index_to_docstore_id={},
     )
     # Add embeddings to the vector store
-    for chunk in global_embeddings:
+    for chunk, meta in zip(global_embeddings, metadatas):
+
         vector_store.add_texts(
             texts=[chunk["chunk"]],
-            metadatas=[{"file_name": chunk["file_name"], "page_number": chunk["page_number"]}],
+            metadatas=[meta],
             ids=[chunk["chunk_id"]],
             embeddings=[chunk["text_vector"]]
         )
 
     # query the vector store directly to check wat is achterland in piping?
     query_embedding = vector_store.similarity_search_with_score(
-        query="wat is achterland in piping?",
-        k=1
+        query="kritisch stijghoogteverschil piping",
+        k=5
     )
     print("Query result:", query_embedding)
 
     # now create the LLM
-    llm = DeltaresOllamaLLM(base_url="https://chat-api.directory.intra", model_name="qwen3:latest")
+    llm = DeltaresOllamaLLM(base_url="https://chat-api.directory.intra", model_name="qwen3:latest", temperature=0.8)
 
     retriever = vector_store.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"score_threshold": 0.1, "k": 10},
+        search_kwargs={"score_threshold": 0.5, "k": 10},
     )
 
-    prompt = [
-        SystemMessage(content="You are a helpful assistant that answers questions based on the provided context."),
-    ]
-    # Run the chain with a question
-    question = "Wat is piping?"
-    context = retriever.invoke(question)
-            # Generate the answer using the LLM
-    prompt.append(HumanMessage(content=f"Question: {question}\nContext: {context}"))
-    prompt.append(SystemMessage(content="Please provide a concise answer."))
-    chat_result = llm._generate(
-            prompt
-        )
+    chat_result = llm.ask_with_retriever("Wat is de kritisch stijghoogteverschil piping?", retriever)
     print("Answer:", chat_result.generations[0].message.content)
 
 

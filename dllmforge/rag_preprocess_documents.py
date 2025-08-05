@@ -42,11 +42,12 @@ class PDFLoader(DocumentLoader):
         pages_with_text = []
         with open(file_path, "rb") as pdf_file:
             pdf_reader = PdfReader(pdf_file)
+            metadata = pdf_reader.metadata
             for page_number, page in enumerate(pdf_reader.pages, start=1):
                 text = page.extract_text()
                 if text.strip():  # Skip empty pages
                     pages_with_text.append((page_number, text))
-        return pages_with_text, file_name
+        return pages_with_text, file_name, metadata
 
 
 class TextChunker:
@@ -69,12 +70,13 @@ class TextChunker:
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
 
-    def chunk_text(self, pages_with_text: List[Tuple[int, str]], file_name: str = None) -> List[Dict[str, Any]]:
+    def chunk_text(self, pages_with_text: List[Tuple[int, str]], file_name: str = None, metadata: dict = None) -> List[Dict[str, Any]]:
         """
         Split text into chunks while preserving sentence boundaries.
         Args:
             pages_with_text: List of tuples containing (page_number, text) pairs
             file_name: Name of the source file (optional)
+            metadata: Metadata information extracted from the document (optional)
         Returns:
             List of dictionaries containing chunks with metadata:
             {
@@ -102,7 +104,8 @@ class TextChunker:
                             'page_number': page_number,
                             'chunk_index': len(chunks),
                             'total_chunks': None,  # Will be updated after all chunks are created
-                            'file_name': file_name
+                            'file_name': file_name,
+                            'metadata': metadata if metadata else None
                         })
 
                     # Start a new chunk with overlap
@@ -115,7 +118,8 @@ class TextChunker:
                     'page_number': page_number,
                     'chunk_index': len(chunks),
                     'total_chunks': None,
-                    'file_name': file_name
+                    'file_name': file_name,
+                    'metadata': metadata if metadata else None
                 })
 
         # Update total_chunks in all chunks
@@ -133,7 +137,7 @@ if __name__ == "__main__":
 
     # Load the PDF document
     loader = PDFLoader()
-    pages, file_name = loader.load(pdf_path)
+    pages, file_name, metadata = loader.load(pdf_path)
 
     # Create chunks with custom settings
     chunker = TextChunker(chunk_size=1000, overlap_size=200)
