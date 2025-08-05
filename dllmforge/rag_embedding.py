@@ -6,6 +6,8 @@ Azure OpenAI service and a deployed embedding model on Azure to use this module.
 """
 
 from typing import List, Any, Union, Dict
+import base64
+import re
 import os
 from dotenv import load_dotenv
 from langchain_openai import AzureOpenAIEmbeddings
@@ -42,6 +44,19 @@ class AzureOpenAIEmbeddingModel:
         if not all(isinstance(x, (int, float)) for x in embedding):
             return False
         return True
+    
+    @staticmethod
+    def encode_filename(filename: str) -> str:
+        """Encode filename to be safe for Azure Cognitive Search document keys."""
+        # Remove file extension
+        name_without_ext = os.path.splitext(filename)[0]
+        # Replace spaces and special characters with underscores
+        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', name_without_ext)
+        # Encode in base64 and make it URL-safe
+        encoded = base64.urlsafe_b64encode(safe_name.encode()).decode()
+        # Remove padding
+        encoded = encoded.rstrip('=')
+        return encoded
 
     def embed(self, query_or_chunks: Union[str, List[Dict[str, Any]]]) -> Union[List[float], List[Dict[str, Any]]]:
         """
@@ -67,8 +82,12 @@ class AzureOpenAIEmbeddingModel:
                 embedding = self.embeddings.embed_query(chunk["text"])
                 if not self.validate_embedding(embedding):
                     raise ValueError(f"Invalid embedding generated for chunk: {chunk}")
+                
+                # encode file_name to be safe for Azure Cognitive Search document keys.
+                safe_filename = self.encode_filename(chunk["file_name"])
+
                 vectorized_chunks.append({
-                    "chunk_id": f"{chunk['file_name']}_p{chunk['page_number']}",
+                    "chunk_id": f"{safe_filename}_i{chunk['chunk_index']}",
                     "chunk": chunk["text"],
                     "page_number": chunk["page_number"],
                     "file_name": chunk["file_name"],

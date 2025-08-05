@@ -4,3 +4,6 @@ sentence-transformers==5.0.0
 langchain-huggingface==0.3.0
 pypdf
 faiss-cpu
+pypdf
+azure-search-documents
+langchain

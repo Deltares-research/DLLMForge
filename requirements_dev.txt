@@ -16,3 +16,5 @@ sphinxcontrib.bibtex
 types-requests
 pypdf
 faiss-cpu
+azure-search-documents
+langchain

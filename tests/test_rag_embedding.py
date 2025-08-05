@@ -115,25 +115,27 @@ class TestAzureOpenAIEmbeddingModel:
             {
                 "text": "First chunk text",
                 "file_name": "test.pdf",
-                "page_number": 1
+                "page_number": 1,
+                "chunk_index": 0
             },
             {
                 "text": "Second chunk text",
                 "file_name": "test.pdf",
-                "page_number": 2
+                "page_number": 2,
+                "chunk_index": 1
             }
         ]
         
         result = model.embed(chunks)
         
         assert len(result) == 2
-        assert result[0]["chunk_id"] == "test.pdf_p1"
+        assert result[0]["chunk_id"] == "dGVzdA_i0"
         assert result[0]["chunk"] == "First chunk text"
         assert result[0]["page_number"] == 1
         assert result[0]["file_name"] == "test.pdf"
         assert result[0]["text_vector"] == [0.1, 0.2, 0.3]
         
-        assert result[1]["chunk_id"] == "test.pdf_p2"
+        assert result[1]["chunk_id"] == "dGVzdA_i1"
         assert result[1]["chunk"] == "Second chunk text"
         assert result[1]["page_number"] == 2
         assert result[1]["file_name"] == "test.pdf"
@@ -181,12 +183,14 @@ class TestAzureOpenAIEmbeddingModel:
             {
                 "text": "First chunk text",
                 "file_name": "test.pdf",
-                "page_number": 1
+                "page_number": 1,
+                "chunk_index": 0
             },
             {
                 "text": "Second chunk text",
                 "file_name": "test.pdf",
-                "page_number": 2
+                "page_number": 2,
+                "chunk_index": 1
             }
         ]
         
@@ -256,12 +260,14 @@ class TestAzureOpenAIEmbeddingModel:
             {
                 "text": "Special chars: !@#$%^&*()",
                 "file_name": "test.pdf",
-                "page_number": 1
+                "page_number": 1,
+                "chunk_index": 0
             },
             {
                 "text": "Unicode: 你好世界 🌍",
                 "file_name": "test.pdf",
-                "page_number": 2
+                "page_number": 2,
+                "chunk_index": 1
             }
         ]
         
