@@ -70,7 +70,10 @@ class TextChunker:
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
 
-    def chunk_text(self, pages_with_text: List[Tuple[int, str]], file_name: str = None, metadata: dict = None) -> List[Dict[str, Any]]:
+    def chunk_text(self,
+                   pages_with_text: List[Tuple[int, str]],
+                   file_name: str = None,
+                   metadata: dict = None) -> List[Dict[str, Any]]:
         """
         Split text into chunks while preserving sentence boundaries.
         Args:

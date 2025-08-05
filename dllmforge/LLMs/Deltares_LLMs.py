@@ -74,10 +74,6 @@ class DeltaresOllamaLLM(BaseChatModel):
         return "custom_chat"
 
     @property
-    def _identifying_params(self) -> dict:
-        return {"model_name": self.model_name}
-
-    @property
     def _llm_type(self) -> str:
         # this is the string by which LangChain will label/log your model
         return "ollama"
@@ -92,7 +88,7 @@ class DeltaresOllamaLLM(BaseChatModel):
         ]
         chat_result = self._generate(prompt, **kwargs)
         return chat_result
-    
+
     def chat_completion(
         self,
         messages: List[dict],
@@ -103,14 +99,13 @@ class DeltaresOllamaLLM(BaseChatModel):
     ) -> dict:
         """
         Direct chat completion method that accepts OpenAI-style message format.
-        
         Args:
-            messages: List of message dicts with 'role' and 'content' keys
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            stream: Whether to stream the response
-            **kwargs: Additional parameters
-        
+            messages: List of message dictionaries in OpenAI format.
+            temperature: Sampling temperature for the model.
+            max_tokens: Maximum number of tokens to generate.
+            stream: Whether to stream the response.
+            **kwargs: Additional parameters for the request.
+
         Returns:
             Dict with completion response
         """
@@ -119,16 +114,16 @@ class DeltaresOllamaLLM(BaseChatModel):
         for msg in messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
-            
+
             if role == "system":
                 prompt_parts.append(f"System: {content}")
             elif role == "user":
                 prompt_parts.append(f"Human: {content}")
             elif role == "assistant":
                 prompt_parts.append(f"Assistant: {content}")
-        
+
         prompt = "\n".join(prompt_parts) + "\nAssistant:"
-        
+
         # Build payload for Ollama API
         payload = {
             "model": self.model_name,
@@ -140,10 +135,10 @@ class DeltaresOllamaLLM(BaseChatModel):
                 **kwargs
             },
         }
-        
+
         # Add headers if provided
         headers = self.headers or {}
-        
+
         # Make request to Ollama API
         resp = requests.post(
             f"{self.base_url}/api/generate",
@@ -152,7 +147,7 @@ class DeltaresOllamaLLM(BaseChatModel):
             verify=False,
         )
         resp.raise_for_status()
-        
+
         # Parse response
         if stream:
             return resp  # Return response object for streaming
@@ -162,7 +157,7 @@ class DeltaresOllamaLLM(BaseChatModel):
                 data = json.loads(data)
             else:
                 raise ValueError(f"Unexpected response format: {data}")
-            
+
             # Return OpenAI-style response format
             return {
                 "choices": [{
@@ -179,4 +174,3 @@ class DeltaresOllamaLLM(BaseChatModel):
                     "total_tokens": data.get("prompt_eval_count", 0) + data.get("eval_count", 0)
                 }
             }
-    

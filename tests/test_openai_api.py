@@ -12,23 +12,23 @@ class TestOpenAIAPI:
     def test_local(self):
         """Test the API locally with actual Azure OpenAI service."""
         api = OpenAIAPI()
-        
+
         # Test server status
         assert api.check_server_status() is True, "Azure OpenAI service should be accessible"
-        
+
         # Test model listing
         models = api.list_available_models()
         assert models is not None, "No models found. Check if the API is running."
         assert isinstance(models, list), "Models should be a list."
         assert len(models) > 0, "No models found. Check if the API is running."
-        
+
         # Test chat completion with multiple models
         test_prompt = "Create a simple HTML webpage with a greeting message and a background color of your choice. Give me only the HTML code so I can save it in a file immediately. No other text is needed."
-        
+
         # Create output directory if it doesn't exist
         output_dir = "tests/test_output"
         os.makedirs(output_dir, exist_ok=True)
-        
+
         # Test each model
         for model in models:
             print(f"\nTesting model: {model}")
@@ -36,13 +36,13 @@ class TestOpenAIAPI:
             response = api.send_test_message(prompt=test_prompt)
             assert response is not None, f"Failed to get response from model {model}"
             assert "response" in response, f"Response should contain 'response' field for model {model}"
-            
+
             # Save the HTML response to a file
             output_file = os.path.join(output_dir, f"response_{model}.html")
             with open(output_file, "w") as f:
                 f.write(response["response"])
             print(f"Output saved to: {output_file}")
-        
+
         # Test embeddings
         test_text = "This is a test text for embeddings"
         embeddings = api.get_embeddings(test_text)
@@ -57,7 +57,7 @@ class TestOpenAIAPI:
         mock_instance = MagicMock()
         mock_instance.models.list.return_value = ["model1", "model2"]
         mock_client.return_value = mock_instance
-        
+
         api = OpenAIAPI()
         assert api.check_server_status() is True
 
@@ -76,7 +76,7 @@ class TestOpenAIAPI:
         mock_model2.id = "model2"
         mock_instance.models.list.return_value = [mock_model1, mock_model2]
         mock_client.return_value = mock_instance
-        
+
         api = OpenAIAPI()
         models = api.list_available_models()
         assert models == ["model1", "model2"]
@@ -100,7 +100,7 @@ class TestOpenAIAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.chat.completions.create.return_value = mock_response
         mock_client.return_value = mock_instance
-        
+
         api = OpenAIAPI()
         response = api.send_test_message(prompt="Test prompt")
         assert response["response"] == "Test response"
@@ -123,7 +123,7 @@ class TestOpenAIAPI:
         mock_response.data[0].embedding = [0.1, 0.2, 0.3]
         mock_instance.embeddings.create.return_value = mock_response
         mock_client.return_value = mock_instance
-        
+
         api = OpenAIAPI()
         embeddings = api.get_embeddings("Test text")
         assert embeddings == [0.1, 0.2, 0.3]
@@ -147,12 +147,15 @@ class TestOpenAIAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.chat.completions.create.return_value = mock_response
         mock_client.return_value = mock_instance
-        
+
         api = OpenAIAPI()
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Test prompt"}
-        ]
+        messages = [{
+            "role": "system",
+            "content": "You are a helpful assistant."
+        }, {
+            "role": "user",
+            "content": "Test prompt"
+        }]
         response = api.chat_completion(messages)
         assert response["response"] == "Test response"
         assert response["model"] == "gpt-4"
@@ -164,4 +167,4 @@ class TestOpenAIAPI:
         mock_instance.chat.completions.create.side_effect = Exception("API Error")
         result = api.chat_completion(messages)
         print(f"Returned value from chat_completion: {result}")
-        assert result is None 
+        assert result is None

@@ -12,27 +12,27 @@ class TestAnthropicAPI:
     def test_local(self):
         """Test the API locally with actual Anthropic service."""
         api = AnthropicAPI()
-        
+
         # Test server status
         assert api.check_server_status() is True, "Anthropic API service should be accessible"
-        
+
         # Test model listing
         models = api.list_available_models()
         assert models is not None, "No models found"
         assert isinstance(models, list), "Models should be a list"
         assert len(models) > 0, "No models found"
-        
+
         # Verify deployment models are included
         assert api.deployment_claude37 in models, "Claude 3.7 deployment model should be in the list"
         assert api.deployment_claude35 in models, "Claude 3.5 deployment model should be in the list"
-        
+
         # Test chat completion with multiple models
         test_prompt = "Create a simple HTML webpage with a greeting message and a background color of your choice. Give me only the HTML code so I can save it in a file immediately. No other text is needed."
-        
+
         # Create output directory if it doesn't exist
         output_dir = "tests/test_output"
         os.makedirs(output_dir, exist_ok=True)
-        
+
         # Test each model
         for model in models:
             print(f"\nTesting model: {model}")
@@ -40,7 +40,7 @@ class TestAnthropicAPI:
             response = api.send_test_message(prompt=test_prompt)
             assert response is not None, f"Failed to get response from model {model}"
             assert "response" in response, f"Response should contain 'response' field for model {model}"
-            
+
             # Save the HTML response to a file
             output_file = os.path.join(output_dir, f"response_{model}.html")
             with open(output_file, "w") as f:
@@ -55,14 +55,13 @@ class TestAnthropicAPI:
         mock_response = MagicMock()
         mock_instance.messages.create.return_value = mock_response
         mock_client.return_value = mock_instance
-        
+
         api = AnthropicAPI()
         assert api.check_server_status() is True
 
         # Mock failed server status check
         mock_instance.messages.create.side_effect = Exception("API Error")
         assert api.check_server_status() is False
-
 
     @patch("dllmforge.anthropic_api.Anthropic")
     def test_send_test_message(self, mock_client):
@@ -78,7 +77,7 @@ class TestAnthropicAPI:
         mock_response.usage.output_tokens = 20
         mock_instance.messages.create.return_value = mock_response
         mock_client.return_value = mock_instance
-        
+
         api = AnthropicAPI()
         response = api.send_test_message(prompt="Test prompt")
         assert response["response"] == "Test response"
@@ -89,4 +88,4 @@ class TestAnthropicAPI:
 
         # Mock failed message sending
         mock_instance.messages.create.side_effect = Exception("API Error")
-        assert api.send_test_message(prompt="Test prompt") is None 
+        assert api.send_test_message(prompt="Test prompt") is None

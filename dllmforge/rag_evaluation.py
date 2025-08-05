@@ -1,7 +1,7 @@
 """
 RAGAS Evaluation Module for DLLMForge
 
-This module provides comprehensive evaluation metrics for RAG (Retrieval-Augmented Generation) 
+This module provides comprehensive evaluation metrics for RAG (Retrieval-Augmented Generation)
 pipelines using RAGAS-inspired metrics without requiring external dashboards or services.
 
 The module evaluates four key aspects of RAG systems:
@@ -17,7 +17,7 @@ annotated datasets.
 import os
 import json
 import time
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
@@ -52,30 +52,30 @@ class RAGEvaluationResult:
 class RAGEvaluator:
     """
     RAGAS-inspired evaluator for RAG pipelines.
-    
+
     This evaluator provides four key metrics:
     - Context Relevancy: Measures the signal-to-noise ratio in retrieved contexts
     - Context Recall: Measures the ability to retrieve all necessary information
     - Faithfulness: Measures factual accuracy and absence of hallucinations
     - Answer Relevancy: Measures how relevant and to-the-point answers are
     """
-    
+
     def __init__(self, llm_provider: str = "auto"):
         """
         Initialize the RAG evaluator.
-        
+
         Args:
             llm_provider: LLM provider to use ("openai", "anthropic", or "auto")
         """
         self.llm_provider = llm_provider
-        
+
         # Initialize LLM APIs
         self.openai_api = OpenAIAPI()
         self.anthropic_api = AnthropicAPI()
-        
+
         # Determine which LLM to use
         self._setup_llm()
-    
+
     def _setup_llm(self):
         """Setup the LLM provider based on available credentials."""
         if self.llm_provider == "auto":
@@ -86,57 +86,49 @@ class RAGEvaluator:
                 self.llm_provider = "anthropic"
             else:
                 raise ValueError("No LLM API credentials found. Please set up OpenAI or Anthropic API keys.")
-        
+
         print(f"Using LLM provider: {self.llm_provider}")
-    
+
     def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.1) -> str:
         """
         Call the LLM with the specified messages.
-        
+
         Args:
             messages: List of message dictionaries
             temperature: Temperature for generation
-            
         Returns:
             LLM response text
         """
         try:
             if self.llm_provider == "openai":
-                response = self.openai_api.chat_completion(
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=1000
-                )
+                response = self.openai_api.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "anthropic":
-                response = self.anthropic_api.chat_completion(
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=1000
-                )
+                response = self.anthropic_api.chat_completion(messages=messages,
+                                                              temperature=temperature,
+                                                              max_tokens=1000)
                 return response.get("response", "")
             else:
                 raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
         except Exception as e:
             print(f"Error calling LLM: {e}")
             return ""
-    
+
     def evaluate_context_relevancy(self, question: str, retrieved_contexts: List[str]) -> EvaluationResult:
         """
         Evaluate the relevancy of retrieved contexts to the question.
-        
+
         This metric measures the signal-to-noise ratio in the retrieved contexts.
         It identifies which sentences from the context are actually needed to answer the question.
-        
+
         Args:
             question: The user's question
             retrieved_contexts: List of retrieved context chunks
-            
         Returns:
             EvaluationResult with score and explanation
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
-        
+
         prompt = f"""You are evaluating the relevancy of retrieved contexts for a question-answering system.
 
 Question: {question}
@@ -162,13 +154,16 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the relevancy of text contexts."},
-            {"role": "user", "content": prompt}
-        ]
-        
+        messages = [{
+            "role": "system",
+            "content": "You are a helpful assistant that evaluates the relevancy of text contexts."
+        }, {
+            "role": "user",
+            "content": prompt
+        }]
+
         response = self._call_llm(messages)
-        
+
         try:
             # Try to parse JSON response
             result = json.loads(response)
@@ -193,7 +188,8 @@ Please respond in the following JSON format:
                         "total_sentences": result.get("total_sentences", 0),
                         "relevant_count": result.get("relevant_count", 0)
                     }
-                except:
+                # not bare except:
+                except json.JSONDecodeError:
                     # Fallback: try to extract score from text
                     score = 0.5  # Default score
                     explanation = "Could not parse LLM response (JSON extraction failed)"
@@ -203,33 +199,26 @@ Please respond in the following JSON format:
                 score = 0.5  # Default score
                 explanation = "Could not parse LLM response (no JSON found)"
                 details = {"raw_response": response}
-        
-        return EvaluationResult(
-            metric_name="context_relevancy",
-            score=score,
-            explanation=explanation,
-            details=details
-        )
-    
-    def evaluate_context_recall(self, question: str, retrieved_contexts: List[str], 
-                               ground_truth_answer: str) -> EvaluationResult:
+
+        return EvaluationResult(metric_name="context_relevancy", score=score, explanation=explanation, details=details)
+
+    def evaluate_context_recall(self, question: str, retrieved_contexts: List[str],
+                                ground_truth_answer: str) -> EvaluationResult:
         """
         Evaluate the recall of retrieved contexts against a ground truth answer.
-        
         This metric measures the ability of the retriever to retrieve all necessary information
         needed to answer the question by checking if each statement from the ground truth
         can be found in the retrieved context.
-        
+
         Args:
             question: The user's question
             retrieved_contexts: List of retrieved context chunks
             ground_truth_answer: The reference answer to compare against
-            
         Returns:
             EvaluationResult with score and explanation
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
-        
+
         prompt = f"""You are evaluating the recall of retrieved contexts for a question-answering system.
 
 Question: {question}
@@ -259,13 +248,16 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the recall of text contexts."},
-            {"role": "user", "content": prompt}
-        ]
-        
+        messages = [{
+            "role": "system",
+            "content": "You are a helpful assistant that evaluates the recall of text contexts."
+        }, {
+            "role": "user",
+            "content": prompt
+        }]
+
         response = self._call_llm(messages)
-        
+
         try:
             result = json.loads(response)
             score = result.get("ratio", 0.0)
@@ -291,7 +283,7 @@ Please respond in the following JSON format:
                         "total_statements": result.get("total_statements", 0),
                         "supported_count": result.get("supported_count", 0)
                     }
-                except:
+                except json.JSONDecodeError:
                     score = 0.5
                     explanation = "Could not parse LLM response (JSON extraction failed)"
                     details = {"raw_response": response}
@@ -299,32 +291,26 @@ Please respond in the following JSON format:
                 score = 0.5
                 explanation = "Could not parse LLM response (no JSON found)"
                 details = {"raw_response": response}
-        
-        return EvaluationResult(
-            metric_name="context_recall",
-            score=score,
-            explanation=explanation,
-            details=details
-        )
-    
-    def evaluate_faithfulness(self, question: str, generated_answer: str, 
-                            retrieved_contexts: List[str]) -> EvaluationResult:
+
+        return EvaluationResult(metric_name="context_recall", score=score, explanation=explanation, details=details)
+
+    def evaluate_faithfulness(self, question: str, generated_answer: str,
+                              retrieved_contexts: List[str]) -> EvaluationResult:
         """
         Evaluate the faithfulness of the generated answer to the retrieved contexts.
-        
+
         This metric measures the factual accuracy of the generated answer by checking
         if all statements in the answer are supported by the retrieved contexts.
-        
+
         Args:
             question: The user's question
             generated_answer: The answer generated by the RAG system
             retrieved_contexts: List of retrieved context chunks
-            
         Returns:
             EvaluationResult with score and explanation
         """
         context_text = "\n\n".join([f"Context {i+1}: {ctx}" for i, ctx in enumerate(retrieved_contexts)])
-        
+
         prompt = f"""You are evaluating the faithfulness of a generated answer to the provided contexts.
 
 Question: {question}
@@ -356,13 +342,16 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the faithfulness of generated answers."},
-            {"role": "user", "content": prompt}
-        ]
-        
+        messages = [{
+            "role": "system",
+            "content": "You are a helpful assistant that evaluates the faithfulness of generated answers."
+        }, {
+            "role": "user",
+            "content": prompt
+        }]
+
         response = self._call_llm(messages)
-        
+
         try:
             result = json.loads(response)
             score = result.get("ratio", 0.0)
@@ -390,7 +379,7 @@ Please respond in the following JSON format:
                         "total_statements": result.get("total_statements", 0),
                         "supported_count": result.get("supported_count", 0)
                     }
-                except:
+                except json.JSONDecodeError:
                     score = 0.5
                     explanation = "Could not parse LLM response (JSON extraction failed)"
                     details = {"raw_response": response}
@@ -398,25 +387,17 @@ Please respond in the following JSON format:
                 score = 0.5
                 explanation = "Could not parse LLM response (no JSON found)"
                 details = {"raw_response": response}
-        
-        return EvaluationResult(
-            metric_name="faithfulness",
-            score=score,
-            explanation=explanation,
-            details=details
-        )
-    
+
+        return EvaluationResult(metric_name="faithfulness", score=score, explanation=explanation, details=details)
+
     def evaluate_answer_relevancy(self, question: str, generated_answer: str) -> EvaluationResult:
         """
         Evaluate the relevancy of the generated answer to the question.
-        
         This metric measures how relevant and to-the-point the answer is by generating
         probable questions that the answer could answer and computing similarity to the actual question.
-        
         Args:
             question: The user's question
             generated_answer: The answer generated by the RAG system
-            
         Returns:
             EvaluationResult with score and explanation
         """
@@ -444,13 +425,16 @@ Please respond in the following JSON format:
     "weaknesses": ["weakness 1", "weakness 2"]
 }}"""
 
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the relevancy of answers."},
-            {"role": "user", "content": prompt}
-        ]
-        
+        messages = [{
+            "role": "system",
+            "content": "You are a helpful assistant that evaluates the relevancy of answers."
+        }, {
+            "role": "user",
+            "content": prompt
+        }]
+
         response = self._call_llm(messages)
-        
+
         try:
             result = json.loads(response)
             score = result.get("relevancy_score", 0.5)
@@ -474,7 +458,7 @@ Please respond in the following JSON format:
                         "strengths": result.get("strengths", []),
                         "weaknesses": result.get("weaknesses", [])
                     }
-                except:
+                except json.JSONDecodeError:
                     score = 0.5
                     explanation = "Could not parse LLM response (JSON extraction failed)"
                     details = {"raw_response": response}
@@ -482,93 +466,81 @@ Please respond in the following JSON format:
                 score = 0.5
                 explanation = "Could not parse LLM response (no JSON found)"
                 details = {"raw_response": response}
-        
-        return EvaluationResult(
-            metric_name="answer_relevancy",
-            score=score,
-            explanation=explanation,
-            details=details
-        )
-    
-    def calculate_ragas_score(self, context_relevancy: float, context_recall: float,
-                            faithfulness: float, answer_relevancy: float) -> float:
+
+        return EvaluationResult(metric_name="answer_relevancy", score=score, explanation=explanation, details=details)
+
+    def calculate_ragas_score(self, context_relevancy: float, context_recall: float, faithfulness: float,
+                              answer_relevancy: float) -> float:
         """
         Calculate the RAGAS score as the harmonic mean of all four metrics.
-        
         Args:
             context_relevancy: Context relevancy score
             context_recall: Context recall score
             faithfulness: Faithfulness score
             answer_relevancy: Answer relevancy score
-            
         Returns:
             RAGAS score (harmonic mean)
         """
         scores = [context_relevancy, context_recall, faithfulness, answer_relevancy]
         # Filter out zero scores to avoid division by zero
         non_zero_scores = [score for score in scores if score > 0]
-        
+
         if not non_zero_scores:
             return 0.0
-        
+
         # Calculate harmonic mean
-        harmonic_mean = len(non_zero_scores) / sum(1/score for score in non_zero_scores)
+        harmonic_mean = len(non_zero_scores) / sum(1 / score for score in non_zero_scores)
         return harmonic_mean
-    
-    def evaluate_rag_pipeline(self, question: str, generated_answer: str, 
-                            retrieved_contexts: List[str], 
-                            ground_truth_answer: Optional[str] = None) -> RAGEvaluationResult:
+
+    def evaluate_rag_pipeline(self,
+                              question: str,
+                              generated_answer: str,
+                              retrieved_contexts: List[str],
+                              ground_truth_answer: Optional[str] = None) -> RAGEvaluationResult:
         """
         Evaluate a complete RAG pipeline using all four metrics.
-        
+
         Args:
             question: The user's question
             generated_answer: The answer generated by the RAG system
             retrieved_contexts: List of retrieved context chunks
             ground_truth_answer: Optional ground truth answer for context recall evaluation
-            
         Returns:
             Complete evaluation results
         """
         start_time = time.time()
-        
+
         print("🔍 Starting RAG evaluation...")
-        
+
         # Evaluate context relevancy
         print("  📊 Evaluating context relevancy...")
         context_relevancy = self.evaluate_context_relevancy(question, retrieved_contexts)
-        
+
         # Evaluate faithfulness
         print("  📊 Evaluating faithfulness...")
         faithfulness = self.evaluate_faithfulness(question, generated_answer, retrieved_contexts)
-        
+
         # Evaluate answer relevancy
         print("  📊 Evaluating answer relevancy...")
         answer_relevancy = self.evaluate_answer_relevancy(question, generated_answer)
-        
+
         # Evaluate context recall (if ground truth is provided)
         if ground_truth_answer:
             print("  📊 Evaluating context recall...")
             context_recall = self.evaluate_context_recall(question, retrieved_contexts, ground_truth_answer)
         else:
             # Use context relevancy as a proxy for context recall
-            context_recall = EvaluationResult(
-                metric_name="context_recall",
-                score=context_relevancy.score,
-                explanation="Using context relevancy as proxy (no ground truth provided)",
-                details={"note": "Ground truth answer not provided"}
-            )
-        
+            context_recall = EvaluationResult(metric_name="context_recall",
+                                              score=context_relevancy.score,
+                                              explanation="Using context relevancy as proxy (no ground truth provided)",
+                                              details={"note": "Ground truth answer not provided"})
+
         # Calculate RAGAS score
-        ragas_score = self.calculate_ragas_score(
-            context_relevancy.score,
-            context_recall.score,
-            faithfulness.score,
-            answer_relevancy.score
-        )
-        
+        ragas_score = self.calculate_ragas_score(context_relevancy.score, context_recall.score, faithfulness.score,
+                                                 answer_relevancy.score)
+
         evaluation_time = time.time() - start_time
-        
+
         # Compile metadata
         metadata = {
             "llm_provider": self.llm_provider,
@@ -577,51 +549,47 @@ Please respond in the following JSON format:
             "context_count": len(retrieved_contexts),
             "has_ground_truth": ground_truth_answer is not None
         }
-        
-        return RAGEvaluationResult(
-            context_relevancy=context_relevancy,
-            context_recall=context_recall,
-            faithfulness=faithfulness,
-            answer_relevancy=answer_relevancy,
-            ragas_score=ragas_score,
-            evaluation_time=evaluation_time,
-            metadata=metadata
-        )
-    
+
+        return RAGEvaluationResult(context_relevancy=context_relevancy,
+                                   context_recall=context_recall,
+                                   faithfulness=faithfulness,
+                                   answer_relevancy=answer_relevancy,
+                                   ragas_score=ragas_score,
+                                   evaluation_time=evaluation_time,
+                                   metadata=metadata)
+
     def print_evaluation_summary(self, result: RAGEvaluationResult):
         """
         Print a formatted summary of the evaluation results.
-        
         Args:
             result: The evaluation results to summarize
         """
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📊 RAG EVALUATION SUMMARY")
-        print("="*60)
-        
+        print("=" * 60)
+
         print(f"🎯 Overall RAGAS Score: {result.ragas_score:.3f}")
         print(f"⏱️  Evaluation Time: {result.evaluation_time:.2f} seconds")
         print()
-        
+
         print("📈 Individual Metrics:")
         print(f"  • Context Relevancy: {result.context_relevancy.score:.3f}")
         print(f"    {result.context_relevancy.explanation}")
-        
+
         print(f"  • Context Recall: {result.context_recall.score:.3f}")
         print(f"    {result.context_recall.explanation}")
-        
+
         print(f"  • Faithfulness: {result.faithfulness.score:.3f}")
         print(f"    {result.faithfulness.explanation}")
-        
+
         print(f"  • Answer Relevancy: {result.answer_relevancy.score:.3f}")
         print(f"    {result.answer_relevancy.explanation}")
-        
-        print("\n" + "="*60)
-    
+
+        print("\n" + "=" * 60)
+
     def save_evaluation_results(self, result: RAGEvaluationResult, output_file: str):
         """
         Save evaluation results to a JSON file.
-        
         Args:
             result: The evaluation results to save
             output_file: Path to the output JSON file
@@ -654,21 +622,22 @@ Please respond in the following JSON format:
                 }
             }
         }
-        
+
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(result_dict, f, indent=2, ensure_ascii=False)
-        
+
         print(f"💾 Evaluation results saved to: {output_file}")
 
 
-def evaluate_rag_response(question: str, generated_answer: str, retrieved_contexts: List[str],
-                         ground_truth_answer: Optional[str] = None, 
-                         llm_provider: str = "auto",
-                         save_results: bool = True,
-                         output_file: Optional[str] = None) -> RAGEvaluationResult:
+def evaluate_rag_response(question: str,
+                          generated_answer: str,
+                          retrieved_contexts: List[str],
+                          ground_truth_answer: Optional[str] = None,
+                          llm_provider: str = "auto",
+                          save_results: bool = True,
+                          output_file: Optional[str] = None) -> RAGEvaluationResult:
     """
     Convenience function to evaluate a RAG response.
-    
     Args:
         question: The user's question
         generated_answer: The answer generated by the RAG system
@@ -677,27 +646,24 @@ def evaluate_rag_response(question: str, generated_answer: str, retrieved_contex
         llm_provider: LLM provider to use ("openai", "anthropic", or "auto")
         save_results: Whether to save results to a file
         output_file: Optional output file path
-        
     Returns:
         Complete evaluation results
     """
     evaluator = RAGEvaluator(llm_provider=llm_provider)
-    
-    result = evaluator.evaluate_rag_pipeline(
-        question=question,
-        generated_answer=generated_answer,
-        retrieved_contexts=retrieved_contexts,
-        ground_truth_answer=ground_truth_answer
-    )
-    
+
+    result = evaluator.evaluate_rag_pipeline(question=question,
+                                             generated_answer=generated_answer,
+                                             retrieved_contexts=retrieved_contexts,
+                                             ground_truth_answer=ground_truth_answer)
+
     evaluator.print_evaluation_summary(result)
-    
+
     if save_results:
         if output_file is None:
             import datetime
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = f"rag_evaluation_{timestamp}.json"
-        
+
         evaluator.save_evaluation_results(result, output_file)
-    
-    return result 
+
+    return result

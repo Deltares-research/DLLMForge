@@ -13,22 +13,22 @@ class TestLangchainAPI:
         # Test Azure OpenAI
         api = LangchainAPI(model_provider="azure-openai")
         assert api.check_server_status() is True, "Azure OpenAI service should be accessible"
-        
+
         # Test OpenAI
         api = LangchainAPI(model_provider="openai")
         assert api.check_server_status() is True, "OpenAI service should be accessible"
-        
+
         # Test Mistral
         api = LangchainAPI(model_provider="mistral")
         assert api.check_server_status() is True, "Mistral service should be accessible"
-        
+
         # Test chat completion with Azure OpenAI
         test_prompt = "Create a simple HTML webpage with a greeting message and a background color of your choice. Give me only the HTML code so I can save it in a file immediately. No other text is needed."
-        
+
         # Create output directory if it doesn't exist
         output_dir = "tests/test_output"
         os.makedirs(output_dir, exist_ok=True)
-        
+
         # Test each provider
         providers = ["azure-openai", "openai", "mistral"]
         for provider in providers:
@@ -37,7 +37,7 @@ class TestLangchainAPI:
             response = api.send_test_message(prompt=test_prompt)
             assert response is not None, f"Failed to get response from {provider}"
             assert "response" in response, f"Response should contain 'response' field for {provider}"
-            
+
             # Save the HTML response to a file
             output_file = os.path.join(output_dir, f"response_{provider}.html")
             with open(output_file, "w") as f:
@@ -51,7 +51,7 @@ class TestLangchainAPI:
         mock_instance = MagicMock()
         mock_instance.invoke.return_value = MagicMock(content="Test response")
         mock_azure.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="azure-openai")
         assert api.check_server_status() is True
 
@@ -66,7 +66,7 @@ class TestLangchainAPI:
         mock_instance = MagicMock()
         mock_instance.invoke.return_value = MagicMock(content="Test response")
         mock_openai.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="openai")
         assert api.check_server_status() is True
 
@@ -81,7 +81,7 @@ class TestLangchainAPI:
         mock_instance = MagicMock()
         mock_instance.invoke.return_value = MagicMock(content="Test response")
         mock_mistral.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="mistral")
         assert api.check_server_status() is True
 
@@ -102,7 +102,7 @@ class TestLangchainAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.invoke.return_value = mock_response
         mock_azure.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="azure-openai")
         response = api.send_test_message(prompt="Test prompt")
         assert response["response"] == "Test response"
@@ -128,7 +128,7 @@ class TestLangchainAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.invoke.return_value = mock_response
         mock_openai.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="openai")
         response = api.send_test_message(prompt="Test prompt")
         assert response["response"] == "Test response"
@@ -154,7 +154,7 @@ class TestLangchainAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.invoke.return_value = mock_response
         mock_mistral.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="mistral")
         response = api.send_test_message(prompt="Test prompt")
         assert response["response"] == "Test response"
@@ -180,12 +180,9 @@ class TestLangchainAPI:
         mock_response.usage.total_tokens = 30
         mock_instance.invoke.return_value = mock_response
         mock_azure.return_value = mock_instance
-        
+
         api = LangchainAPI(model_provider="azure-openai")
-        messages = [
-            ("system", "You are a helpful assistant."),
-            ("human", "Test prompt")
-        ]
+        messages = [("system", "You are a helpful assistant."), ("human", "Test prompt")]
         response = api.chat_completion(messages)
         assert response["response"] == "Test response"
         assert response["model"] == "azure-openai"
@@ -200,4 +197,4 @@ class TestLangchainAPI:
     def test_init_invalid_provider(self):
         """Test initialization with invalid provider"""
         with pytest.raises(ValueError, match="Unsupported model provider"):
-            LangchainAPI(model_provider="invalid") 
+            LangchainAPI(model_provider="invalid")

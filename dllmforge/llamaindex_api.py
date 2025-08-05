@@ -1,7 +1,7 @@
 """
 Create LLM object and API calls using llama_index, including Azure and non-Azure models.
 We use openai and mistral models for examples.
-An overview of available llama_index LLMs: https://docs.llamaindex.ai/en/stable/module_guides/models/llms/modules/ 
+An overview of available llama_index LLMs: https://docs.llamaindex.ai/en/stable/module_guides/models/llms/modules/
 """
 import os
 from dotenv import load_dotenv
@@ -43,28 +43,23 @@ class LlamaIndexAPI:
         self.temperature = temperature
 
         if self.model_provider == "azure-openai":
-            self.llm = AzureOpenAI(
-                engine=deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-                model=model_name or os.getenv("AZURE_OPENAI_MODEL_NAME", "gpt-35-turbo"),
-                api_key=api_key or os.getenv("AZURE_OPENAI_API_KEY"),
-                azure_endpoint=api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
-                api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
-                temperature=self.temperature
-            )
+            self.llm = AzureOpenAI(engine=deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                                   model=model_name or os.getenv("AZURE_OPENAI_MODEL_NAME", "gpt-35-turbo"),
+                                   api_key=api_key or os.getenv("AZURE_OPENAI_API_KEY"),
+                                   azure_endpoint=api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
+                                   api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
+                                   temperature=self.temperature)
         elif self.model_provider == "openai":
-            self.llm = OpenAI(
-                api_key=api_key or os.getenv("OPENAI_API_KEY"),
-                model=model_name or os.getenv("OPENAI_MODEL_NAME", "gpt-3.5-turbo"),
-                temperature=self.temperature
-            )
+            self.llm = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"),
+                              model=model_name or os.getenv("OPENAI_MODEL_NAME", "gpt-3.5-turbo"),
+                              temperature=self.temperature)
         elif self.model_provider == "mistral":
-            self.llm = MistralAI(
-                api_key=api_key or os.getenv("MISTRAL_API_KEY"),
-                model=model_name or os.getenv("MISTRAL_MODEL_NAME", "mistral-medium"),
-                temperature=self.temperature
-            )
+            self.llm = MistralAI(api_key=api_key or os.getenv("MISTRAL_API_KEY"),
+                                 model=model_name or os.getenv("MISTRAL_MODEL_NAME", "mistral-medium"),
+                                 temperature=self.temperature)
         else:
-            raise ValueError(f"Unsupported model provider: {model_provider}. Choose from 'azure-openai', 'openai', or 'mistral'")
+            raise ValueError(
+                f"Unsupported model provider: {model_provider}. Choose from 'azure-openai', 'openai', or 'mistral'")
 
     def check_server_status(self):
         """Check if the LLM service is accessible."""
@@ -125,11 +120,9 @@ class LlamaIndexAPI:
                     chat_messages.append(ChatMessage(role=m[0], content=m[1]))
                 else:
                     raise ValueError("Invalid message format")
-            response = self.llm.chat(
-                chat_messages,
-                temperature=temperature if temperature is not None else self.temperature,
-                max_tokens=max_tokens
-            )
+            response = self.llm.chat(chat_messages,
+                                     temperature=temperature if temperature is not None else self.temperature,
+                                     max_tokens=max_tokens)
             return {
                 "response": response.message.content if hasattr(response, 'message') else str(response),
                 "model": self.model_provider,
@@ -137,4 +130,4 @@ class LlamaIndexAPI:
             }
         except Exception as e:
             print(f"Error getting chat completion: {e}")
-            return None 
+            return None

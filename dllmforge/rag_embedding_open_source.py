@@ -6,10 +6,9 @@ Azure OpenAI service and a deployed embedding model on Azure to use this module.
 """
 
 from typing import List, Any, Union, Dict
-import os
 from langchain_huggingface import HuggingFaceEmbeddings
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
-from langchain.schema import HumanMessage, SystemMessage
+
 
 class LangchainHFEmbeddingModel:
     """Class for embedding queries and document chunks using LangChain's HuggingFaceEmbeddings."""
@@ -23,10 +22,7 @@ class LangchainHFEmbeddingModel:
         """
         # kwargs for encoder; adjust as needed
         encode_kwargs = {"normalize_embeddings": False}
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
-            encode_kwargs=encode_kwargs
-        )
+        self.embeddings = HuggingFaceEmbeddings(model_name=model_name, encode_kwargs=encode_kwargs)
 
     @staticmethod
     def validate_embedding(embedding: List[float]) -> bool:
@@ -79,13 +75,12 @@ class LangchainHFEmbeddingModel:
 
 if __name__ == "__main__":
     # Example usage
-    model = LangchainHFEmbeddingModel(model_name="Linq-AI-Research/Linq-Embed-Mistral") # Qwen/Qwen3-Embedding-8B
-
+    model = LangchainHFEmbeddingModel(model_name="Linq-AI-Research/Linq-Embed-Mistral")  # Qwen/Qwen3-Embedding-8B
 
     # Example: Embedding document chunks
     from dllmforge.rag_preprocess_documents import *
     from pathlib import Path
-    
+
     data_dir = Path(r'D:\\LLMs\\DLLMForge\\tests\\test_input\\piping_documents')
     # find all PDF files in the directory
     pdfs = list(data_dir.glob("*.pdf"))
@@ -110,7 +105,6 @@ if __name__ == "__main__":
     from langchain_community.docstore.in_memory import InMemoryDocstore
     from langchain_community.vectorstores import FAISS
 
-
     # Dimension of embeddings
     index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
 
@@ -123,18 +117,13 @@ if __name__ == "__main__":
     # Add embeddings to the vector store
     for chunk, meta in zip(global_embeddings, metadatas):
 
-        vector_store.add_texts(
-            texts=[chunk["chunk"]],
-            metadatas=[meta],
-            ids=[chunk["chunk_id"]],
-            embeddings=[chunk["text_vector"]]
-        )
+        vector_store.add_texts(texts=[chunk["chunk"]],
+                               metadatas=[meta],
+                               ids=[chunk["chunk_id"]],
+                               embeddings=[chunk["text_vector"]])
 
     # query the vector store directly to check wat is achterland in piping?
-    query_embedding = vector_store.similarity_search_with_score(
-        query="kritisch stijghoogteverschil piping",
-        k=5
-    )
+    query_embedding = vector_store.similarity_search_with_score(query="kritisch stijghoogteverschil piping", k=5)
     print("Query result:", query_embedding)
 
     # now create the LLM
@@ -142,11 +131,11 @@ if __name__ == "__main__":
 
     retriever = vector_store.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"score_threshold": 0.5, "k": 10},
+        search_kwargs={
+            "score_threshold": 0.5,
+            "k": 10
+        },
     )
 
     chat_result = llm.ask_with_retriever("Wat is de kritisch stijghoogteverschil piping?", retriever)
     print("Answer:", chat_result.generations[0].message.content)
-
-
-
