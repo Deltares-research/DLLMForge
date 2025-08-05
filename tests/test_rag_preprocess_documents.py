@@ -17,7 +17,7 @@ def test_pdf_loader_reads_pages(monkeypatch):
         with patch("builtins.open", mock_open(read_data=b"dummy")):
             loader = PDFLoader()
             # The file path is irrelevant due to mocking
-            pages, file_name = loader.load(Path("dummy.pdf"))
+            pages, file_name, metadata = loader.load(Path("dummy.pdf"))
             assert pages == [(1, "Page 1 text."), (2, "Page 2 text.")]
             assert file_name == "dummy.pdf"
 
@@ -33,7 +33,7 @@ def test_pdf_loader_skips_empty_pages():
     with patch("dllmforge.rag_preprocess_documents.PdfReader", return_value=mock_reader):
         with patch("builtins.open", mock_open(read_data=b"dummy")):
             loader = PDFLoader()
-            pages, file_name = loader.load(Path("dummy.pdf"))
+            pages, file_name, metadata = loader.load(Path("dummy.pdf"))
             assert pages == [(2, "Not empty.")]
             assert file_name == "dummy.pdf"
 

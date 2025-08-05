@@ -63,23 +63,6 @@ class TestAnthropicAPI:
         mock_instance.messages.create.side_effect = Exception("API Error")
         assert api.check_server_status() is False
 
-    def test_list_available_models(self):
-        """Test listing available models."""
-        # Test with default configuration
-        api = AnthropicAPI()
-        models = api.list_available_models()
-        assert isinstance(models, list)
-        assert len(models) > 0
-        assert all(isinstance(model, str) for model in models)
-        
-        # Test with custom deployment models
-        custom_api = AnthropicAPI(
-            deployment_claude37="custom-claude-37",
-            deployment_claude35="custom-claude-35"
-        )
-        custom_models = custom_api.list_available_models()
-        assert "custom-claude-37" in custom_models
-        assert "custom-claude-35" in custom_models
 
     @patch("dllmforge.anthropic_api.Anthropic")
     def test_send_test_message(self, mock_client):

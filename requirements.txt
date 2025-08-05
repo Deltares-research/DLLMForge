@@ -7,3 +7,10 @@ faiss-cpu
 pypdf
 azure-search-documents
 langchain
+openai
+langchain-openai
+anthropic
+llama-index
+langchain-mistralai
+llama-index-llms-azure-openai
+llama-index-llms-mistralai

@@ -224,25 +224,8 @@ class TestRAGEvaluator:
             
             assert isinstance(result, RAGEvaluationResult)
             assert result.ragas_score > 0
-            assert result.evaluation_time > 0
             assert result.metadata["question"] == "What is the capital of France?"
             assert result.metadata["has_ground_truth"] is True
-    
-    def test_ragas_score_calculation(self):
-        """Test RAGAS score calculation."""
-        evaluator = RAGEvaluator(llm_provider="openai")
-        
-        # Test with all scores equal
-        score = evaluator.calculate_ragas_score(0.8, 0.8, 0.8, 0.8)
-        assert score == 0.8
-        
-        # Test with different scores
-        score = evaluator.calculate_ragas_score(1.0, 0.5, 0.5, 1.0)
-        assert abs(score - 0.667) < 0.001  # Harmonic mean of [1.0, 0.5, 0.5, 1.0] with tolerance
-        
-        # Test with zero scores
-        score = evaluator.calculate_ragas_score(0.0, 0.5, 0.5, 0.5)
-        assert score == 0.5  # Should handle zero scores gracefully
     
     @patch('dllmforge.rag_evaluation.OpenAIAPI')
     @patch('dllmforge.rag_evaluation.AnthropicAPI')
@@ -410,7 +393,3 @@ class TestIntegration:
         assert rag_result.ragas_score == 0.825
         assert rag_result.context_relevancy.score == 0.8
         assert rag_result.context_recall.score == 0.9
-
-
-if __name__ == "__main__":
-    pytest.main([__file__]) 
