@@ -5,6 +5,7 @@ Phase 2-3 Implementation: Core Agent Structure and Specialized Tools
 This module implements a multi-agent system for data analysis that helps non-technical
 users query databases and perform sophisticated data analysis through natural language.
 """
+#TODO: legacy code, change from pandasai import SmartDataframe to pai
 
 import os
 import pandas as pd
