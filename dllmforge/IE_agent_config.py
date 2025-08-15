@@ -60,9 +60,6 @@ class DocumentConfig(BaseModel):
     input_dir: Path = Field(
         description="Directory containing input documents"
     )
-    output_dir: Path = Field(
-        description="Directory for output files"
-    )
     file_pattern: str = Field(
         default="*.*",
         description="Glob pattern for matching input files"

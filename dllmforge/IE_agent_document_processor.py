@@ -7,11 +7,8 @@ from pathlib import Path
 from typing import Union, List, Dict, Any, Optional
 from PIL import Image
 import fitz  # PyMuPDF
-try:
-    from .document_loader import DocumentLoader
-except ImportError:
-    from document_loader import DocumentLoader
-from .IE_agent_config import DocumentConfig
+from utils.document_loader import DocumentLoader
+from IE_agent_config import DocumentConfig
 
 class ProcessedDocument:
     """Class representing processed document content"""
@@ -87,9 +84,7 @@ class DocumentProcessor:
                     metadata={
                         'source_file': str(file_path),
                         'page_number': page_num + 1,
-                        'image_size_bytes': len(img_bytes),
-                        'width': pix.width,
-                        'height': pix.height
+                        'image_size_bytes': len(img_bytes)
                     }
                 ))
             
@@ -106,9 +101,7 @@ class DocumentProcessor:
                 content_type='image',
                 metadata={
                     'source_file': str(file_path),
-                    'image_size_bytes': len(img_bytes),
-                    'width': img.width,
-                    'height': img.height
+                    'image_size_bytes': len(img_bytes)
                 }
             ))
         
@@ -157,3 +150,56 @@ class DocumentProcessor:
                 continue
         
         return processed_docs
+
+if __name__ == "__main__":
+    # Example 1: Convert PDF to text
+    test_pdf_path = r"c:\Users\deng_jg\work\16centralized_agents\test_data\lstm_low_flow.pdf"
+    # Configure document processor for text output
+    text_config = DocumentConfig(
+        input_dir=Path(test_pdf_path).parent,
+        file_pattern="*.pdf",
+        output_type="text"
+    )
+    text_processor = DocumentProcessor(text_config)
+    # Process PDF to text
+    processed_text = text_processor.process_to_text(test_pdf_path)
+    print("\nText Processing Results:")
+    print(f"Source file: {processed_text.metadata['source_file']}")
+    print(f"Text length: {processed_text.metadata['text_length']} characters")
+    print("First 500 characters of extracted text:")
+    print(processed_text.content[:500])
+    
+    # Example 2: Convert PDF to images
+    test_pdf_path = r"c:\Users\deng_jg\work\16centralized_agents\test_data\Kratzert2018_Rainfall–runoff modelling using Long Short-Term.pdf"
+    # Configure document processor for image output
+    image_config = DocumentConfig(
+        input_dir=Path(test_pdf_path).parent,
+        file_pattern="*.pdf",
+        output_type="image"
+    )
+    image_processor = DocumentProcessor(image_config)
+    # Process PDF to images
+    processed_images = image_processor.process_to_image(test_pdf_path)
+    print("\nImage Processing Results:")
+    print(f"Source file: {processed_images[0].metadata['source_file']}")
+    print(f"Number of pages processed: {len(processed_images)}")
+    for i, img_doc in enumerate(processed_images):
+        print(f"Page {img_doc.metadata['page_number']}: {img_doc.metadata['image_size_bytes'] / 1024:.1f} KB")
+        
+    # Example 3: Process all PDFs in directory using process_directory()
+    test_dir = r"c:\Users\deng_jg\work\16centralized_agents\test_data"
+    print("\nBatch Processing Results using process_directory():")
+    # First process all PDFs to text
+    text_config = DocumentConfig(
+        input_dir=Path(test_dir),
+        file_pattern="*.pdf",
+        output_type="text"
+    )
+    text_processor = DocumentProcessor(text_config)
+    print("\nProcessing all PDFs to text:")
+    text_results = text_processor.process_directory()
+    for result in text_results:
+        print(f"File: {result.metadata['source_file']}")
+        print(f"Text length: {result.metadata['text_length']} characters")
+
+

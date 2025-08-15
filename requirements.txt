@@ -17,3 +17,4 @@ llama-index-llms-mistralai
 pytesseract
 pdf2image
 python-docx
+PyMuPDF
