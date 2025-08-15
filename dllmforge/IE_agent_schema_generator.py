@@ -133,6 +133,7 @@ class SchemaGenerator:
         if self.config.user_schema_path:
             schema_code = self._load_user_schema(self.config.user_schema_path)
             if schema_code:
+                print(f"Loaded user schema from {self.config.user_schema_path}")
                 return schema_code
             # If loading fails, fall back to generation
             print("Failed to load user schema, falling back to generation")
@@ -179,6 +180,7 @@ Generated Pydantic schema for information extraction
 
 if __name__ == "__main__":
     # Example 1: Generate schema from task description only
+    #-----------------------------------------------------------------------------------------
     config_simple = SchemaConfig(
         task_description="""
         Extract flood event information from reports. We need to capture:
@@ -199,6 +201,7 @@ if __name__ == "__main__":
     print(schema_code)
     
     # Example 2: Generate schema with example document as text
+    #------------------------------------------------------------------------------------------
     config_with_example = SchemaConfig(
         task_description="Extract technical specifications from engineering reports",
         example_doc="""
@@ -232,6 +235,7 @@ if __name__ == "__main__":
     print(schema_code)
     
     # Example 3: Generate schema from PDF example
+    #-----------------------------------------------------------------------------------------
     try:
         config_from_pdf = SchemaConfig(
             task_description="Extract rainfall event information from the following document",
@@ -249,30 +253,13 @@ if __name__ == "__main__":
         print(f"\nExample 3 failed: {e}")
     
     # Example 4: Use pre-defined schema
-    predefined_schema = """
-    from typing import Optional, List, Dict
-    from pydantic import BaseModel, Field
-    
-    class WeatherEvent(BaseModel):
-        \"\"\"Information about a weather event\"\"\"
-        event_type: str = Field(description="Type of weather event (e.g., storm, flood)")
-        start_date: str = Field(description="Start date of the event")
-        end_date: str = Field(description="End date of the event")
-        location: str = Field(description="Location affected by the event")
-        measurements: Dict[str, float] = Field(
-            description="Key measurements (e.g., rainfall, wind speed)",
-            default_factory=dict
-        )
-        impacts: List[str] = Field(
-            description="List of observed impacts",
-            default_factory=list
-        )
-    """
+    #-----------------------------------------------------------------------------------------
+    predefined_schema = r'c:\Users\deng_jg\work\16centralized_agents\DLLMForge\dllmforge\weather_schema.py'
     
     config_predefined = SchemaConfig(
         task_description="Extract weather event information",
-        user_schema=predefined_schema,
-        output_path="weather_schema.py"
+        user_schema_path=Path(predefined_schema),
+        output_path="weather_schema_from_file.py"
     )
     
     generator_predefined = SchemaGenerator(config_predefined)
