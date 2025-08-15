@@ -25,3 +25,6 @@ llama-index
 langchain-mistralai
 llama-index-llms-azure-openai
 llama-index-llms-mistralai
+pytesseract
+pdf2image
+python-docx

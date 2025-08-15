@@ -46,9 +46,9 @@ class SchemaConfig(BaseModel):
         default=None,
         description="Example document to help with schema generation"
     )
-    user_schema: Optional[str] = Field(
+    user_schema_path: Optional[Path] = Field(
         default=None,
-        description="User-provided schema code (if not using auto-generation)"
+        description="Path to user-provided schema Python file"
     )
     output_path: Optional[Path] = Field(
         default=None,
