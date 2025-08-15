@@ -6,37 +6,6 @@ from pathlib import Path
 from typing import Optional, Union, Dict, Any, List
 from pydantic import BaseModel, Field
 
-class LLMConfig(BaseModel):
-    """Configuration for LLM settings"""
-    model_provider: str = Field(
-        default="azure-openai",
-        description="Provider of model to use (azure-openai, openai, or mistral)"
-    )
-    temperature: float = Field(
-        default=0.1,
-        description="Temperature setting for the model (0.0 to 1.0)"
-    )
-    api_key: Optional[str] = Field(
-        default=None,
-        description="API key for the provider"
-    )
-    api_base: Optional[str] = Field(
-        default=None,
-        description="API base URL (for Azure)"
-    )
-    api_version: Optional[str] = Field(
-        default=None,
-        description="API version (for Azure)"
-    )
-    deployment_name: Optional[str] = Field(
-        default=None,
-        description="Deployment name (for Azure)"
-    )
-    model_name: Optional[str] = Field(
-        default=None,
-        description="Model name (for OpenAI/Mistral)"
-    )
-
 class SchemaConfig(BaseModel):
     """Configuration for schema generation"""
     task_description: str = Field(
@@ -61,7 +30,7 @@ class DocumentConfig(BaseModel):
         description="Directory containing input documents"
     )
     file_pattern: str = Field(
-        default="*.*",
+        default="*.pdf*",
         description="Glob pattern for matching input files"
     )
     output_type: str = Field(
@@ -75,10 +44,10 @@ class DocumentConfig(BaseModel):
 
 class ExtractorConfig(BaseModel):
     """Configuration for information extraction"""
-    max_concurrent_tasks: int = Field(
-        default=5,
-        description="Maximum number of concurrent LLM calls"
-    )
+    # max_concurrent_tasks: int = Field(
+    #     default=5,
+    #     description="Maximum number of concurrent LLM calls"
+    # )
     chunk_size: int = Field(
         default=80000,
         description="Size of text chunks when splitting is needed"
@@ -87,21 +56,9 @@ class ExtractorConfig(BaseModel):
         default=10000,
         description="Overlap between text chunks"
     )
-    text_chunk_threshold: int = Field(
-        default=100000,
-        description="Character threshold for when to start chunking text"
-    )
-    image_chunk_threshold: int = Field(
-        default=10 * 1024 * 1024,  # 10MB
-        description="Size threshold for when to start chunking images in bytes"
-    )
 
 class IEAgentConfig(BaseModel):
     """Main configuration class for Information Extraction Agent"""
-    llm: LLMConfig = Field(
-        default_factory=LLMConfig,
-        description="LLM configuration"
-    )
     schema: SchemaConfig = Field(
         description="Schema generation configuration"
     )
@@ -153,28 +110,8 @@ class IEAgentConfig(BaseModel):
         else:
             raise ValueError(f"Unsupported config file format: {config_path.suffix}")
 
-# Example configuration
-example_config = {
-    "llm": {
-        "model_provider": "azure-openai",
-        "temperature": 0.1
-    },
-    "schema": {
-        "task_description": "Extract technical specifications from engineering documents",
-        "example_doc": None,
-        "output_path": "generated_schema.py"
-    },
-    "document": {
-        "input_dir": "input_docs",
-        "output_dir": "output",
-        "file_pattern": "*.pdf",
-        "output_type": "text"
-    },
-    "extractor": {
-        "max_concurrent_tasks": 5,
-        "chunk_size": 2000,
-        "chunk_overlap": 200,
-        "text_chunk_threshold": 100000,
-        "image_chunk_threshold": 10485760  # 10MB
-    }
-}
+
+if __name__ == "__main__":
+    config = IEAgentConfig.load_from_file(r"c:\Users\deng_jg\work\16centralized_agents\test_data\example_config.json")
+    print(config)
+    
