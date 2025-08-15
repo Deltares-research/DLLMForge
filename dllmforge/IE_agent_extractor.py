@@ -3,15 +3,15 @@ Async Information Extractor module for extracting structured information from do
 """
 import os
 import json
-import asyncio
 from typing import List, Dict, Any, Optional, Union, Generator
 from pathlib import Path
 from pydantic import BaseModel
 from langchain.output_parsers import PydanticOutputParser
+from langchain.output_parsers.json import parse_json_markdown
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from .langchain_api import LangchainAPI
-from .IE_agent_config import IEAgentConfig, ExtractorConfig
-from .IE_agent_document_processor import ProcessedDocument, DocumentProcessor
+from langchain_api import LangchainAPI
+from IE_agent_config import IEAgentConfig, ExtractorConfig
+from IE_agent_document_processor import ProcessedDocument, DocumentProcessor
 
 class DocumentChunk:
     """Class representing a chunk of document content"""
@@ -33,15 +33,7 @@ class InfoExtractor:
         """Initialize the information extractor"""
         self.config = config
         self.output_schema = output_schema
-        self.llm_api = llm_api or LangchainAPI(
-            model_provider=config.llm.model_provider,
-            temperature=config.llm.temperature,
-            api_key=config.llm.api_key,
-            api_base=config.llm.api_base,
-            api_version=config.llm.api_version,
-            deployment_name=config.llm.deployment_name,
-            model_name=config.llm.model_name
-        )
+        self.llm_api = llm_api or LangchainAPI()
         self.output_parser = PydanticOutputParser(pydantic_object=output_schema)
         self.doc_processor = DocumentProcessor(config.document)
         self.system_prompt = self.refine_system_prompt(config.schema.task_description)
@@ -64,7 +56,7 @@ class InfoExtractor:
         {task_description}
         
         Create a well-structured system prompt that will guide the LLM in extracting information
-        according to the task requirements.
+        according to the task requirements. Be thorough but concise.
         """
         
         prompt = ChatPromptTemplate.from_messages([
@@ -79,7 +71,7 @@ class InfoExtractor:
 
     def chunk_document(self, doc: ProcessedDocument) -> Generator[DocumentChunk, None, None]:
         """Split document into chunks if needed based on thresholds"""
-        if doc.content_type == 'text' and doc.content_length > self.config.document.text_chunk_threshold:
+        if doc.content_type == 'text':
             # Split text into chunks
             text = doc.content
             chunk_size = self.config.extractor.chunk_size
@@ -107,7 +99,7 @@ class InfoExtractor:
                 
                 start = end - overlap
                 
-        elif doc.content_type == 'image' and doc.content_length > self.config.document.image_chunk_threshold:
+        elif doc.content_type == 'image':
             # For images that are too large, we might want to compress or split them
             # For now, we'll just yield the original as one chunk
             yield DocumentChunk(
@@ -123,13 +115,13 @@ class InfoExtractor:
                 metadata=doc.metadata
             )
 
-    def create_extraction_prompt(self) -> ChatPromptTemplate:
-        """Create prompt template for information extraction"""
+    def create_text_extraction_prompt(self) -> ChatPromptTemplate:
+        """Create prompt template for text-based information extraction"""
         system_message_prompt = SystemMessagePromptTemplate.from_template(
             self.system_prompt
         )
         
-        human_template = """Please extract the required information from the following {content_type}:
+        human_template = """Please extract the required information from the following text:
         
         {content}
         
@@ -146,57 +138,90 @@ class InfoExtractor:
             human_message_prompt
         ])
 
-    async def process_chunk(self, 
-                          chunk: DocumentChunk,
-                          semaphore: asyncio.Semaphore) -> Optional[Dict[str, Any]]:
-        """Process a single document chunk asynchronously"""
-        async with semaphore:
-            try:
-                prompt = self.create_extraction_prompt()
-                
-                # Prepare content based on chunk type
-                if chunk.content_type == 'text':
-                    content = chunk.content
-                    content_type = 'text'
-                else:  # image
-                    content = f"data:image/jpeg;base64,{self.doc_processor.encode_image_base64(chunk.content)}"
-                    content_type = 'image'
-                
-                # Format messages
-                messages = prompt.format_messages(
-                    content=content,
-                    content_type=content_type,
-                    format_instructions=self.output_parser.get_format_instructions()
-                )
-                
-                if chunk.content_type == 'image':
-                    messages[1].content = [
-                        {"type": "text", "text": messages[1].content},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": content}
-                        }
-                    ]
-                
-                # Call LLM and parse response
-                response = await self.llm_api.chat_completion(messages)
-                if not response:
-                    return None
-                    
-                parsed_response = self.output_parser.parse(response["response"])
-                
-                # Add chunk metadata to response
-                result = parsed_response.dict()
-                result['_chunk_metadata'] = chunk.metadata
-                
-                return result
-                
-            except Exception as e:
-                print(f"Error processing chunk: {e}")
+    def process_text_chunk(self, chunk: DocumentChunk) -> Optional[Dict[str, Any]]:
+        """Process a text document chunk"""
+        try:
+            prompt = self.create_text_extraction_prompt()
+            messages = prompt.format_messages(
+                content=chunk.content,
+                format_instructions=self.output_parser.get_format_instructions()
+            )
+            
+            response = self.llm_api.chat_completion(messages)
+            if not response:
                 return None
+            
+            parsed_json = parse_json_markdown(response["response"])
+            # Validate against schema
+            validated_response = self.output_schema(**parsed_json)
+            return validated_response
+            
+        except Exception as e:
+            print(f"Error processing text chunk: {e}")
+            return None
 
-    async def process_document(self, doc: Union[ProcessedDocument, List[ProcessedDocument]]) -> List[Dict[str, Any]]:
-        """Process document and extract information asynchronously"""
+    def create_image_extraction_prompt(self) -> ChatPromptTemplate:
+        """Create prompt template for image-based information extraction"""
+        system_message_prompt = SystemMessagePromptTemplate.from_template(
+            self.system_prompt + "\nNote: The input will include images that you should analyze."
+        )
+        
+        human_template = """Please extract the required information from the provided image.
+        
+        Extract the information according to this schema:
+        {format_instructions}
+        
+        Return the extracted information in the specified JSON format as above.
+        """
+        
+        human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+        
+        return ChatPromptTemplate.from_messages([
+            system_message_prompt,
+            human_message_prompt
+        ])
+
+    def process_image_chunk(self, chunk: DocumentChunk) -> Optional[Dict[str, Any]]:
+        """Process an image document chunk"""
+        try:
+            prompt = self.create_image_extraction_prompt()
+            content = f"data:image/jpeg;base64,{self.doc_processor.encode_image_base64(chunk.content)}"
+            
+            messages = prompt.format_messages(
+                format_instructions=self.output_parser.get_format_instructions()
+            )
+            
+            # Convert to multimodal format
+            messages[1].content = [
+                {"type": "text", "text": messages[1].content},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": content}
+                }
+            ]
+            
+            response = self.llm_api.chat_completion(messages)
+            if not response:
+                return None
+            
+            parsed_json = parse_json_markdown(response["response"])
+            # Validate against schema
+            validated_response = self.output_schema(**parsed_json)
+            return validated_response
+            
+        except Exception as e:
+            print(f"Error processing image chunk: {e}")
+            return None
+
+    def process_chunk(self, chunk: DocumentChunk) -> Optional[Dict[str, Any]]:
+        """Process a document chunk based on its type"""
+        if chunk.content_type == 'text':
+            return self.process_text_chunk(chunk)
+        else:  # image
+            return self.process_image_chunk(chunk)
+
+    def process_document(self, doc: Union[ProcessedDocument, List[ProcessedDocument]]) -> List[Dict[str, Any]]:
+        """Process document and extract information"""
         # Handle both single documents and lists
         docs = [doc] if isinstance(doc, ProcessedDocument) else doc
         
@@ -205,32 +230,37 @@ class InfoExtractor:
         for d in docs:
             chunks.extend(list(self.chunk_document(d)))
         
-        # Create semaphore for limiting concurrent tasks
-        semaphore = asyncio.Semaphore(self.config.extractor.max_concurrent_tasks)
+        # Process chunks sequentially
+        results = []
+        for chunk in chunks:
+            result = self.process_chunk(chunk)
+            if result is not None:
+                results.append(result)
         
-        # Process chunks concurrently
-        tasks = [
-            self.process_chunk(chunk, semaphore)
-            for chunk in chunks
-        ]
-        
-        results = await asyncio.gather(*tasks)
-        
-        # Filter out None results from failed chunks
-        return [r for r in results if r is not None]
+        return results
 
     def save_results(self, 
-                    results: List[Dict[str, Any]], 
+                    results: List[Any], 
                     output_path: Path) -> None:
         """Save extraction results to JSON file"""
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
+        # Convert Pydantic models to dictionaries
+        json_results = []
+        for result in results:
+            if hasattr(result, 'model_dump'):  # Pydantic v2
+                json_results.append(result.model_dump())
+            elif hasattr(result, 'dict'):  # Pydantic v1
+                json_results.append(result.dict())
+            else:
+                json_results.append(result)  # Already a dict or other JSON-serializable object
+        
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
+            json.dump(json_results, f, indent=2, ensure_ascii=False)
         
         print(f"Results saved to {output_path}")
 
-    async def process_all(self) -> None:
+    def process_all(self) -> None:
         """Process all documents in configured directory"""
         # Process documents
         processed_docs = self.doc_processor.process_directory()
@@ -242,7 +272,7 @@ class InfoExtractor:
         # Process each document
         for doc in processed_docs:
             try:
-                results = await self.process_document(doc)
+                results = self.process_document(doc)
                 
                 # Generate output path from source file name
                 if isinstance(doc, list):
@@ -257,52 +287,86 @@ class InfoExtractor:
                 print(f"Error processing document: {e}")
                 continue
 
-async def main():
-    """Example usage of the Information Extraction Agent"""
-    # Example configuration
-    config = IEAgentConfig(
-        schema=SchemaConfig(
-            task_description="""
-            Extract technical specifications from engineering documents. The information should include:
-            1. Document metadata (title, date, author)
-            2. Technical parameters (measurements, materials, specifications)
-            3. Key findings or conclusions
-            4. Any safety considerations or warnings
-            """
-        ),
-        document=DocumentConfig(
-            input_dir="input_docs",
-            output_dir="output",
-            file_pattern="*.pdf",
-            output_type="text"
-        )
-    )
-    
-    # Example output schema
-    class TechnicalInfo(BaseModel):
-        """Schema for technical information extraction"""
-        document_metadata: dict = Field(
-            description="Document metadata including title, date, and author"
-        )
-        technical_parameters: dict = Field(
-            description="Technical measurements and specifications"
-        )
-        key_findings: List[str] = Field(
-            description="Main conclusions or findings"
-        )
-        safety_considerations: Optional[List[str]] = Field(
-            description="Safety warnings or considerations",
-            default=None
-        )
-    
-    # Initialize extractor
-    extractor = InfoExtractor(
-        config=config,
-        output_schema=TechnicalInfo
-    )
-    
-    # Process all documents
-    await extractor.process_all()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import os
+    import importlib.util
+    from pathlib import Path
+    from IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
+    from IE_agent_schema_generator import SchemaGenerator
+
+    # Setup paths
+    current_dir = Path(__file__).parent
+    schema_dir = current_dir / "generated_schemas"
+    schema_dir.mkdir(exist_ok=True)
+    schema_file = schema_dir / "model_hyperparameters.py"
+    
+    # Create schema configuration for model hyperparameters
+    schema_config = SchemaConfig(
+        task_description="""Generate a Pydantic schema class named ModelHyperparameters to extract machine learning model hyperparameters from research papers and documentation.
+        The schema should capture: model architecture details (type, layers, neurons, etc.), training parameters (learning rate, batch size, epochs), 
+        optimization settings (optimizer, loss function), regularization techniques (dropout, etc.)""",
+        output_path=str(schema_file)
+    )
+    
+    # Generate and save the schema
+    schema_generator = SchemaGenerator(schema_config)
+    schema_code = schema_generator.generate_schema()
+    
+    # Find all class names in the generated code
+    import re
+    class_matches = re.finditer(r"class\s+(\w+)\s*\(", schema_code)
+    class_names = [match.group(1) for match in class_matches]
+    
+    if not class_names:
+        raise ValueError("Could not find any class names in generated schema")
+        
+    # Get the last class as it's typically the main schema
+    schema_class_name = class_names[-1]
+    print(f"\nFound schema classes: {', '.join(class_names)}")
+    print(f"Using main schema class: {schema_class_name}")
+    
+    # Save the schema
+    schema_generator.save_schema(schema_code)
+    
+    # Import the generated schema module
+    spec = importlib.util.spec_from_file_location("model_hyperparameters", schema_file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    
+    # Get the schema class dynamically
+    if not hasattr(module, schema_class_name):
+        raise ValueError(f"Generated schema does not contain class {schema_class_name}")
+    SchemaClass = getattr(module, schema_class_name)
+    
+    # Create configuration for the extractor
+    config = IEAgentConfig(
+        schema=schema_config,  # Reuse the same schema config
+        document=DocumentConfig(
+            input_dir=r"c:\Users\deng_jg\work\16centralized_agents\test_data",
+            output_dir=r"c:\Users\deng_jg\work\16centralized_agents\test_data\output",
+            file_pattern="*.pdf",  # Process PDF files
+            output_type="text"  # Extract as text
+        ),
+        extractor=ExtractorConfig()
+    )
+
+    # Example 1: Process single document
+    print("\nExample 1: Processing single document...")
+    single_doc_path = Path(r"c:\Users\deng_jg\work\16centralized_agents\test_data\lstm_low_flow.pdf")
+    
+    # Create extractor with the generated schema
+    extractor = InfoExtractor(config=config, output_schema=SchemaClass)
+    
+    # Process the document
+    doc = extractor.doc_processor.process_document(single_doc_path)
+    if doc:
+        results = extractor.process_document(doc)
+        output_path = Path(config.document.output_dir) / f"{single_doc_path.stem}_extracted.json"
+        extractor.save_results(results, output_path)
+
+    # Example 2: Process entire directory
+    print("\nExample 2: Processing entire directory...")
+    # Create new extractor instance with the same schema
+    extractor = InfoExtractor(config=config, output_schema=SchemaClass)
+    extractor.process_all()s

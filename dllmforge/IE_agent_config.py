@@ -68,13 +68,9 @@ class DocumentConfig(BaseModel):
         default="text",
         description="Type of processing ('text' or 'image')"
     )
-    text_chunk_threshold: int = Field(
-        default=100000,
-        description="Character threshold for text chunking"
-    )
-    image_chunk_threshold: int = Field(
-        default=10 * 1024 * 1024,  # 10MB
-        description="Size threshold for image chunking in bytes"
+    output_dir: Optional[Path] = Field(
+        default=None,
+        description="Directory for output files"
     )
 
 class ExtractorConfig(BaseModel):
@@ -84,12 +80,20 @@ class ExtractorConfig(BaseModel):
         description="Maximum number of concurrent LLM calls"
     )
     chunk_size: int = Field(
-        default=2000,
+        default=80000,
         description="Size of text chunks when splitting is needed"
     )
     chunk_overlap: int = Field(
-        default=200,
+        default=10000,
         description="Overlap between text chunks"
+    )
+    text_chunk_threshold: int = Field(
+        default=100000,
+        description="Character threshold for when to start chunking text"
+    )
+    image_chunk_threshold: int = Field(
+        default=10 * 1024 * 1024,  # 10MB
+        description="Size threshold for when to start chunking images in bytes"
     )
 
 class IEAgentConfig(BaseModel):
@@ -169,6 +173,8 @@ example_config = {
     "extractor": {
         "max_concurrent_tasks": 5,
         "chunk_size": 2000,
-        "chunk_overlap": 200
+        "chunk_overlap": 200,
+        "text_chunk_threshold": 100000,
+        "image_chunk_threshold": 10485760  # 10MB
     }
 }

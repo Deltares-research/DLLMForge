@@ -14,7 +14,7 @@ class LangchainAPI:
 
     def __init__(self,
                  model_provider: str = "azure-openai",
-                 temperature: float = 0.0,
+                 temperature: float = 0.1,
                  api_key=None,
                  api_base=None,
                  api_version=None,
