@@ -66,8 +66,9 @@ class InfoExtractor:
         
         messages = prompt.format_messages(task_description=task_description)
         response = self.llm_api.chat_completion(messages)
-        
-        return response["response"] if response else task_description
+        refined_prompt = response["response"] if response else task_description
+        print(f"Refined system prompt: {refined_prompt}")
+        return refined_prompt
 
     def chunk_document(self, doc: ProcessedDocument) -> Generator[DocumentChunk, None, None]:
         """Split document into chunks if needed based on thresholds"""
