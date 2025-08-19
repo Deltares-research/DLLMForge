@@ -1,5 +1,7 @@
+#TODO: add async version of this module
+
 """
-Async Information Extractor module for extracting structured information from documents using LLM.
+Synchronous Information Extractor module for extracting structured information from documents using LLM.
 """
 import os
 import json
@@ -370,4 +372,4 @@ if __name__ == "__main__":
     print("\nExample 2: Processing entire directory...")
     # Create new extractor instance with the same schema
     extractor = InfoExtractor(config=config, output_schema=SchemaClass)
-    extractor.process_all()s
+    extractor.process_all()
