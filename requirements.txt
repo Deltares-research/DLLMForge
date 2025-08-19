@@ -14,3 +14,9 @@ llama-index
 langchain-mistralai
 llama-index-llms-azure-openai
 llama-index-llms-mistralai
+streamlit
+python-dotenv
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+jinja2==3.1.2
+python-multipart==0.0.6

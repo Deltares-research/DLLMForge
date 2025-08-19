@@ -21,7 +21,7 @@ TEST_QUESTIONS = [{
     "ground_truth": "The images produced by schemaGAN have a size of **512 × 32 pixels**."
 }, {
     "question": "What is the network architecture based on?",
-    "ground_truth": "the pix 2 pix method from Isola et al. (2017)"
+    "ground_truth": "the pix2pix method from Isola et al. (2017)"
 }]
 
 if __name__ == "__main__":
