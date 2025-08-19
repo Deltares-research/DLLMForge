@@ -11,6 +11,10 @@ langchain-community==0.3.27
 transformers==4.53.2
 sentence-transformers==5.0.0
 langchain-huggingface==0.3.0
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+jinja2==3.1.2
+python-multipart==0.0.6
 types-requests
 sphinxcontrib.bibtex
 types-requests
@@ -25,3 +29,5 @@ llama-index
 langchain-mistralai
 llama-index-llms-azure-openai
 llama-index-llms-mistralai
+streamlit
+python-dotenv
