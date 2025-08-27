@@ -5,6 +5,9 @@ on:
     branches:
       - main    # or your default branch
 
+permissions:
+    contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -30,10 +33,11 @@ jobs:
       - name: Build HTML docs
         working-directory: docs
         run: sphinx-build -M html . ./build
-
-      - name: Deploy to GitHub Pages
-        uses: EleniSmyrniou/github-push-action@master
+      
+      - name: Upload to GitHub Pages
+        if: ${{ github.event_name != 'pull_request'}}
+        uses: peaceiris/actions-gh-pages@v3.8.0
         with:
-          branch: gh-pages
-          directory: docs/build
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/html
+          force_orphan: true
