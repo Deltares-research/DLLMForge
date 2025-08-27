@@ -16,6 +16,7 @@ import json
 
 # Import DLLMForge modules
 from dllmforge.rag_preprocess_documents import PDFLoader, TextChunker
+from dllmforge.rag_preprocess_documents_docling import RagPreprocessDocumentsDocling
 from dllmforge.rag_embedding_open_source import LangchainHFEmbeddingModel
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 from dllmforge.langchain_api import LangchainAPI
@@ -89,7 +90,11 @@ class RAGApp:
             st.error(f"❌ Error loading LLM: {str(e)}")
             return False
 
-    def process_documents(self, pdf_directory: str, chunk_size: int = 1000, overlap_size: int = 200):
+    def process_documents(self,
+                          pdf_directory: str,
+                          chunk_size: int = 1000,
+                          overlap_size: int = 200,
+                          use_docling: bool = False):
         """Process PDF documents from the specified directory"""
         try:
             data_dir = Path(pdf_directory)
@@ -105,51 +110,73 @@ class RAGApp:
 
             st.info(f"Found {len(pdfs)} PDF files")
 
-            # Initialize components
-            loader = PDFLoader()
-            chunker = TextChunker(chunk_size=chunk_size, overlap_size=overlap_size)
+            if use_docling:
+                # Use Docling for advanced preprocessing
+                st.write("🔬 Using Docling for advanced document preprocessing...")
+                with st.spinner("Processing documents with Docling..."):
+                    # Get the embedding model name for docling
+                    embedding_model_name = self.embedding_model.model_name if hasattr(
+                        self.embedding_model, 'model_name') else "sentence-transformers/all-MiniLM-L6-v2"
 
-            global_embeddings = []
-            metadatas = []
+                    # Initialize Docling processor
+                    rag_processor = RagPreprocessDocumentsDocling(pdfs, embedding_model_name)
+                    rag_processor.preprocess_documents_to_chunks()
+                    processed_docs = rag_processor.get_processed_documents()
 
-            # Process each PDF
-            progress_bar = st.progress(0)
-            for i, pdf_path in enumerate(pdfs):
-                st.write(f"Processing: {pdf_path.name}")
+                    # Create vector store directly from processed documents
+                    st.write("Creating vector database with Docling processed documents...")
+                    self.vector_store = FAISS.from_documents(processed_docs, embedding=self.embedding_model.embeddings)
 
-                # Load PDF
-                pages, file_name, metadata = loader.load(pdf_path)
+                    st.success(f"✅ Successfully processed {len(processed_docs)} document chunks using Docling")
+            else:
+                # Traditional preprocessing method
+                st.write("📄 Using traditional PDF preprocessing...")
+                # Initialize components
+                loader = PDFLoader()
+                chunker = TextChunker(chunk_size=chunk_size, overlap_size=overlap_size)
 
-                # Create chunks
-                chunks = chunker.chunk_text(pages, file_name, metadata)
+                global_embeddings = []
+                metadatas = []
 
-                # Embed chunks
-                chunk_embeddings = self.embedding_model.embed(chunks)
-                global_embeddings.extend(chunk_embeddings)
-                metadatas.extend([chunk["metadata"] for chunk in chunks])
+                # Process each PDF
+                progress_bar = st.progress(0)
+                for i, pdf_path in enumerate(pdfs):
+                    st.write(f"Processing: {pdf_path.name}")
 
-                progress_bar.progress((i + 1) / len(pdfs))
-                st.write(f"✅ Processed {len(chunk_embeddings)} chunks from {file_name}")
+                    # Load PDF
+                    pages, file_name, metadata = loader.load(pdf_path)
 
-            # Create vector store
-            st.write("Creating vector database...")
-            index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
+                    # Create chunks
+                    chunks = chunker.chunk_text(pages, file_name, metadata)
 
-            self.vector_store = FAISS(
-                embedding_function=self.embedding_model.embeddings,
-                index=index,
-                docstore=InMemoryDocstore(),
-                index_to_docstore_id={},
-            )
+                    # Embed chunks
+                    chunk_embeddings = self.embedding_model.embed(chunks)
+                    global_embeddings.extend(chunk_embeddings)
+                    metadatas.extend([chunk["metadata"] for chunk in chunks])
 
-            # Add embeddings to vector store
-            for chunk, meta in zip(global_embeddings, metadatas):
-                self.vector_store.add_texts(texts=[chunk["chunk"]],
-                                            metadatas=[meta],
-                                            ids=[chunk["chunk_id"]],
-                                            embeddings=[chunk["text_vector"]])
+                    progress_bar.progress((i + 1) / len(pdfs))
+                    st.write(f"✅ Processed {len(chunk_embeddings)} chunks from {file_name}")
 
-            st.success(f"✅ Successfully processed {len(global_embeddings)} document chunks")
+                # Create vector store
+                st.write("Creating vector database...")
+                index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
+
+                self.vector_store = FAISS(
+                    embedding_function=self.embedding_model.embeddings,
+                    index=index,
+                    docstore=InMemoryDocstore(),
+                    index_to_docstore_id={},
+                )
+
+                # Add embeddings to vector store
+                for chunk, meta in zip(global_embeddings, metadatas):
+                    self.vector_store.add_texts(texts=[chunk["chunk"]],
+                                                metadatas=[meta],
+                                                ids=[chunk["chunk_id"]],
+                                                embeddings=[chunk["text_vector"]])
+
+                st.success(f"✅ Successfully processed {len(global_embeddings)} document chunks")
+
             self.documents_loaded = True
             st.session_state.vector_store_ready = True
             return True
@@ -593,13 +620,42 @@ def main():
 
         # Advanced settings
         with st.expander("🔧 Advanced Settings"):
-            temperature = st.slider("Temperature",
-                                    0.0,
-                                    1.0,
-                                    0.7,
-                                    0.1,
-                                    help="""**Temperature**: Controls randomness in the LLM's responses.
-                
+            # Document preprocessing method
+            use_docling = st.checkbox(
+                "🔬 Use Docling Advanced Preprocessing",
+                value=False,
+                help="""**Docling Advanced Preprocessing**: Use IBM's Docling for enhanced document understanding.
+
+**Benefits:**
+- **Better Structure Recognition**: Automatically detects tables, figures, headers, and document layout
+- **Enhanced Text Quality**: Superior text extraction from complex PDFs
+- **Metadata Preservation**: Maintains document structure and formatting information
+- **Multi-modal Support**: Handles mixed content (text, tables, images) more effectively
+
+**When to Use:**
+- **Complex Documents**: Technical reports, research papers, structured documents
+- **Tables and Figures**: Documents with important tabular data or diagrams
+- **Multi-column Layouts**: Academic papers, magazines, complex formatting
+- **High-Quality Extraction**: When document structure is important for context
+
+**Trade-offs:**
+- **Slower Processing**: More thorough analysis takes additional time
+- **Higher Resource Usage**: Requires more computational resources
+- **Dependency**: Requires Docling installation and dependencies
+
+**Recommendation**: Use for complex technical documents, disable for simple text-only PDFs""")
+
+            # Show chunk size and overlap only for traditional preprocessing
+            if not use_docling:
+                st.markdown("**Traditional Preprocessing Settings:**")
+
+                temperature = st.slider("Temperature",
+                                        0.0,
+                                        1.0,
+                                        0.7,
+                                        0.1,
+                                        help="""**Temperature**: Controls randomness in the LLM's responses.
+                    
 **Values:**
 - **0.0**: Deterministic, always picks the most likely response (best for factual Q&A)
 - **0.1-0.3**: Low randomness, very consistent and focused responses
@@ -609,13 +665,13 @@ def main():
 
 **Recommendation**: Use 0.1-0.3 for factual document analysis, 0.7 for general Q&A""")
 
-            chunk_size = st.slider("Chunk Size",
-                                   500,
-                                   2000,
-                                   1000,
-                                   100,
-                                   help="""**Chunk Size**: Number of characters per document chunk for processing.
-                
+                chunk_size = st.slider("Chunk Size",
+                                       500,
+                                       2000,
+                                       1000,
+                                       100,
+                                       help="""**Chunk Size**: Number of characters per document chunk for processing.
+                    
 **Values:**
 - **500-800**: Small chunks, good for precise answers to specific questions
 - **900-1200**: Medium chunks, balanced approach for most use cases
@@ -628,13 +684,13 @@ def main():
 
 **Recommendation**: 1000 for general use, 800 for technical documents, 1500 for narrative texts""")
 
-            overlap_size = st.slider("Overlap Size",
-                                     50,
-                                     500,
-                                     200,
-                                     50,
-                                     help="""**Overlap Size**: Number of characters that consecutive chunks share.
-                
+                overlap_size = st.slider("Overlap Size",
+                                         50,
+                                         500,
+                                         200,
+                                         50,
+                                         help="""**Overlap Size**: Number of characters that consecutive chunks share.
+                    
 **Values:**
 - **50-100**: Minimal overlap, more independent chunks
 - **150-250**: Standard overlap, ensures continuity between chunks
@@ -648,6 +704,32 @@ def main():
 - Step-by-step procedures
 
 **Recommendation**: 200 (20% of chunk size) for most documents, 300+ for complex technical content""")
+
+            else:
+                st.markdown("**Docling Preprocessing Enabled:**")
+                st.info(
+                    "📋 Docling will automatically handle optimal chunking and text extraction. Traditional chunk size and overlap settings are not applicable."
+                )
+
+                temperature = st.slider("Temperature",
+                                        0.0,
+                                        1.0,
+                                        0.7,
+                                        0.1,
+                                        help="""**Temperature**: Controls randomness in the LLM's responses.
+                    
+**Values:**
+- **0.0**: Deterministic, always picks the most likely response (best for factual Q&A)
+- **0.1-0.3**: Low randomness, very consistent and focused responses
+- **0.4-0.6**: Moderate randomness, balanced between consistency and creativity
+- **0.7-0.8**: Higher creativity, more varied responses (good for general conversation)
+- **0.9-1.0**: High randomness, very creative but potentially less coherent
+
+**Recommendation**: Use 0.1-0.3 for factual document analysis, 0.7 for general Q&A""")
+
+                # Set default values for chunk_size and overlap_size when using docling
+                chunk_size = 1000  # Default value, not used by docling
+                overlap_size = 200  # Default value, not used by docling
 
         with st.expander("🔍 RAG Retrieval Settings"):
             k_documents = st.slider(
@@ -735,7 +817,7 @@ def main():
 
             # Process documents
             if success and pdf_directory:
-                if app.process_documents(pdf_directory, chunk_size, overlap_size):
+                if app.process_documents(pdf_directory, chunk_size, overlap_size, use_docling):
                     st.session_state.rag_app.vector_store = app.vector_store
                     st.session_state.rag_app.documents_loaded = True
                 else:
@@ -803,7 +885,8 @@ def main():
             st.markdown("**📊 Current Configuration:**")
             st.write(f"🧠 Embedding Model: {selected_embedding.split('/')[-1]}")
             st.write(f"🤖 LLM Provider: {llm_provider}")
-            st.write(f"📁 Documents Loaded: {'✅ Yes' if app_state.documents_loaded else '❌ No'}")
+            st.write(f"� Preprocessing: {'🔬 Docling (Advanced)' if use_docling else '📝 Traditional'}")
+            st.write(f"�📁 Documents Loaded: {'✅ Yes' if app_state.documents_loaded else '❌ No'}")
             st.write(f"💾 Vector Store Ready: {'✅ Yes' if st.session_state.vector_store_ready else '❌ No'}")
 
             st.markdown("---")
@@ -813,37 +896,46 @@ def main():
             st.markdown("""
             1. **Set PDF Directory**: Point to a folder with PDF files
             2. **Choose Models**: Select embedding and LLM models
-            3. **Load System**: Click the load button to initialize
-            4. **Ask Questions**: Type questions about your documents
-            5. **Review Sources**: Check the source documents for each answer
+            3. **Configure Preprocessing**: Choose traditional or Docling preprocessing
+            4. **Load System**: Click the load button to initialize
+            5. **Ask Questions**: Type questions about your documents
+            6. **Review Sources**: Check the source documents for each answer
             
             **🎯 Parameter Optimization Guide:**
             
+            **📄 Document Preprocessing Choice:**
+            - **Traditional**: Fast, simple text extraction, good for plain text PDFs
+            - **Docling**: Advanced structure recognition, ideal for complex documents with tables/figures
+            
             **For Technical Documents:**
+            - Preprocessing: Docling (preserves structure and tables)
             - Temperature: 0.1-0.3 (precise, factual responses)
-            - Chunk Size: 800-1000 (preserve technical details)
-            - Overlap: 250-300 (maintain technical continuity)
+            - Chunk Size: 800-1000 (preserve technical details) *Traditional only*
+            - Overlap: 250-300 (maintain technical continuity) *Traditional only*
             - k: 3-5 (focused technical context)
             - Score Threshold: 0.6-0.7 (high precision)
             
             **For General Knowledge/Research:**
+            - Preprocessing: Docling for complex docs, Traditional for simple text
             - Temperature: 0.5-0.7 (balanced creativity)
-            - Chunk Size: 1000-1500 (comprehensive context)
-            - Overlap: 200-250 (standard continuity)
+            - Chunk Size: 1000-1500 (comprehensive context) *Traditional only*
+            - Overlap: 200-250 (standard continuity) *Traditional only*
             - k: 5-8 (broader perspective)
             - Score Threshold: 0.4-0.6 (balanced relevance)
             
             **For Exploratory Analysis:**
+            - Preprocessing: Docling recommended for comprehensive understanding
             - Temperature: 0.6-0.8 (creative insights)
-            - Chunk Size: 1200-1600 (rich context)
-            - Overlap: 200-300 (context preservation)
+            - Chunk Size: 1200-1600 (rich context) *Traditional only*
+            - Overlap: 200-300 (context preservation) *Traditional only*
             - k: 8-12 (comprehensive coverage)
             - Score Threshold: 0.3-0.5 (inclusive search)
             
             **For Quick Fact-Finding:**
+            - Preprocessing: Traditional (faster processing)
             - Temperature: 0.1-0.2 (deterministic answers)
-            - Chunk Size: 600-800 (focused chunks)
-            - Overlap: 150-200 (minimal redundancy)
+            - Chunk Size: 600-800 (focused chunks) *Traditional only*
+            - Overlap: 150-200 (minimal redundancy) *Traditional only*
             - k: 3-4 (targeted retrieval)
             - Score Threshold: 0.6-0.8 (high precision)
             """)

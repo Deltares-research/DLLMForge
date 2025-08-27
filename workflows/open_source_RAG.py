@@ -7,6 +7,7 @@ Azure OpenAI service and a deployed embedding model on Azure to use this module.
 
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 from dllmforge.rag_preprocess_documents import PDFLoader, TextChunker
+from dllmforge.rag_preprocess_documents_docling import RagPreprocessDocumentsDocling
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from dllmforge.rag_embedding_open_source import LangchainHFEmbeddingModel
@@ -27,47 +28,58 @@ TEST_QUESTIONS = [{
 if __name__ == "__main__":
     # Example usage
     model = LangchainHFEmbeddingModel()  # Qwen/Qwen3-Embedding-8B
-
-    data_dir = Path(r'D:\\LLMs\\DLLMForge\\tests\\test_input\\piping_documents')
-    # find all PDF files in the directory
-    pdfs = list(data_dir.glob("*.pdf"))
-    # Load the PDF document
-    loader = PDFLoader()
-    # Create chunks with custom settings
-    chunker = TextChunker(chunk_size=1000, overlap_size=200)
+    DOCLING = True
+    data_dir = Path(r'D:\\LLMs\\DLLMForge\\tests\\test_input')
     global_embeddings = []
     metadatas = []
-    for pdf_path in pdfs:
-        pages, file_name, metadata = loader.load(pdf_path)
+    # find all PDF files in the directory
+    pdfs = list(data_dir.glob("*.pdf"))
+    if DOCLING:
+        # Use Docling for preprocessing
+        rag_processor = RagPreprocessDocumentsDocling(pdfs, "sentence-transformers/all-MiniLM-L6-v2")
+        rag_processor.preprocess_documents_to_chunks()
+        processed_docs = rag_processor.get_processed_documents()
+
+        # build the vector store
+        index = faiss.IndexFlatL2(768)
+
+        vector_store = FAISS.from_documents(processed_docs, embedding=model.embeddings)
+
+    else:
+        # Load the PDF document
+        loader = PDFLoader()
         # Create chunks with custom settings
-        chunks = chunker.chunk_text(pages, file_name, metadata)
-        # Embed the document chunks
-        chunk_embeddings = model.embed(chunks)
-        global_embeddings.extend(chunk_embeddings)
-        metadatas.extend([chunk["metadata"] for chunk in chunks])
-        print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
-    print(f"Total embeddings generated: {len(global_embeddings)}")
-    # now create the vector store
+        chunker = TextChunker(chunk_size=1000, overlap_size=200)
 
-    # Dimension of embeddings
-    index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
+        for pdf_path in pdfs:
+            pages, file_name, metadata = loader.load(pdf_path)
+            # Create chunks with custom settings
+            chunks = chunker.chunk_text(pages, file_name, metadata)
+            # Embed the document chunks
+            chunk_embeddings = model.embed(chunks)
+            global_embeddings.extend(chunk_embeddings)
+            metadatas.extend([chunk["metadata"] for chunk in chunks])
+            print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
+        print(f"Total embeddings generated: {len(global_embeddings)}")
+        # Dimension of embeddings
+        index = faiss.IndexFlatL2("test")
 
-    vector_store = FAISS(
-        embedding_function=model.embeddings,
-        index=index,
-        docstore=InMemoryDocstore(),
-        index_to_docstore_id={},
-    )
-    # Add embeddings to the vector store
-    for chunk, meta in zip(global_embeddings, metadatas):
+        vector_store = FAISS(
+            embedding_function=model.embeddings,
+            index=index,
+            docstore=InMemoryDocstore(),
+            index_to_docstore_id={},
+        )
+        # Add embeddings to the vector store
+        for chunk, meta in zip(global_embeddings, metadatas):
 
-        vector_store.add_texts(texts=[chunk["chunk"]],
-                               metadatas=[meta],
-                               ids=[chunk["chunk_id"]],
-                               embeddings=[chunk["text_vector"]])
+            vector_store.add_texts(texts=[chunk["chunk"]],
+                                   metadatas=[meta],
+                                   ids=[chunk["chunk_id"]],
+                                   embeddings=[chunk["text_vector"]])
 
     # query the vector store directly to check wat is achterland in piping?
-    query_embedding = vector_store.similarity_search_with_score(query="Size of images for schema GAN", k=5)
+    query_embedding = vector_store.similarity_search_with_score(query="Pixel size of images produced by schemaGAN", k=5)
     print("Query result:", query_embedding)
 
     # now create the LLM
@@ -81,7 +93,7 @@ if __name__ == "__main__":
         },
     )
 
-    chat_result = llm.ask_with_retriever("Size of images produced by schemaGAN?", retriever)
+    chat_result = llm.ask_with_retriever("Pixel size of images produced by schemaGAN?", retriever)
     print("Answer:", chat_result.generations[0].message.content)
 
     # Now let's evaluate the RAG system
