@@ -10,9 +10,7 @@ jobs:
   docs:
     name: Build (and deploy) documentation
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+
     steps:
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -27,7 +25,9 @@ jobs:
           pip install -r requirements_dev.txt
 
       - name: Build docs
-        run: make html
+        run: | 
+          cd docs/
+          make html
       
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}
