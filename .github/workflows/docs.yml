@@ -32,7 +32,7 @@ jobs:
         run: sphinx-build -M html . ./build
 
       - name: Deploy to GitHub Pages
-        uses: ad-m/github-push-action@master
+        uses: EleniSmyrniou/github-push-action@master
         with:
           branch: gh-pages
           directory: docs/build
