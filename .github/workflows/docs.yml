@@ -1,23 +1,19 @@
-name: Publish Python docs to GitHub Pages
-
+name: "GitHub Pages documentation"
 on:
   push:
-    branches:
-      - main    # or your default branch
+    branches: [ main ]
 
 permissions:
     contents: write
 
 jobs:
-  build-and-deploy:
+  docs:
+    name: Build (and deploy) documentation
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0        # required for gh-pages deployment
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -30,9 +26,8 @@ jobs:
           # plus any of your own requirements, e.g.:
           pip install -r requirements_dev.txt
 
-      - name: Build HTML docs
-        working-directory: docs
-        run: sphinx-build -M html . ./build
+      - name: Build docs
+        run: make html
       
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}
