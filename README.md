@@ -1,162 +1,77 @@
-# DLLMForge
-A repository for LLM tools in Deltares
+# 🌊 Water Management Agent - Live Chat
 
+A **simple, clean live chat interface** for the Water Management Agent that shows real-time workflow progress without the complexity of multiple tabs and interfaces.
 
+## ✨ What You Get
 
+- **One Clean Chat Window**: Simple, focused interface
+- **Live Workflow Monitoring**: See the agent's progress in real-time
+- **Real-Time Status Dashboard**: Live indicators for workflow status
+- **Step-by-Step Progress**: Watch each workflow step execute
+- **Human Feedback Integration**: Respond when the agent asks for input
 
-# Software Development Guide
+## 🚀 Key Features
 
-This guide is intended to help you when developing a new feature. It walks you through the process of creating a new branch, writing unit tests with pytest, adding docstrings with type annotations to your functions, and creating a pull request on GitHub.
+### 🔴 Live Workflow Monitoring
+- **Live Status Dashboard**: Shows current workflow status with animated indicators
+- **Real-Time Progress**: Watch each step as it executes
+- **Visual Feedback**: Color-coded workflow steps (active, completed, error)
+
+### 💬 Simple Chat Interface
+- **Single Chat Window**: No confusing tabs or multiple interfaces
+- **Live Progress Display**: See workflow progress above the chat
+- **Human Interaction**: Respond to agent feedback requests
+- **Clean History**: Simple chat message display
+
+### 🎯 Workflow States
+- **Idle**: No active workflow
+- **Active**: Workflow is executing with live updates
+- **Completed**: Workflow finished successfully
+- **Error**: Workflow encountered an issue
+
+## 🏗️ How It Works
+
+1. **Ask a Question**: Type your water management query in the chat
+2. **Watch Progress**: See the live workflow progress above the chat
+3. **Get Response**: Receive the agent's comprehensive answer
+4. **Provide Feedback**: Respond when the agent asks for input
+5. **Continue Conversation**: Keep chatting naturally
+
+## 🔧 Technical Details
+
+- **Streamlit**: Clean, responsive web interface
+- **LangGraph**: Workflow orchestration and execution
+- **Real-Time Updates**: Live progress monitoring
+- **Session State**: Maintains conversation context
+
+## 🚀 Quick Start
+
+1. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the App**:
+   ```bash
+   streamlit run streamlit_water_management_app.py
+   ```
+
+3. **Start Chatting**: Ask questions about water management and watch the live workflow!
+
+## 💡 Usage Tips
+
+- **Start Simple**: Begin with basic water management questions
+- **Watch Progress**: Monitor the live workflow steps above the chat
+- **Provide Feedback**: Respond when the agent asks for your input
+- **Use Clear Language**: Be specific about what you need
+
+## 🎨 Interface Design
+
+- **Clean Layout**: Single chat window with live progress above
+- **Visual Indicators**: Color-coded workflow steps and status
+- **Responsive Design**: Works on different screen sizes
+- **Intuitive Flow**: Natural conversation with live monitoring
 
 ---
 
-## 1. Creating a New Branch
-
-### Why Create a Branch?
-Creating a dedicated branch for a feature allows you to isolate your changes from the main codebase. This helps keep the project organized and simplifies code reviews and integration.
-
-### Steps to Create a Branch:
-1. **Update Your Local Repository**  
-   Make sure your local `main` (or `master`) branch is up to date:
-   ```bash
-   git checkout main
-   git pull origin main
-   ```
-
-2. **Create a New Branch**  
-   Use a clear and consistent naming convention. For example:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-   Replace `your-feature-name` with a concise description of your feature.
-
-3. **Confirm Branch Creation**  
-   Verify that you’re on the new branch:
-   ```bash
-   git branch
-   ```
-
-
-## 2. Writing Unit Tests with pytest
-
-### Why Write Unit Tests?
-Unit tests help ensure that individual parts of your code work as expected. They make it easier to catch bugs early and provide documentation on how functions should behave.
-
-### Setting Up pytest:
-1. **Install pytest (if not already installed):**
-   ```bash
-   pip install pytest
-   ```
-
-2. **Organize Your Tests**  
-   - Place your tests in a dedicated directory (commonly named `tests`).
-   - Test files should be named starting with `test_` (e.g., `test_my_feature.py`).
-
-### Writing a Sample Test:
-Here’s a basic example of a unit test for a function that adds two numbers:
-
-```python
-# In your feature file (e.g., my_feature.py)
-def add(a: int, b: int) -> int:
-    """
-    Add two numbers together.
-
-    Args:
-        a (int): First number.
-        b (int): Second number.
-
-    Returns:
-        int: The sum of a and b.
-    """
-    return a + b
-```
-
-```python
-# In your test file (e.g., tests/test_my_feature.py)
-import pytest
-from my_feature import add
-
-class TestMyFeature:
-    def test_add():
-        assert add(2, 3) == 5
-        assert add(-1, 1) == 0
-```
-
-### Running Tests:
-- To run all tests, execute:
-  ```bash
-  pytest
-  ```
-
-### Best Practices for Tests:
-- Write tests that are isolated and independent.
-- Aim for clear, concise test cases.
-- Use fixtures for setup and teardown if needed.
-- Name your tests descriptively so that failures are easy to interpret.
-
----
-
-## 3. Writing Docstrings with Type Annotations
-
-### Why Add Docstrings with Typing?
-Adding docstrings to your functions helps document what your code does, making it easier for team members to understand and maintain the codebase. Including type annotations ensures clarity on the expected data types for function inputs and outputs.
-
-### Guidelines:
-- **Write a Clear Docstring:** Include a description, parameters, and return value.
-- **Use Type Annotations:** Clearly specify the type for each parameter and the return type.
-- **Follow Consistent Formatting:** Use a standard format (like Google style or NumPy style) across the project.
-
-
-```python
-def multiply(a: int, b: int) -> int:
-    """
-    Multiply two numbers.
-
-    Args:
-        a (int): The first number.
-        b (int): The second number.
-
-    Returns:
-        int: The product of a and b.
-    """
-    return a * b
-```
-
----
-
-## 4. Creating a Pull Request on GitHub
-
-### Why Create a Pull Request?
-Pull requests (PRs) allow team members to review your code changes before merging them into the main branch. They provide an opportunity for feedback, quality checks, and discussion.
-
-### Steps to Create a Pull Request:
-1. **Push Your Branch to GitHub:**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-2. **Open a Pull Request on GitHub:**
-   - Navigate to your repository on [GitHub](https://github.com).
-   - You will often see a prompt to create a pull request once your branch is pushed.
-   - Click the "New Pull Request" button.
-   - Ensure that the base branch (often `main` or `develop`) is correct.
-
-3. **Fill in the PR Details:**
-   - **Title:** Provide a concise summary of your changes.
-   - **Description:** Explain the purpose of the feature, reference any related issues, and include instructions or notes for testing.
-   - **Reviewers:** Add team members to review the PR.
-   - **Labels/Milestones:** If your team uses labels or milestones, add them accordingly.
-
-4. **Submit the Pull Request:**  
-   Once all details are in place, submit your PR for review.
-
----
-
-## Best Practices
-
-- **Branch Naming:** Use clear, descriptive names (e.g., `feature/login-authentication` or `bugfix/correct-calculation`).
-- **Commit Often:** Make small, logical commits with clear messages.
-- **Test Early & Often:** Run your tests frequently during development to catch issues early.
-- **Code Reviews:** Engage in constructive discussions during the code review process.
-- **Documentation:** Update documentation if your feature includes changes to the API or behavior.
-- **Docstrings with Typing:** Ensure every function includes a docstring with type annotations.
+**🎉 Simple, clean, and live - the Water Management Agent now provides a focused chat experience with real-time workflow visibility!**
