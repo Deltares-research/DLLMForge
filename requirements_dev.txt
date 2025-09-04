@@ -31,3 +31,4 @@ llama-index-llms-azure-openai
 llama-index-llms-mistralai
 streamlit
 python-dotenv
+langgraph
