@@ -103,7 +103,7 @@ class DeltaresOllamaLLM(BaseChatModel):
         """
         Direct chat completion method that accepts OpenAI-style message format.
         Args:
-            messages: List of message dictionaries in OpenAI format.
+            messages: List of message dictionaries in OpenAI format or LangChain message objects.
             temperature: Sampling temperature for the model.
             max_tokens: Maximum number of tokens to generate.
             stream: Whether to stream the response.
@@ -115,8 +115,25 @@ class DeltaresOllamaLLM(BaseChatModel):
         # Convert messages to prompt format expected by Ollama
         prompt_parts = []
         for msg in messages:
-            role = msg.get("role", "")
-            content = msg.get("content", "")
+            # Handle both dict format and LangChain message objects
+            if isinstance(msg, dict):
+                role = msg.get("role", "")
+                content = msg.get("content", "")
+            else:
+                # Handle LangChain message objects
+                if isinstance(msg, SystemMessage):
+                    role = "system"
+                    content = msg.content
+                elif isinstance(msg, HumanMessage):
+                    role = "user"
+                    content = msg.content
+                elif isinstance(msg, AIMessage):
+                    role = "assistant"
+                    content = msg.content
+                else:
+                    # Fallback for unknown message types
+                    role = "user"
+                    content = str(msg.content) if hasattr(msg, 'content') else str(msg)
 
             if role == "system":
                 prompt_parts.append(f"System: {content}")
@@ -170,6 +187,7 @@ class DeltaresOllamaLLM(BaseChatModel):
                     },
                     "finish_reason": "stop"
                 }],
+                "response": data.get("response", ""),
                 "model": self.model_name,
                 "usage": {
                     "prompt_tokens": data.get("prompt_eval_count", 0),
