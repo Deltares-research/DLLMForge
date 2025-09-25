@@ -17,6 +17,7 @@ import json
 # Import DLLMForge modules
 from dllmforge.rag_preprocess_documents import PDFLoader, TextChunker
 from dllmforge.rag_embedding_open_source import LangchainHFEmbeddingModel
+from dllmforge.rag_embedding import AzureOpenAIEmbeddingModel
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.rag_evaluation import RAGEvaluator
@@ -47,11 +48,21 @@ class RAGApp:
         if 'evaluator_results' not in st.session_state:
             st.session_state.evaluator_results = []
 
-    def load_embedding_model(self, model_name: str):
+    def load_embedding_model(self, model_name: str, **kwargs):
         """Load the selected embedding model"""
         try:
             with st.spinner(f"Loading embedding model: {model_name}..."):
-                self.embedding_model = LangchainHFEmbeddingModel(model_name=model_name)
+                if model_name == "Azure OpenAI Embedding model":
+                    
+                    self.embedding_model = AzureOpenAIEmbeddingModel(
+                        model=kwargs.get('model_name', 'text-embedding-3-large'),
+                        api_base=kwargs.get('api_base'),
+                        deployment_name_embeddings=kwargs.get('deployment_name_embeddings'),
+                        api_key=kwargs.get('api_key'),
+                        api_version=kwargs.get('api_version')
+                    )
+                else:
+                    self.embedding_model = LangchainHFEmbeddingModel(model_name=model_name)
             st.success(f"✅ Embedding model loaded: {model_name}")
             return True
         except Exception as e:
@@ -75,7 +86,8 @@ class RAGApp:
                                             deployment_name=kwargs.get('deployment_name'),
                                             api_base=kwargs.get('api_base'),
                                             api_version=kwargs.get('api_version'),
-                                            temperature=kwargs.get('temperature', 0.7)).llm
+                                            temperature=kwargs.get('temperature', 0.7),
+                                            api_key=kwargs.get('api_key')).llm
                 elif provider == "Mistral":
                     self.llm = LangchainAPI(model_provider="mistral",
                                             model_name=kwargs.get('model_name', 'mistral-large-latest'),
@@ -554,12 +566,21 @@ def main():
         embedding_models = [
             "sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2",
             "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "BAAI/bge-small-en-v1.5",
-            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base"
+            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base",
+            "Azure OpenAI Embedding model"
         ]
 
         selected_embedding = st.selectbox("Choose Embedding Model",
                                           embedding_models,
                                           help="Select the embedding model for document vectorization")
+
+        # Azure OpenAI Embeddings configuration
+        if selected_embedding == "Azure OpenAI Embedding model":
+            embedding_api_base = st.text_input("API Base URL", placeholder="https://your-resource.openai.azure.com/", help="Azure OpenAI endpoint URL")
+            deployment_name_embeddings = st.text_input("Embeddings Deployment Name", placeholder="your-embedding-deployment-name-on-Azure", help="Azure OpenAI deployment name for embeddings")
+            embedding_api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key")
+            embedding_api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version")
+            embedding_model_name = st.text_input("Model Name", value="text-embedding-3-large", help="Azure OpenAI embedding model name")
 
         # LLM Configuration
         st.subheader("🤖 Language Model")
@@ -578,13 +599,14 @@ def main():
             st.info("Make sure to set your OPENAI_API_KEY environment variable")
         elif llm_provider == "Azure OpenAI":
             deployment_name = st.text_input("Deployment Name",
-                                            placeholder="your-gpt-4-deployment",
+                                            placeholder="your-gpt-model-deployment-name-on-Azure",
                                             help="Azure OpenAI deployment name")
             api_base = st.text_input("API Base URL",
                                      placeholder="https://your-resource.openai.azure.com/",
                                      help="Azure OpenAI endpoint URL")
-            api_version = st.text_input("API Version", value="2023-12-01-preview", help="Azure OpenAI API version")
-            st.info("Set AZURE_OPENAI_API_KEY environment variable")
+            api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version")
+            api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key for authentication")
+            # st.info("Set AZURE_OPENAI_API_KEY environment variable or provide it above.")
         elif llm_provider == "Mistral":
             model_name = st.selectbox("Mistral Model",
                                       ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"],
@@ -710,7 +732,16 @@ def main():
             success = True
 
             # Load embedding model
-            if app.load_embedding_model(selected_embedding):
+            embedding_kwargs = {}
+            if selected_embedding == "Azure OpenAI Embeddings":
+                embedding_kwargs = {
+                    'model_name': embedding_model_name,
+                    'api_base': embedding_api_base,
+                    'deployment_name_embeddings': deployment_name_embeddings,
+                    'api_key': embedding_api_key,
+                    'api_version': embedding_api_version
+                }
+            if app.load_embedding_model(selected_embedding, **embedding_kwargs):
                 st.session_state.rag_app.embedding_model = app.embedding_model
             else:
                 success = False
@@ -723,7 +754,8 @@ def main():
                 llm_kwargs.update({
                     'deployment_name': deployment_name,
                     'api_base': api_base,
-                    'api_version': api_version
+                    'api_version': api_version,
+                    'api_key': api_key
                 })
             else:
                 llm_kwargs.update({'model_name': model_name})

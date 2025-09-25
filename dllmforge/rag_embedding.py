@@ -16,18 +16,21 @@ from langchain_openai import AzureOpenAIEmbeddings
 class AzureOpenAIEmbeddingModel:
     """Class for embedding queries and document chunks using Azure OpenAI Embeddings."""
 
-    def __init__(self, model: str = "text-embedding-3-large"):
+    def __init__(self, model: str = "text-embedding-3-large", api_base: str = None, deployment_name_embeddings: str = None, api_key: str = None, api_version: str = None):
         """
-        Initialize the embedding model using environment variables for Azure OpenAI.
+        Initialize the embedding model using provided arguments or environment variables for Azure OpenAI.
         Args:
             model: Name of the embedding model to use
-            (default: "text-embedding-3-large", check Azure OpenAI for available models)
+            api_base: Azure OpenAI API base URL
+            deployment_name_embeddings: Azure OpenAI deployment name for embeddings
+            api_key: Azure OpenAI API key
+            api_version: Azure OpenAI API version
         """
         load_dotenv()
-        api_base = os.getenv('AZURE_OPENAI_API_BASE')
-        deployment_name_embeddings = os.getenv('AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS')
-        api_key = os.getenv('AZURE_OPENAI_API_KEY')
-        api_version = os.getenv('AZURE_OPENAI_API_VERSION')
+        api_base = api_base or os.getenv('AZURE_OPENAI_API_BASE')
+        deployment_name_embeddings = deployment_name_embeddings or os.getenv('AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS')
+        api_key = api_key or os.getenv('AZURE_OPENAI_API_KEY')
+        api_version = api_version or os.getenv('AZURE_OPENAI_API_VERSION')
 
         self.embeddings = AzureOpenAIEmbeddings(model=model,
                                                 azure_endpoint=api_base,
