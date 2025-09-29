@@ -21,7 +21,7 @@ class LangchainHFEmbeddingModel:
             model_name: Name or path of the Hugging Face model (default: "sentence-transformers/all-MiniLM-L6-v2").
         """
         # kwargs for encoder; adjust as needed
-        encode_kwargs = {"normalize_embeddings": False, "trust_remote_code": True}
+        encode_kwargs = {"normalize_embeddings": False}  #, "trust_remote_code": True}
         self.embeddings = HuggingFaceEmbeddings(model_name=model_name, encode_kwargs=encode_kwargs)
 
     @staticmethod

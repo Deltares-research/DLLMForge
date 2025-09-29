@@ -27,7 +27,8 @@ class DeltaresOllamaLLM(BaseChatModel):
     model_name: str  # e.g. "my‐finetuned‐gpt"
     metadata: Metadata = Metadata()
     headers: Optional[dict] = None  # e.g. {"Authorization": "Bearer ..."}
-    system_message: Optional[str] = "You are a helpful assistant that answers questions based on the provided context."
+    system_message: Optional[
+        str] = "You are a helpful assistant that answers questions based on the provided context. As you are thinking reflect on the question."
 
     def _generate(
         self,
@@ -43,7 +44,7 @@ class DeltaresOllamaLLM(BaseChatModel):
             "stream": False,
             "options": {
                 "temperature": kwargs.get("temperature", 0.2),
-                "max_tokens": kwargs.get("max_tokens", 512),
+                "max_tokens": kwargs.get("max_tokens", 4096),
             },
         }
 
@@ -87,7 +88,6 @@ class DeltaresOllamaLLM(BaseChatModel):
         prompt = [
             SystemMessage(content=self.system_message),
             HumanMessage(content=f"Question: {question} \nContext: {context}"),
-            SystemMessage(content="Please provide a concise answer.")
         ]
         chat_result = self._generate(prompt, **kwargs)
         return chat_result
@@ -112,39 +112,61 @@ class DeltaresOllamaLLM(BaseChatModel):
         Returns:
             Dict with completion response
         """
-        # Convert messages to prompt format expected by Ollama
-        prompt_parts = []
-        for msg in messages:
-            role = msg.get("role", "")
-            content = msg.get("content", "")
+        has_images = any(msg.get("images") for msg in messages)
 
-            if role == "system":
-                prompt_parts.append(f"System: {content}")
-            elif role == "user":
-                prompt_parts.append(f"Human: {content}")
-            elif role == "assistant":
-                prompt_parts.append(f"Assistant: {content}")
+        if has_images:
+            # For vision models, use the chat API format
+            # Convert to Ollama chat format
+            ollama_messages = []
+            for msg in messages:
+                ollama_msg = {"role": msg.get("role", "user"), "content": msg.get("content", "")}
+                if msg.get("images"):
+                    ollama_msg["images"] = msg["images"]
+                ollama_messages.append(ollama_msg)
 
-        prompt = "\n".join(prompt_parts) + "\nAssistant:"
+            payload = {
+                "model": self.model_name,
+                "messages": ollama_messages,
+                "stream": stream,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                    **kwargs
+                },
+            }
+            endpoint = f"{self.base_url}/api/chat"
+        else:
+            # Convert messages to prompt format expected by Ollama
+            prompt_parts = []
+            for msg in messages:
+                role = msg.get("role", "")
+                content = msg.get("content", "")
 
-        # Build payload for Ollama API
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "stream": stream,
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens,
-                **kwargs
-            },
-        }
+                if role == "system":
+                    prompt_parts.append(f"System: {content}")
+                elif role == "user":
+                    prompt_parts.append(f"Human: {content}")
+                elif role == "assistant":
+                    prompt_parts.append(f"Assistant: {content}")
 
-        # Add headers if provided
+            prompt = "\n".join(prompt_parts) + "\nAssistant:"
+
+            # Build payload for Ollama API
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": stream,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                    **kwargs
+                },
+            }
+            endpoint = f"{self.base_url}/api/generate"
         headers = self.headers or {}
-
         # Make request to Ollama API
         resp = requests.post(
-            f"{self.base_url}/api/generate",
+            endpoint,
             json=payload,
             headers=headers,
             verify=False,
@@ -160,15 +182,17 @@ class DeltaresOllamaLLM(BaseChatModel):
                 data = json.loads(data)
             else:
                 raise ValueError(f"Unexpected response format: {data}")
-
+            # Chat API response format
+            content = data.get("message", {}).get("content", "")
             # Return OpenAI-style response format
             return {
                 "choices": [{
                     "message": {
                         "role": "assistant",
-                        "content": data.get("response", "")
+                        "content": content
                     },
-                    "finish_reason": "stop"
+                    "finish_reason": data.get("done_reason", "stop"),
+                    "done": data.get("done", True)
                 }],
                 "model": self.model_name,
                 "usage": {
@@ -177,3 +201,92 @@ class DeltaresOllamaLLM(BaseChatModel):
                     "total_tokens": data.get("prompt_eval_count", 0) + data.get("eval_count", 0)
                 }
             }
+
+    def get_available_models(self) -> List[str]:
+        """
+        Fetch available models from the Ollama API.
+        
+        Returns:
+            List of available model names, sorted alphabetically.
+            
+        Raises:
+            requests.RequestException: If the API request fails.
+            ValueError: If the response format is unexpected.
+        """
+        try:
+            resp = requests.get(f"{self.base_url}/api/tags", headers=self.headers or {}, verify=False, timeout=10)
+            resp.raise_for_status()
+
+            data = resp.json()
+
+            # Extract model names from the response
+            models = []
+            if "models" in data:
+                for model in data["models"]:
+                    if "name" in model:
+                        models.append(model["name"])
+
+            # Return sorted list of model names
+            return sorted(models)
+
+        except requests.RequestException as e:
+            raise requests.RequestException(f"Failed to fetch models from {self.base_url}/api/tags: {e}")
+        except (json.JSONDecodeError, KeyError) as e:
+            raise ValueError(f"Unexpected response format from models API: {e}")
+
+    def validate_model(self) -> bool:
+        """
+        Check if the current model_name is available on the server.
+        
+        Returns:
+            True if the model is available, False otherwise.
+        """
+        try:
+            available_models = self.get_available_models()
+            return self.model_name in available_models
+        except (requests.RequestException, ValueError):
+            return False
+
+    @classmethod
+    def list_available_models(cls, base_url: str, headers: Optional[dict] = None) -> List[str]:
+        """
+        Class method to fetch available models without instantiating the class.
+        
+        Args:
+            base_url: The base URL of the Ollama API
+            headers: Optional headers for the request
+            
+        Returns:
+            List of available model names, sorted alphabetically.
+        """
+        try:
+            resp = requests.get(f"{base_url}/api/tags", headers=headers or {}, verify=False, timeout=10)
+            resp.raise_for_status()
+
+            data = resp.json()
+
+            # Extract model names from the response
+            models = []
+            if "models" in data:
+                for model in data["models"]:
+                    if "name" in model:
+                        models.append(model["name"])
+
+            # Return sorted list of model names
+            return sorted(models)
+
+        except requests.RequestException as e:
+            raise requests.RequestException(f"Failed to fetch models from {base_url}/api/tags: {e}")
+
+
+def get_deltares_models(base_url: str = "https://chat-api.deltares.nl") -> List[str]:
+    """
+    Convenience function to get available models from Deltares API.
+
+    Args:
+        base_url: The base URL of the Deltares API (default: https://chat-api.deltares.nl)
+
+    Returns:
+        List of available model names, sorted alphabetically.
+    """
+    return DeltaresOllamaLLM.list_available_models(base_url)

@@ -9,11 +9,7 @@ with RAG capabilities, agentic workflows, and enterprise-grade features.
 from .__version__ import __version__
 
 # Core agentic infrastructure (always available)
-from .agent_core import (
-    SimpleAgent,
-    create_basic_agent,
-    create_basic_tools
-)
+from .agent_core import (SimpleAgent, create_basic_agent, create_basic_tools)
 
 # RAG components (always available)
 from .rag_embedding import AzureOpenAIEmbeddingModel
@@ -68,15 +64,15 @@ except ImportError:
 __all__ = [
     # Version
     "__version__",
-    
+
     # Core agentic infrastructure (always available)
     "SimpleAgent",
     "create_basic_agent",
     "create_basic_tools",
-    
+
     # RAG components (always available)
     "AzureOpenAIEmbeddingModel",
-    "PDFLoader", 
+    "PDFLoader",
     "TextChunker",
 ]
 

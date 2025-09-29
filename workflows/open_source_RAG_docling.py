@@ -5,6 +5,7 @@ The module uses Azure OpenAI embeddings model as an example of using hosted embe
 Azure OpenAI service and a deployed embedding model on Azure to use this module.
 """
 
+from anyio import mkdtemp
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 from dllmforge.rag_preprocess_documents import PDFLoader, TextChunker
 from langchain_community.vectorstores import FAISS
@@ -18,6 +19,7 @@ from dllmforge.rag_evaluation import evaluate_rag_response, RAGEvaluator
 
 from langchain_docling import DoclingLoader
 from docling.chunking import HybridChunker
+from langchain_docling.loader import ExportType
 
 TEST_QUESTIONS = [{
     "question": "Size of images produced by schemaGAN?",
@@ -29,48 +31,38 @@ TEST_QUESTIONS = [{
 
 if __name__ == "__main__":
     # Example usage
-    model = LangchainHFEmbeddingModel("intfloat/multilingual-e5-large")  # Qwen/Qwen3-Embedding-8B
+    model = LangchainHFEmbeddingModel("intfloat/multilingual-e5-large")
 
     data_dir = Path(r'D:\\LLMs\\DLLMForge\\tests\\test_input\\piping_documents')
     # find all PDF files in the directory
     pdfs = list(data_dir.glob("*.pdf"))
-    # Load the PDF document
-    loader = PDFLoader()
-    # Create chunks with custom settings
-    chunker = TextChunker(chunk_size=1000, overlap_size=200)
-    global_embeddings = []
-    metadatas = []
+    global_chunks = []
     for pdf_path in pdfs:
-        pages, file_name, metadata = loader.load(pdf_path)
-        # Create chunks with custom settings
-        chunks = chunker.chunk_text(pages, file_name, metadata)
-        # Embed the document chunks
-        chunk_embeddings = model.embed(chunks)
-        global_embeddings.extend(chunk_embeddings)
-        metadatas.extend([chunk["metadata"] for chunk in chunks])
-        print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
-    print(f"Total embeddings generated: {len(global_embeddings)}")
+        loader = DoclingLoader(
+            file_path=pdf_path,
+            export_type=ExportType.DOC_CHUNKS,
+            chunker=HybridChunker(
+                tokenizer=model.embeddings.model_name,
+                chunk_size=512,  # Max length supported by MiniLM
+                chunk_overlap=50  # Some overlap for better context
+            ))
+        docs = loader.load()
+        global_chunks.extend(docs)
+
+    print(f"Total embeddings generated: {len(global_chunks)}")
     # now create the vector store
 
-    # Dimension of embeddings
-    index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
-
+    # create faiss vector store
+    index = faiss.IndexFlatL2(len(model.embed("test")))
     vector_store = FAISS(
         embedding_function=model.embeddings,
         index=index,
-        docstore=InMemoryDocstore(),
+        docstore=InMemoryDocstore({}),
         index_to_docstore_id={},
     )
-    # Add embeddings to the vector store
-    for chunk, meta in zip(global_embeddings, metadatas):
-
-        vector_store.add_texts(texts=[chunk["chunk"]],
-                               metadatas=[meta],
-                               ids=[chunk["chunk_id"]],
-                               embeddings=[chunk["text_vector"]])
-
+    vector_store.add_documents(global_chunks)
     # query the vector store directly to check wat is achterland in piping?
-    query_embedding = vector_store.similarity_search_with_score(query="Size of images for schema GAN", k=5)
+    query_embedding = vector_store.similarity_search_with_score(query="Size of images for schema GAN in pixels", k=5)
     print("Query result:", query_embedding)
 
     # now create the LLM
@@ -84,8 +76,10 @@ if __name__ == "__main__":
         },
     )
 
-    chat_result = llm.ask_with_retriever("Size of images produced by schemaGAN? give me the answer in axb format",
-                                         retriever)
+    chat_result = llm.ask_with_retriever("What is the size of images produced by schemaGAN?",
+                                         retriever,
+                                         max_tokens=5024,
+                                         temperature=0.8)
     print("Answer:", chat_result.generations[0].message.content)
 
     # Now let's evaluate the RAG system
