@@ -31,27 +31,22 @@ from .rag_embedding import AzureOpenAIEmbeddingModel
 # Optionally load environment variables from a .env file
 load_dotenv()
 
-# Configuration from environment variables
-api_key = os.getenv('AZURE_OPENAI_API_KEY')
-deployment_name_embeddings = os.getenv('AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS')
-api_base = os.getenv('AZURE_OPENAI_API_BASE')
-api_version = os.getenv('AZURE_OPENAI_API_VERSION')
-search_client_endpoint = os.getenv('AZURE_SEARCH_ENDPOINT')
-search_api_key = os.getenv('AZURE_SEARCH_API_KEY')
-deployment_name_gpt4o = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
-
+# Remove top-level config variables, use function/class arguments with os.getenv fallback
 
 class IndexManager:
 
-    def __init__(self, search_client_endpoint, search_api_key, index_name, embedding_dim):
-        self.endpoint = search_client_endpoint
-        self.search_api_key = search_api_key
-        self.index_name = index_name
+    def __init__(self, search_client_endpoint=None, search_api_key=None, index_name=None, embedding_dim=None):
+        self.endpoint = search_client_endpoint or os.getenv('AZURE_SEARCH_ENDPOINT')
+        self.search_api_key = search_api_key or os.getenv('AZURE_SEARCH_API_KEY')
+        self.index_name = index_name or "dllmforge_index"
         self.embedding_dim = embedding_dim
-        self.index_client = SearchIndexClient(endpoint=search_client_endpoint,
-                                              credential=AzureKeyCredential(search_api_key))
+        self.index_client = SearchIndexClient(endpoint=self.endpoint,
+                                              credential=AzureKeyCredential(self.search_api_key))
 
-    def create_index(self):
+    def create_index(self, api_base=None, deployment_name_embeddings=None, api_key=None):
+        api_base = api_base or os.getenv('AZURE_OPENAI_API_BASE')
+        deployment_name_embeddings = deployment_name_embeddings or os.getenv('AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS')
+        api_key = api_key or os.getenv('AZURE_OPENAI_API_KEY')
         fields = [
             SearchField(name="chunk_id", type=SearchFieldDataType.String, key=True, sortable=True, filterable=True),
             SearchField(name="chunk", type=SearchFieldDataType.String),
@@ -62,7 +57,6 @@ class IndexManager:
                         vector_search_dimensions=self.embedding_dim,
                         vector_search_profile_name="myHnswProfile")
         ]
-
         # Configure vector search with Azure OpenAI credentials
         vector_search = VectorSearch(algorithms=[HnswAlgorithmConfiguration(name="myHnsw")],
                                      profiles=[
@@ -79,7 +73,6 @@ class IndexManager:
                                                                    model_name=deployment_name_embeddings,
                                                                    api_key=api_key))
                                      ])
-
         index = SearchIndex(name=self.index_name, fields=fields, vector_search=vector_search)
         try:
             self.index_client.create_or_update_index(index)
@@ -100,12 +93,14 @@ class IndexManager:
 
 class Retriever:
 
-    def __init__(self, embedding_model, index_name, search_client_endpoint, search_api_key):
+    def __init__(self, embedding_model, index_name=None, search_client_endpoint=None, search_api_key=None):
         self.embedding_model = embedding_model
-        self.index_name = index_name
-        self.search_client = SearchClient(endpoint=search_client_endpoint,
-                                          index_name=index_name,
-                                          credential=AzureKeyCredential(search_api_key))
+        self.index_name = index_name or os.getenv('AZURE_SEARCH_INDEX_NAME') or "dllmforge_index"
+        self.endpoint = search_client_endpoint or os.getenv('AZURE_SEARCH_ENDPOINT')
+        self.search_api_key = search_api_key or os.getenv('AZURE_SEARCH_API_KEY')
+        self.search_client = SearchClient(endpoint=self.endpoint,
+                                          index_name=self.index_name,
+                                          credential=AzureKeyCredential(self.search_api_key))
 
     def get_embeddings(self, text):
         text_vectorized = self.embedding_model.embed(text)

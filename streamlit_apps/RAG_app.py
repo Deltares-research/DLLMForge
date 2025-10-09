@@ -17,12 +17,14 @@ import json
 # Import DLLMForge modules
 from dllmforge.rag_preprocess_documents import PDFLoader, TextChunker
 from dllmforge.rag_embedding_open_source import LangchainHFEmbeddingModel
+from dllmforge.rag_embedding import AzureOpenAIEmbeddingModel
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.rag_evaluation import RAGEvaluator
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 import faiss
+from dllmforge.rag_search_and_response import IndexManager, Retriever
 
 
 class RAGApp:
@@ -33,6 +35,9 @@ class RAGApp:
         self.llm = None
         self.embedding_model = None
         self.documents_loaded = False
+        self.retriever_type = "FAISS"
+        self.azure_search_config = {}
+        self.azure_retriever = None
 
     def initialize_session_state(self):
         """Initialize Streamlit session state variables"""
@@ -47,11 +52,21 @@ class RAGApp:
         if 'evaluator_results' not in st.session_state:
             st.session_state.evaluator_results = []
 
-    def load_embedding_model(self, model_name: str):
+    def load_embedding_model(self, model_name: str, **kwargs):
         """Load the selected embedding model"""
         try:
             with st.spinner(f"Loading embedding model: {model_name}..."):
-                self.embedding_model = LangchainHFEmbeddingModel(model_name=model_name)
+                if model_name == "Azure OpenAI Embedding model":
+                    
+                    self.embedding_model = AzureOpenAIEmbeddingModel(
+                        model=kwargs.get('model_name', 'text-embedding-3-large'),
+                        api_base=kwargs.get('api_base'),
+                        deployment_name_embeddings=kwargs.get('deployment_name_embeddings'),
+                        api_key=kwargs.get('api_key'),
+                        api_version=kwargs.get('api_version')
+                    )
+                else:
+                    self.embedding_model = LangchainHFEmbeddingModel(model_name=model_name)
             st.success(f"✅ Embedding model loaded: {model_name}")
             return True
         except Exception as e:
@@ -75,7 +90,8 @@ class RAGApp:
                                             deployment_name=kwargs.get('deployment_name'),
                                             api_base=kwargs.get('api_base'),
                                             api_version=kwargs.get('api_version'),
-                                            temperature=kwargs.get('temperature', 0.7)).llm
+                                            temperature=kwargs.get('temperature', 0.7),
+                                            api_key=kwargs.get('api_key')).llm
                 elif provider == "Mistral":
                     self.llm = LangchainAPI(model_provider="mistral",
                                             model_name=kwargs.get('model_name', 'mistral-large-latest'),
@@ -89,7 +105,7 @@ class RAGApp:
             st.error(f"❌ Error loading LLM: {str(e)}")
             return False
 
-    def process_documents(self, pdf_directory: str, chunk_size: int = 1000, overlap_size: int = 200):
+    def process_documents(self, pdf_directory: str, chunk_size: int = 1000, overlap_size: int = 200, retriever_type: str = "FAISS", azure_search_config: dict = None):
         """Process PDF documents from the specified directory"""
         try:
             data_dir = Path(pdf_directory)
@@ -131,23 +147,35 @@ class RAGApp:
                 progress_bar.progress((i + 1) / len(pdfs))
                 st.write(f"✅ Processed {len(chunk_embeddings)} chunks from {file_name}")
 
-            # Create vector store
-            st.write("Creating vector database...")
-            index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
-
-            self.vector_store = FAISS(
-                embedding_function=self.embedding_model.embeddings,
-                index=index,
-                docstore=InMemoryDocstore(),
-                index_to_docstore_id={},
-            )
-
-            # Add embeddings to vector store
-            for chunk, meta in zip(global_embeddings, metadatas):
-                self.vector_store.add_texts(texts=[chunk["chunk"]],
-                                            metadatas=[meta],
-                                            ids=[chunk["chunk_id"]],
-                                            embeddings=[chunk["text_vector"]])
+            if retriever_type == "Azure AI Search":
+                # Use Azure AI Search for indexing and retrieval
+                st.write("Creating Azure AI Search index and uploading documents...")
+                embedding_dim = len(global_embeddings[0]["text_vector"])
+                index_name = azure_search_config.get("index_name", "dllmforge_index")
+                search_endpoint = azure_search_config.get("endpoint")
+                search_api_key = azure_search_config.get("api_key")
+                index_manager = IndexManager(search_endpoint, search_api_key, index_name, embedding_dim)
+                index_manager.create_index()
+                index_manager.upload_documents(global_embeddings)
+                self.azure_retriever = Retriever(self.embedding_model, index_name, search_endpoint, search_api_key)
+                self.vector_store = None
+            else:
+                # Create vector store (FAISS)
+                st.write("Creating vector database...")
+                index = faiss.IndexFlatL2(len(global_embeddings[0]["text_vector"]))
+                self.vector_store = FAISS(
+                    embedding_function=self.embedding_model.embeddings,
+                    index=index,
+                    docstore=InMemoryDocstore(),
+                    index_to_docstore_id={},
+                )
+                # Add embeddings to vector store
+                for chunk, meta in zip(global_embeddings, metadatas):
+                    self.vector_store.add_texts(texts=[chunk["chunk"]],
+                                                metadatas=[meta],
+                                                ids=[chunk["chunk_id"]],
+                                                embeddings=[chunk["text_vector"]])
+                self.azure_retriever = None
 
             st.success(f"✅ Successfully processed {len(global_embeddings)} document chunks")
             self.documents_loaded = True
@@ -162,57 +190,66 @@ class RAGApp:
     def ask_question(self, question: str, k: int = 5, score_threshold: float = 0.5):
         """Ask a question using the RAG system"""
         try:
-            if not self.vector_store or not self.llm:
-                st.error("Please load documents and configure LLM first")
-                return None
-
-            # Create retriever
-            retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
-                                                       search_kwargs={
-                                                           "score_threshold": score_threshold,
-                                                           "k": k
-                                                       })
-
-            # Get answer
-            with st.spinner("Generating answer..."):
-                # Check if this is a Deltares Ollama LLM (has ask_with_retriever method)
-                if hasattr(self.llm, 'ask_with_retriever'):
-                    chat_result = self.llm.ask_with_retriever(question, retriever)
-                    answer = chat_result.generations[0].message.content
-                else:
-                    # For other LLMs, manually create the prompt with context
-                    contexts = retriever.invoke(question)
-                    context_text = "\n\n".join([doc.page_content for doc in contexts])
-
-                    prompt = f"""Based on the following context, please answer the question.
-
-Context:
-{context_text}
-
-Question: {question}
-
-Please provide a clear and concise answer based only on the information provided in the context."""
-
-                    # Use the LLM directly
-                    response = self.llm.invoke([{"role": "user", "content": prompt}])
+            if self.retriever_type == "Azure AI Search":
+                if not self.azure_retriever or not self.llm:
+                    st.error("Please load documents and configure LLM first")
+                    return None
+                with st.spinner("Generating answer (Azure AI Search)..."):
+                    # Use Azure retriever
+                    results = self.azure_retriever.search(question, top_k=k)
+                    # Compose context as in LLMResponder
+                    context_chunks = [doc["chunk"] for doc in results]
+                    context_text = "\n\n".join(f"Chunk {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks))
+                    sys_prompt = "You are a helpful assistant that answers questions based on the provided context."
+                    human_prompt = f'Question: "{question}"\n\nContext:\n{context_text}'
+                    prompt = [
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": human_prompt}
+                    ]
+                    response = self.llm.invoke(prompt)
                     answer = response.content if hasattr(response, 'content') else str(response)
-                    contexts = retriever.invoke(question)
-
-                # Clean up answer if needed
-                if "</think>" in answer:
-                    answer = answer.split("</think>")[-1].strip()
-
-                # Get relevant contexts if not already retrieved
-                if 'contexts' not in locals():
-                    contexts = retriever.invoke(question)
-
-            return {
-                'answer': answer,
-                'contexts': contexts,
-                'question': question,
-                'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
-            }
-
+                return {
+                    'answer': answer,
+                    'contexts': results,
+                    'question': question,
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                }
+            else:
+                if not self.vector_store or not self.llm:
+                    st.error("Please load documents and configure LLM first")
+                    return None
+                # Create retriever
+                retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
+                                                           search_kwargs={
+                                                               "score_threshold": score_threshold,
+                                                               "k": k
+                                                           })
+                # Get answer
+                with st.spinner("Generating answer..."):
+                    # Check if this is a Deltares Ollama LLM (has ask_with_retriever method)
+                    if hasattr(self.llm, 'ask_with_retriever'):
+                        chat_result = self.llm.ask_with_retriever(question, retriever)
+                        answer = chat_result.generations[0].message.content
+                    else:
+                        # For other LLMs, manually create the prompt with context
+                        contexts = retriever.invoke(question)
+                        context_text = "\n\n".join([doc.page_content for doc in contexts])
+                        prompt = f"""Based on the following context, please answer the question.\n\nContext:\n{context_text}\n\nQuestion: {question}\n\nPlease provide a clear and concise answer based only on the information provided in the context."""
+                        response = self.llm.invoke([{"role": "user", "content": prompt}])
+                        answer = response.content if hasattr(response, 'content') else str(response)
+                        contexts = retriever.invoke(question)
+                    # Clean up answer if needed
+                    if "</think>" in answer:
+                        answer = answer.split("</think>")[-1].strip()
+                    # Get relevant contexts if not already retrieved
+                    if 'contexts' not in locals():
+                        contexts = retriever.invoke(question)
+                return {
+                    'answer': answer,
+                    'contexts': contexts,
+                    'question': question,
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                }
         except Exception as e:
             st.error(f"❌ Error generating answer: {str(e)}")
             st.error(traceback.format_exc())
@@ -548,47 +585,72 @@ def main():
         pdf_directory = st.text_input("PDF Directory Path",
                                       placeholder="Enter path to folder containing PDF files",
                                       help="Specify the directory containing your PDF documents")
+        st.markdown("---")
 
         # Embedding Model Configuration
         st.subheader("🧠 Embedding Model")
         embedding_models = [
             "sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2",
             "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "BAAI/bge-small-en-v1.5",
-            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base"
+            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base",
+            "Azure OpenAI Embedding model"
         ]
-
         selected_embedding = st.selectbox("Choose Embedding Model",
                                           embedding_models,
-                                          help="Select the embedding model for document vectorization")
+                                          help="Select the embedding model for document vectorization",
+                                          key="embedding_model_select")
+        if selected_embedding == "Azure OpenAI Embedding model":
+            st.info("You have to add Azure OpenAI service and deploy OpenAI embedding models on Azure.")
+            embedding_api_base = st.text_input("API Base URL", placeholder="https://your-resource.openai.azure.com/", help="Azure OpenAI endpoint URL", key="embedding_api_base")
+            deployment_name_embeddings = st.text_input("Embeddings Deployment Name", placeholder="your-embedding-deployment-name-on-Azure", help="Azure OpenAI deployment name for embeddings", key="embedding_deployment_name")
+            embedding_api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key", key="embedding_api_key")
+            embedding_api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version", key="embedding_api_version")
+            embedding_model_name = st.text_input("Model Name", value="text-embedding-3-large", help="Azure OpenAI embedding model name", key="embedding_model_name")
+        st.markdown("---")
+
+        # Retriever Configuration
+        st.subheader("🔎 Retriever Type")
+        retriever_type = st.selectbox("Choose Retriever", ["FAISS", "Azure AI Search"], help="Select the retriever type for document search.", key="retriever_type_select")
+        if retriever_type == "Azure AI Search":
+            st.info("You have to add AI Search service on Azure.")
+            azure_search_endpoint = st.text_input("Azure Search Endpoint", placeholder="https://<your-search-service>.search.windows.net", help="Azure Cognitive Search endpoint URL", key="azure_search_endpoint")
+            azure_search_api_key = st.text_input("Azure Search API Key", type="password", placeholder="Enter your Azure Search API key", help="Azure Cognitive Search API key", key="azure_search_api_key")
+            azure_search_index_name = st.text_input("Azure Search Index Name", placeholder="dllmforge_index", help="Name of the Azure Search index to use", key="azure_search_index_name")
+        st.markdown("---")
 
         # LLM Configuration
         st.subheader("🤖 Language Model")
         llm_provider = st.selectbox("Choose LLM Provider", ["Deltares Ollama", "OpenAI", "Azure OpenAI", "Mistral"],
-                                    help="Select your preferred language model provider")
-
-        # Provider-specific configurations
+                                    help="Select your preferred language model provider",
+                                    key="llm_provider_select")
         if llm_provider == "Deltares Ollama":
             base_url = st.text_input("Ollama Base URL",
                                      value="https://chat-api.directory.intra",
-                                     help="Base URL for Ollama API")
-            model_name = st.text_input("Model Name", value="qwen3:latest", help="Ollama model name")
+                                     help="Base URL for Ollama API",
+                                     key="llm_ollama_base_url")
+            model_name = st.text_input("Model Name", value="qwen3:latest", help="Ollama model name", key="llm_ollama_model_name")
         elif llm_provider == "OpenAI":
             model_name = st.selectbox("OpenAI Model", ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-                                      help="Select OpenAI model")
+                                      help="Select OpenAI model",
+                                      key="llm_openai_model_select")
             st.info("Make sure to set your OPENAI_API_KEY environment variable")
         elif llm_provider == "Azure OpenAI":
+            st.info("You have to add Azure OpenAI service on Azure.")
             deployment_name = st.text_input("Deployment Name",
-                                            placeholder="your-gpt-4-deployment",
-                                            help="Azure OpenAI deployment name")
+                                            placeholder="your-gpt-model-deployment-name-on-Azure",
+                                            help="Azure OpenAI deployment name",
+                                            key="llm_azure_deployment_name")
             api_base = st.text_input("API Base URL",
                                      placeholder="https://your-resource.openai.azure.com/",
-                                     help="Azure OpenAI endpoint URL")
-            api_version = st.text_input("API Version", value="2023-12-01-preview", help="Azure OpenAI API version")
-            st.info("Set AZURE_OPENAI_API_KEY environment variable")
+                                     help="Azure OpenAI endpoint URL",
+                                     key="llm_azure_api_base")
+            api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version", key="llm_azure_api_version")
+            api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key for authentication", key="llm_azure_api_key")
         elif llm_provider == "Mistral":
             model_name = st.selectbox("Mistral Model",
                                       ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"],
-                                      help="Select Mistral model")
+                                      help="Select Mistral model",
+                                      key="llm_mistral_model_select")
             st.info("Make sure to set your MISTRAL_API_KEY environment variable")
 
         # Advanced settings
@@ -710,10 +772,24 @@ def main():
             success = True
 
             # Load embedding model
-            if app.load_embedding_model(selected_embedding):
-                st.session_state.rag_app.embedding_model = app.embedding_model
+            embedding_kwargs = {}
+            if selected_embedding == "Azure OpenAI Embedding model":
+                embedding_kwargs = {
+                    'model': embedding_model_name,
+                    'api_base': embedding_api_base,
+                    'deployment_name_embeddings': deployment_name_embeddings,
+                    'api_key': embedding_api_key,
+                    'api_version': embedding_api_version
+                }
+                if app.load_embedding_model(selected_embedding, **embedding_kwargs):
+                    st.session_state.rag_app.embedding_model = app.embedding_model
+                else:
+                    success = False
             else:
-                success = False
+                if app.load_embedding_model(selected_embedding):
+                    st.session_state.rag_app.embedding_model = app.embedding_model
+                else:
+                    success = False
 
             # Load LLM
             llm_kwargs = {'temperature': temperature}
@@ -723,7 +799,8 @@ def main():
                 llm_kwargs.update({
                     'deployment_name': deployment_name,
                     'api_base': api_base,
-                    'api_version': api_version
+                    'api_version': api_version,
+                    'api_key': api_key
                 })
             else:
                 llm_kwargs.update({'model_name': model_name})
@@ -733,11 +810,26 @@ def main():
             else:
                 success = False
 
+            # Prepare retriever config
+            azure_search_config = {}
+            if retriever_type == "Azure AI Search":
+                azure_search_config = {
+                    "endpoint": azure_search_endpoint,
+                    "api_key": azure_search_api_key,
+                    "index_name": azure_search_index_name
+                }
+            app.retriever_type = retriever_type
+            app.azure_search_config = azure_search_config
+
             # Process documents
             if success and pdf_directory:
-                if app.process_documents(pdf_directory, chunk_size, overlap_size):
+                if app.process_documents(pdf_directory, chunk_size, overlap_size, retriever_type, azure_search_config):
                     st.session_state.rag_app.vector_store = app.vector_store
                     st.session_state.rag_app.documents_loaded = True
+                    st.session_state.rag_app.azure_retriever = app.azure_retriever
+                    st.session_state.rag_app.llm = app.llm
+                    st.session_state.rag_app.retriever_type = app.retriever_type
+                    st.session_state.rag_app.azure_search_config = app.azure_search_config
                 else:
                     success = False
 
@@ -778,9 +870,14 @@ def main():
                     with st.expander("📄 Source Documents"):
                         for i, context in enumerate(result['contexts']):
                             st.markdown(f"**Source {i+1}:**")
-                            st.markdown(f"- **File:** {context.metadata.get('file_name', 'Unknown')}")
-                            st.markdown(f"- **Page:** {context.metadata.get('page_number', 'Unknown')}")
-                            st.markdown(f"- **Content:** {context.page_content[:300]}...")
+                            if isinstance(context, dict):  # Azure AI Search results
+                                st.markdown(f"- **File:** {context.get('file_name', 'Unknown')}")
+                                st.markdown(f"- **Page:** {context.get('page_number', 'Unknown')}")
+                                st.markdown(f"- **Content:** {context.get('chunk', '')[:300]}...")
+                            else:  # FAISS results (Langchain Document objects)
+                                st.markdown(f"- **File:** {context.metadata.get('file_name', 'Unknown')}")
+                                st.markdown(f"- **Page:** {context.metadata.get('page_number', 'Unknown')}")
+                                st.markdown(f"- **Content:** {context.page_content[:300]}...")
                             st.markdown("---")
             else:
                 st.warning("Please enter a question")
