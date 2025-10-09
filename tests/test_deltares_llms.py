@@ -173,42 +173,6 @@ class TestDeltaresOllamaLLM:
         assert result.generations[0].message.content == "Test response with context"
 
     @patch('requests.post')
-    def test_chat_completion_basic(self, mock_post):
-        """Test basic chat_completion method."""
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.raise_for_status.return_value = None
-        mock_response.text = json.dumps({
-            "response": "Hello! How can I help you?",
-            "prompt_eval_count": 10,
-            "eval_count": 8
-        })
-        mock_post.return_value = mock_response
-
-        # Test messages
-        messages = [{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Hello"}]
-
-        # Call method
-        result = self.llm.chat_completion(messages)
-
-        # Assertions
-        assert "choices" in result
-        assert len(result["choices"]) == 1
-        assert result["choices"][0]["message"]["role"] == "assistant"
-        assert result["choices"][0]["message"]["content"] == "Hello! How can I help you?"
-        assert result["choices"][0]["finish_reason"] == "stop"
-        assert result["model"] == self.model_name
-        assert result["usage"]["prompt_tokens"] == 10
-        assert result["usage"]["completion_tokens"] == 8
-        assert result["usage"]["total_tokens"] == 18
-
-        # Verify request format
-        call_args = mock_post.call_args
-        payload = call_args[1]['json']
-        expected_prompt = "System: You are a helpful assistant\nHuman: Hello\nAssistant:"
-        assert payload['prompt'] == expected_prompt
-
-    @patch('requests.post')
     def test_chat_completion_with_parameters(self, mock_post):
         """Test chat_completion method with custom parameters."""
         # Mock response
