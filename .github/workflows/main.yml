@@ -8,6 +8,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  GITHUB_ACTIONS: true
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
