@@ -33,6 +33,7 @@ load_dotenv()
 
 # Remove top-level config variables, use function/class arguments with os.getenv fallback
 
+
 class IndexManager:
 
     def __init__(self, search_client_endpoint=None, search_api_key=None, index_name=None, embedding_dim=None):

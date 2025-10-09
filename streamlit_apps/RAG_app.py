@@ -57,14 +57,13 @@ class RAGApp:
         try:
             with st.spinner(f"Loading embedding model: {model_name}..."):
                 if model_name == "Azure OpenAI Embedding model":
-                    
+
                     self.embedding_model = AzureOpenAIEmbeddingModel(
                         model=kwargs.get('model_name', 'text-embedding-3-large'),
                         api_base=kwargs.get('api_base'),
                         deployment_name_embeddings=kwargs.get('deployment_name_embeddings'),
                         api_key=kwargs.get('api_key'),
-                        api_version=kwargs.get('api_version')
-                    )
+                        api_version=kwargs.get('api_version'))
                 else:
                     self.embedding_model = LangchainHFEmbeddingModel(model_name=model_name)
             st.success(f"✅ Embedding model loaded: {model_name}")
@@ -105,7 +104,12 @@ class RAGApp:
             st.error(f"❌ Error loading LLM: {str(e)}")
             return False
 
-    def process_documents(self, pdf_directory: str, chunk_size: int = 1000, overlap_size: int = 200, retriever_type: str = "FAISS", azure_search_config: dict = None):
+    def process_documents(self,
+                          pdf_directory: str,
+                          chunk_size: int = 1000,
+                          overlap_size: int = 200,
+                          retriever_type: str = "FAISS",
+                          azure_search_config: dict = None):
         """Process PDF documents from the specified directory"""
         try:
             data_dir = Path(pdf_directory)
@@ -202,10 +206,7 @@ class RAGApp:
                     context_text = "\n\n".join(f"Chunk {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks))
                     sys_prompt = "You are a helpful assistant that answers questions based on the provided context."
                     human_prompt = f'Question: "{question}"\n\nContext:\n{context_text}'
-                    prompt = [
-                        {"role": "system", "content": sys_prompt},
-                        {"role": "user", "content": human_prompt}
-                    ]
+                    prompt = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": human_prompt}]
                     response = self.llm.invoke(prompt)
                     answer = response.content if hasattr(response, 'content') else str(response)
                 return {
@@ -592,8 +593,7 @@ def main():
         embedding_models = [
             "sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2",
             "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "BAAI/bge-small-en-v1.5",
-            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base",
-            "Azure OpenAI Embedding model"
+            "BAAI/bge-base-en-v1.5", "thenlper/gte-small", "thenlper/gte-base", "Azure OpenAI Embedding model"
         ]
         selected_embedding = st.selectbox("Choose Embedding Model",
                                           embedding_models,
@@ -601,21 +601,49 @@ def main():
                                           key="embedding_model_select")
         if selected_embedding == "Azure OpenAI Embedding model":
             st.info("You have to add Azure OpenAI service and deploy OpenAI embedding models on Azure.")
-            embedding_api_base = st.text_input("API Base URL", placeholder="https://your-resource.openai.azure.com/", help="Azure OpenAI endpoint URL", key="embedding_api_base")
-            deployment_name_embeddings = st.text_input("Embeddings Deployment Name", placeholder="your-embedding-deployment-name-on-Azure", help="Azure OpenAI deployment name for embeddings", key="embedding_deployment_name")
-            embedding_api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key", key="embedding_api_key")
-            embedding_api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version", key="embedding_api_version")
-            embedding_model_name = st.text_input("Model Name", value="text-embedding-3-large", help="Azure OpenAI embedding model name", key="embedding_model_name")
+            embedding_api_base = st.text_input("API Base URL",
+                                               placeholder="https://your-resource.openai.azure.com/",
+                                               help="Azure OpenAI endpoint URL",
+                                               key="embedding_api_base")
+            deployment_name_embeddings = st.text_input("Embeddings Deployment Name",
+                                                       placeholder="your-embedding-deployment-name-on-Azure",
+                                                       help="Azure OpenAI deployment name for embeddings",
+                                                       key="embedding_deployment_name")
+            embedding_api_key = st.text_input("API Key",
+                                              type="password",
+                                              placeholder="Enter your Azure OpenAI API key",
+                                              help="Azure OpenAI API key",
+                                              key="embedding_api_key")
+            embedding_api_version = st.text_input("API Version",
+                                                  value="2024-08-01-preview",
+                                                  help="Azure OpenAI API version",
+                                                  key="embedding_api_version")
+            embedding_model_name = st.text_input("Model Name",
+                                                 value="text-embedding-3-large",
+                                                 help="Azure OpenAI embedding model name",
+                                                 key="embedding_model_name")
         st.markdown("---")
 
         # Retriever Configuration
         st.subheader("🔎 Retriever Type")
-        retriever_type = st.selectbox("Choose Retriever", ["FAISS", "Azure AI Search"], help="Select the retriever type for document search.", key="retriever_type_select")
+        retriever_type = st.selectbox("Choose Retriever", ["FAISS", "Azure AI Search"],
+                                      help="Select the retriever type for document search.",
+                                      key="retriever_type_select")
         if retriever_type == "Azure AI Search":
             st.info("You have to add AI Search service on Azure.")
-            azure_search_endpoint = st.text_input("Azure Search Endpoint", placeholder="https://<your-search-service>.search.windows.net", help="Azure Cognitive Search endpoint URL", key="azure_search_endpoint")
-            azure_search_api_key = st.text_input("Azure Search API Key", type="password", placeholder="Enter your Azure Search API key", help="Azure Cognitive Search API key", key="azure_search_api_key")
-            azure_search_index_name = st.text_input("Azure Search Index Name", placeholder="dllmforge_index", help="Name of the Azure Search index to use", key="azure_search_index_name")
+            azure_search_endpoint = st.text_input("Azure Search Endpoint",
+                                                  placeholder="https://<your-search-service>.search.windows.net",
+                                                  help="Azure Cognitive Search endpoint URL",
+                                                  key="azure_search_endpoint")
+            azure_search_api_key = st.text_input("Azure Search API Key",
+                                                 type="password",
+                                                 placeholder="Enter your Azure Search API key",
+                                                 help="Azure Cognitive Search API key",
+                                                 key="azure_search_api_key")
+            azure_search_index_name = st.text_input("Azure Search Index Name",
+                                                    placeholder="dllmforge_index",
+                                                    help="Name of the Azure Search index to use",
+                                                    key="azure_search_index_name")
         st.markdown("---")
 
         # LLM Configuration
@@ -628,7 +656,10 @@ def main():
                                      value="https://chat-api.directory.intra",
                                      help="Base URL for Ollama API",
                                      key="llm_ollama_base_url")
-            model_name = st.text_input("Model Name", value="qwen3:latest", help="Ollama model name", key="llm_ollama_model_name")
+            model_name = st.text_input("Model Name",
+                                       value="qwen3:latest",
+                                       help="Ollama model name",
+                                       key="llm_ollama_model_name")
         elif llm_provider == "OpenAI":
             model_name = st.selectbox("OpenAI Model", ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
                                       help="Select OpenAI model",
@@ -644,8 +675,15 @@ def main():
                                      placeholder="https://your-resource.openai.azure.com/",
                                      help="Azure OpenAI endpoint URL",
                                      key="llm_azure_api_base")
-            api_version = st.text_input("API Version", value="2024-08-01-preview", help="Azure OpenAI API version", key="llm_azure_api_version")
-            api_key = st.text_input("API Key", type="password", placeholder="Enter your Azure OpenAI API key", help="Azure OpenAI API key for authentication", key="llm_azure_api_key")
+            api_version = st.text_input("API Version",
+                                        value="2024-08-01-preview",
+                                        help="Azure OpenAI API version",
+                                        key="llm_azure_api_version")
+            api_key = st.text_input("API Key",
+                                    type="password",
+                                    placeholder="Enter your Azure OpenAI API key",
+                                    help="Azure OpenAI API key for authentication",
+                                    key="llm_azure_api_key")
         elif llm_provider == "Mistral":
             model_name = st.selectbox("Mistral Model",
                                       ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"],
