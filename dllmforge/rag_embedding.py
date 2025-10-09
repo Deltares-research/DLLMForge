@@ -16,7 +16,12 @@ from langchain_openai import AzureOpenAIEmbeddings
 class AzureOpenAIEmbeddingModel:
     """Class for embedding queries and document chunks using Azure OpenAI Embeddings."""
 
-    def __init__(self, model: str = "text-embedding-3-large", api_base: str = None, deployment_name_embeddings: str = None, api_key: str = None, api_version: str = None):
+    def __init__(self,
+                 model: str = "text-embedding-3-large",
+                 api_base: str = None,
+                 deployment_name_embeddings: str = None,
+                 api_key: str = None,
+                 api_version: str = None):
         """
         Initialize the embedding model using provided arguments or environment variables for Azure OpenAI.
         Args:
