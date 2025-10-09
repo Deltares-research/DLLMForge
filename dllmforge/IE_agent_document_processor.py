@@ -111,12 +111,10 @@ class DocumentProcessor:
         """Encode image bytes to base64 string"""
         return base64.b64encode(image_bytes).decode('utf-8')
 
-    def process_document(self, file_path: Union[str, Path]) -> Union[ProcessedDocument, List[ProcessedDocument]]:
-        """Process document based on configuration
-        
+    def process_file(self, file_path: Union[str, Path]) -> Union[ProcessedDocument, List[ProcessedDocument]]:
+        """Process a single file based on configuration (text/image)
         Args:
             file_path: Path to document
-            
         Returns:
             Single ProcessedDocument for text or list of ProcessedDocument for images
         """
@@ -143,7 +141,7 @@ class DocumentProcessor:
         processed_docs = []
         for file_path in files:
             try:
-                processed_doc = self.process_document(file_path)
+                processed_doc = self.process_file(file_path)
                 processed_docs.append(processed_doc)
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")

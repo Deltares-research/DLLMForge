@@ -27,18 +27,53 @@ class DocumentChunk:
 
 class InfoExtractor:
     """Class for extracting information from documents using LLM"""
-    
     def __init__(self, 
-                 config: IEAgentConfig,
-                 output_schema: type[BaseModel],
-                 llm_api: Optional[LangchainAPI] = None):
-        """Initialize the information extractor"""
-        self.config = config
-        self.output_schema = output_schema
-        self.llm_api = llm_api or LangchainAPI()
-        self.output_parser = PydanticOutputParser(pydantic_object=output_schema)
-        self.doc_processor = DocumentProcessor(config.document)
-        self.system_prompt = self.refine_system_prompt(config.schema.task_description)
+                 config: Optional[IEAgentConfig] = None,
+                 output_schema: Optional[type[BaseModel]] = None,
+                 llm_api: Optional[LangchainAPI] = None,
+                 # Plain-argument mode:
+                 system_prompt: Optional[str] = None,
+                 chunk_size: Optional[int] = None,
+                 chunk_overlap: Optional[int] = None,
+                 doc_processor: Optional[DocumentProcessor] = None,
+                 document_output_type: str = 'text',
+                 ):
+        """Initialize the information extractor.
+
+        You can use either `config` (IEAgentConfig), or pass the individual parameters directly.
+        """
+        if config:
+            self.config = config
+            self.output_schema = output_schema or None
+            self.llm_api = llm_api or LangchainAPI()
+            self.doc_processor = doc_processor or DocumentProcessor(config.document)
+            self.output_parser = PydanticOutputParser(pydantic_object=output_schema)
+            self.chunk_size = config.extractor.chunk_size
+            self.chunk_overlap = config.extractor.chunk_overlap
+            self.system_prompt = self.refine_system_prompt(config.schema.task_description)
+        else:
+            if output_schema is None:
+                raise ValueError('output_schema is required if config is not given')
+            self.config = None
+            self.output_schema = output_schema
+            self.llm_api = llm_api or LangchainAPI()
+            self.output_parser = PydanticOutputParser(pydantic_object=output_schema)
+            self.chunk_size = chunk_size or 80000
+            self.chunk_overlap = chunk_overlap or 10000
+            # NOTE: direct mode must require plain prompt string
+            self.system_prompt = system_prompt or "You are an information extraction LLM."
+            if doc_processor:
+                self.doc_processor = doc_processor
+            else:
+                # create a very basic DocumentProcessor (assume user will provide method input)
+                self.doc_processor = DocumentProcessor(DocumentConfig(
+                    input_dir=Path('.'), file_pattern="*.pdf", output_type=document_output_type
+                ))
+
+    @classmethod
+    def from_params(cls, *, output_schema, llm_api=None, system_prompt=None, chunk_size=None, chunk_overlap=None, doc_processor=None, document_output_type='text'):
+        """Alternate constructor for direct use without config objects"""
+        return cls(config=None, output_schema=output_schema, llm_api=llm_api, system_prompt=system_prompt, chunk_size=chunk_size, chunk_overlap=chunk_overlap, doc_processor=doc_processor, document_output_type=document_output_type)
 
     def refine_system_prompt(self, task_description: str) -> str:
         """Use LLM to refine user's task description into a proper system prompt"""
@@ -75,21 +110,17 @@ class InfoExtractor:
     def chunk_document(self, doc: ProcessedDocument) -> Generator[DocumentChunk, None, None]:
         """Split document into chunks if needed based on thresholds"""
         if doc.content_type == 'text':
-            # Split text into chunks
             text = doc.content
-            chunk_size = self.config.extractor.chunk_size
-            overlap = self.config.extractor.chunk_overlap
-            
+            chunk_size = self.chunk_size if hasattr(self, 'chunk_size') else self.config.extractor.chunk_size
+            overlap = self.chunk_overlap if hasattr(self, 'chunk_overlap') else self.config.extractor.chunk_overlap
             start = 0
             while start < len(text):
                 end = start + chunk_size
                 if end < len(text):
-                    # Try to find a space to break at
                     while end < len(text) and text[end] != ' ':
                         end -= 1
-                    if end == start:  # No space found
+                    if end == start:
                         end = start + chunk_size
-                
                 yield DocumentChunk(
                     content=text[start:end],
                     content_type='text',
@@ -99,19 +130,14 @@ class InfoExtractor:
                         'chunk_end': end
                     }
                 )
-                
                 start = end - overlap
-                
         elif doc.content_type == 'image':
-            # For images that are too large, we might want to compress or split them
-            # For now, we'll just yield the original as one chunk
             yield DocumentChunk(
                 content=doc.content,
                 content_type='image',
                 metadata=doc.metadata
             )
         else:
-            # Document is under threshold, yield as single chunk
             yield DocumentChunk(
                 content=doc.content,
                 content_type=doc.content_type,
@@ -291,85 +317,187 @@ class InfoExtractor:
                 continue
 
 
+def extract_info_from_file(
+    file_path,
+    output_schema,
+    system_prompt=None,
+    llm_api=None,
+    chunk_size=None,
+    chunk_overlap=None,
+    document_output_type='text',
+    doc_processor=None,
+):
+    """
+    Extract structured information from a file using LLM, without requiring config objects.
+
+    Args:
+        file_path (str or Path): Path to input document (PDF, etc).
+        output_schema (pydantic.BaseModel class): Pydantic model class with expected output structure.
+        system_prompt (str, optional): Custom prompt for the LLM.
+        llm_api (LangchainAPI, optional): Custom LLM api instance.
+        chunk_size (int, optional): How large each chunk should be.
+        chunk_overlap (int, optional): Number of chars to overlap between chunks.
+        document_output_type (str, optional): "text" or "image" (default: "text").
+        doc_processor (DocumentProcessor, optional): Custom document processor.
+
+    Returns:
+        List[output_schema]: Results parsed and validated by the output_schema.
+
+    Example Usage:
+        from IE_agent_extractor import extract_info_from_file
+        from my_schema_module import MyPydanticSchema
+        results = extract_info_from_file(
+            file_path="path/to/file.pdf",
+            output_schema=MyPydanticSchema,
+            system_prompt="Extract model hyperparameters from research paper."
+        )
+        # results is a list of schema objects
+    """
+    ie = InfoExtractor.from_params(
+        output_schema=output_schema,
+        llm_api=llm_api,
+        system_prompt=system_prompt,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        doc_processor=doc_processor,
+        document_output_type=document_output_type
+    )
+    doc = ie.doc_processor.process_file(file_path)
+    return ie.process_document(doc)
+
+
 if __name__ == "__main__":
+    # ------- Explicit Example: Using config objects (full control) -------
     import os
     import importlib.util
     from pathlib import Path
     from IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
     from IE_agent_schema_generator import SchemaGenerator
+    from dllmforge.IE_agent_document_processor import DocumentProcessor
+    from dllmforge.langchain_api import LangchainAPI
+    from glob import glob
+    import json
 
-    # Setup paths
+    # 1. PREPARE SCHEMA (always required)
     current_dir = Path(__file__).parent
     schema_dir = current_dir / "generated_schemas"
     schema_dir.mkdir(exist_ok=True)
     schema_file = schema_dir / "model_hyperparameters.py"
-    
-    # Create schema configuration for model hyperparameters
-    schema_config = SchemaConfig(
-        task_description="""Generate a Pydantic schema class named ModelHyperparameters to extract machine learning model hyperparameters from research papers and documentation.
-        The schema should capture: model architecture details (type, layers, neurons, etc.), training parameters (learning rate, batch size, epochs), 
-        optimization settings (optimizer, loss function), regularization techniques (dropout, etc.)""",
-        output_path=str(schema_file)
+    schema_task_description = (
+        "Generate a Pydantic schema class named ModelHyperparameters to extract machine learning model hyperparameters from research papers and documentation. "
+        "The schema should capture: model architecture details (type, layers, neurons, etc.), "
+        "training parameters (learning rate, batch size, epochs), "
+        "optimization settings (optimizer, loss function), regularization techniques (dropout, etc.)."
     )
-    
-    # Generate and save the schema
+    schema_config = SchemaConfig(
+        task_description=schema_task_description,  # REQUIRED
+        example_doc=None,                         # optional
+        user_schema_path=None,                    # optional
+        output_path=str(schema_file)              # optional for saving schema
+    )
     schema_generator = SchemaGenerator(schema_config)
     schema_code = schema_generator.generate_schema()
-    
-    # Find all class names in the generated code
     import re
     class_matches = re.finditer(r"class\s+(\w+)\s*\(", schema_code)
     class_names = [match.group(1) for match in class_matches]
-    
     if not class_names:
         raise ValueError("Could not find any class names in generated schema")
-        
-    # Get the last class as it's typically the main schema
     schema_class_name = class_names[-1]
-    print(f"\nFound schema classes: {', '.join(class_names)}")
-    print(f"Using main schema class: {schema_class_name}")
-    
-    # Save the schema
     schema_generator.save_schema(schema_code)
-    
-    # Import the generated schema module
     spec = importlib.util.spec_from_file_location("model_hyperparameters", schema_file)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    
-    # Get the schema class dynamically
     if not hasattr(module, schema_class_name):
         raise ValueError(f"Generated schema does not contain class {schema_class_name}")
     SchemaClass = getattr(module, schema_class_name)
-    
-    # Create configuration for the extractor
-    config = IEAgentConfig(
-        schema=schema_config,  # Reuse the same schema config
-        document=DocumentConfig(
-            input_dir=r"c:\Users\deng_jg\work\16centralized_agents\test_data",
-            output_dir=r"c:\Users\deng_jg\work\16centralized_agents\test_data\output",
-            file_pattern="*.pdf",  # Process PDF files
-            output_type="text"  # Extract as text
-        ),
-        extractor=ExtractorConfig()
-    )
 
-    # Example 1: Process single document
-    print("\nExample 1: Processing single document...")
-    single_doc_path = Path(r"c:\Users\deng_jg\work\16centralized_agents\test_data\lstm_low_flow.pdf")
-    
-    # Create extractor with the generated schema
-    extractor = InfoExtractor(config=config, output_schema=SchemaClass)
-    
-    # Process the document
-    doc = extractor.doc_processor.process_document(single_doc_path)
+    # 2. CONFIG-BASED (FULL) USAGE
+    # ----- Specify ALL config arguments explicitly
+    document_input_dir = r"c:/Users/deng_jg/work/16centralized_agents/test_data/test"
+    document_file_pattern = "*.pdf"
+    document_output_type = "text"
+    document_output_dir = r"c:/Users/deng_jg/work/16centralized_agents/test_data/output"
+
+    chunk_size = 80000      # how large (chars) each text chunk should be
+    chunk_overlap = 10000   # how much chunks overlap (chars)
+
+    # Build ALL config objects with all fields
+    extractor_config = ExtractorConfig(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
+    )
+    document_config = DocumentConfig(
+        input_dir=document_input_dir,
+        file_pattern=document_file_pattern,
+        output_type=document_output_type,
+        output_dir=document_output_dir
+    )
+    config = IEAgentConfig(
+        schema=schema_config,
+        document=document_config,
+        extractor=extractor_config
+    )
+    output_schema = SchemaClass  # REQUIRED
+    llm_api = LangchainAPI(model_provider="azure-openai", temperature=0.1)  # OPTIONAL, or None for default
+
+    # --- Process single file (with all InfoExtractor vars shown)
+    single_doc_path = os.path.join(document_input_dir, "lstm_low_flow.pdf")
+    extractor = InfoExtractor(
+        config=config,                  # REQUIRED (when using config route)
+        output_schema=output_schema,    # REQUIRED
+        llm_api=llm_api                 # Optional
+    )
+    doc = extractor.doc_processor.process_file(single_doc_path)  # Uses DocumentProcessor config
     if doc:
         results = extractor.process_document(doc)
-        output_path = Path(config.document.output_dir) / f"{single_doc_path.stem}_extracted.json"
+        output_path = os.path.join(document_output_dir, "lstm_low_flow_extracted.json")
         extractor.save_results(results, output_path)
-
-    # Example 2: Process entire directory
-    print("\nExample 2: Processing entire directory...")
-    # Create new extractor instance with the same schema
-    extractor = InfoExtractor(config=config, output_schema=SchemaClass)
+        print(f"[CONFIG] Single file results saved to {output_path}")
+    # --- Directory mode (all config-driven)
     extractor.process_all()
+    print(f"[CONFIG] Directory batch complete! Check {document_output_dir}")
+
+
+    # ------- Explicit Example: Direct/no-config (all args shown) -----------
+    print("\nExample 2: Direct, no config objects (all params explicit)")
+    # Define for direct mode:
+    direct_system_prompt = "Extract model hyperparameters from research paper."
+    direct_doc_processor = DocumentProcessor(
+        DocumentConfig(
+            input_dir=document_input_dir,
+            file_pattern=document_file_pattern,
+            output_type=document_output_type,
+            output_dir=document_output_dir
+        )
+    )
+    # --- Process single file ---
+    results = extract_info_from_file(
+        file_path=single_doc_path,
+        output_schema=output_schema,
+        system_prompt=direct_system_prompt,
+        llm_api=llm_api,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        doc_processor=direct_doc_processor,
+        document_output_type=document_output_type
+    )
+    print(f"[DIRECT] Single-file direct results (first result): {results[0] if results else None}")
+    # --- Directory mode (loop) ---
+    output_dir2 = r"c:/Users/deng_jg/work/16centralized_agents/test_data/output_noconfig_explicit"
+    os.makedirs(output_dir2, exist_ok=True)
+    file_list = glob(os.path.join(document_input_dir, "*.pdf"))
+    for fpath in file_list:
+        results = extract_info_from_file(
+            file_path=fpath,
+            output_schema=output_schema,
+            system_prompt=direct_system_prompt,
+            llm_api=llm_api,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            doc_processor=direct_doc_processor,
+            document_output_type=document_output_type
+        )
+        output_path = os.path.join(output_dir2, f"{Path(fpath).stem}_extracted.json")
+        with open(output_path, "w", encoding="utf-8") as fp:
+            json.dump([r.dict() if hasattr(r, 'dict') else r for r in results], fp, indent=2, ensure_ascii=False)
+        print(f"[DIRECT] Saved results for {fpath} -> {output_path}")
