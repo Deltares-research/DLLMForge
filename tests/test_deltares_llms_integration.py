@@ -8,7 +8,8 @@ import base64
 
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM, get_deltares_models
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+#  see if we are running in GitHub Actions
+IN_GITHUB_ACTIONS = os.getenv('GITHUB_ACTIONS', 'false').lower() == 'true'
 
 
 class TestDeltaresOllamaLLMIntegration:
