@@ -84,7 +84,7 @@ def test_chunk_document_yields_chunks(MockParser, mock_config, mock_doc_processo
     )
     doc = MagicMock()
     doc.content_type = 'text'
-    doc.content = '01234567890123456789'
+    doc.content = "The quick brown fox jumps over the lazy dog and runs away"
     doc.metadata = {}
     chunks = list(info.chunk_document(doc))
     assert all(isinstance(c, DocumentChunk) for c in chunks)

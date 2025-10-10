@@ -115,14 +115,13 @@ class InfoExtractor:
             overlap = self.chunk_overlap if hasattr(self, 'chunk_overlap') else self.config.extractor.chunk_overlap
             start = 0
             while start < len(text):
-                end = min(start + chunk_size, len(text))
+                end = start + chunk_size
                 if end < len(text):
-                    temp_end = end
-                    while temp_end > start and temp_end < len(text) and text[temp_end] != ' ':
-                        temp_end -= 1
-                    if temp_end == start:
-                        temp_end = end
-                    end = temp_end
+                    # Try to find a space to break at
+                    while end < len(text) and text[end] != ' ':
+                        end -= 1
+                    if end == start:  # No space found
+                        end = start + chunk_size
                 yield DocumentChunk(
                     content=text[start:end],
                     content_type='text',
@@ -132,7 +131,7 @@ class InfoExtractor:
                         'chunk_end': end
                     }
                 )
-                start = max(0, end - overlap)
+                start = end - overlap
         elif doc.content_type == 'image':
             yield DocumentChunk(
                 content=doc.content,
