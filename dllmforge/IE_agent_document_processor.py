@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Union, List, Dict, Any, Optional
 from PIL import Image
 import fitz  # PyMuPDF
-from utils.document_loader import DocumentLoader
-from IE_agent_config import DocumentConfig
+from dllmforge.utils.document_loader import DocumentLoader
+from dllmforge.IE_agent_config import DocumentConfig
 
 class ProcessedDocument:
     """Class representing processed document content"""

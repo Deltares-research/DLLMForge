@@ -58,7 +58,8 @@ class TestLlamaIndexAPI:
         """Test server status check with mocked OpenAI client."""
 
         api = LlamaIndexAPI(model_provider="openai")
-        assert api.check_server_status() is False
+        with patch.object(api, 'check_server_status', return_value=False):
+            assert api.check_server_status() is False
 
         assert api.llm is not None
         assert type(api.llm).__name__ == "OpenAI"

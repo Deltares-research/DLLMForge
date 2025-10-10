@@ -18,3 +18,4 @@ pytesseract
 pdf2image
 python-docx
 PyMuPDF
+docling

@@ -10,8 +10,8 @@ from pydantic import BaseModel
 from langchain.output_parsers import PydanticOutputParser
 from langchain.output_parsers.json import parse_json_markdown
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain_api import LangchainAPI
-from IE_agent_config import IEAgentConfig, ExtractorConfig
+from dllmforge.langchain_api import LangchainAPI
+from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig
 import base64
 
 # Docling imports
@@ -443,8 +443,8 @@ if __name__ == "__main__":
     import os
     import importlib.util
     from pathlib import Path
-    from IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
-    from IE_agent_schema_generator import SchemaGenerator
+    from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
+    from dllmforge.IE_agent_schema_generator import SchemaGenerator
     from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 
     # Setup paths

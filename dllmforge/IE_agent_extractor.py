@@ -11,9 +11,9 @@ from pydantic import BaseModel
 from langchain.output_parsers import PydanticOutputParser
 from langchain.output_parsers.json import parse_json_markdown
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain_api import LangchainAPI
-from IE_agent_config import IEAgentConfig, ExtractorConfig
-from IE_agent_document_processor import ProcessedDocument, DocumentProcessor
+from dllmforge.langchain_api import LangchainAPI
+from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig
+from dllmforge.IE_agent_document_processor import ProcessedDocument, DocumentProcessor
 
 class DocumentChunk:
     """Class representing a chunk of document content"""
@@ -115,12 +115,14 @@ class InfoExtractor:
             overlap = self.chunk_overlap if hasattr(self, 'chunk_overlap') else self.config.extractor.chunk_overlap
             start = 0
             while start < len(text):
-                end = start + chunk_size
+                end = min(start + chunk_size, len(text))
                 if end < len(text):
-                    while end < len(text) and text[end] != ' ':
-                        end -= 1
-                    if end == start:
-                        end = start + chunk_size
+                    temp_end = end
+                    while temp_end > start and temp_end < len(text) and text[temp_end] != ' ':
+                        temp_end -= 1
+                    if temp_end == start:
+                        temp_end = end
+                    end = temp_end
                 yield DocumentChunk(
                     content=text[start:end],
                     content_type='text',
@@ -130,7 +132,7 @@ class InfoExtractor:
                         'chunk_end': end
                     }
                 )
-                start = end - overlap
+                start = max(0, end - overlap)
         elif doc.content_type == 'image':
             yield DocumentChunk(
                 content=doc.content,
@@ -321,8 +323,8 @@ if __name__ == "__main__":
     import os
     import importlib.util
     from pathlib import Path
-    from IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
-    from IE_agent_schema_generator import SchemaGenerator
+    from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig, SchemaConfig
+    from dllmforge.IE_agent_schema_generator import SchemaGenerator
     from dllmforge.IE_agent_document_processor import DocumentProcessor
     from dllmforge.langchain_api import LangchainAPI
     from glob import glob
