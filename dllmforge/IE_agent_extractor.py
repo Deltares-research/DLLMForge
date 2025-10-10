@@ -175,16 +175,14 @@ class InfoExtractor:
                 content=chunk.content,
                 format_instructions=self.output_parser.get_format_instructions()
             )
-            
             response = self.llm_api.chat_completion(messages)
             if not response:
                 return None
-            
             parsed_json = parse_json_markdown(response["response"])
+            # print("PARSED JSON TO VALIDATE:", parsed_json)  # DEBUG LINE
             # Validate against schema
             validated_response = self.output_schema(**parsed_json)
             return validated_response
-            
         except Exception as e:
             print(f"Error processing text chunk: {e}")
             return None
@@ -251,27 +249,28 @@ class InfoExtractor:
 
     def process_document(self, doc: Union[ProcessedDocument, List[ProcessedDocument]]) -> List[Dict[str, Any]]:
         """Process document and extract information"""
-        # Handle both single documents and lists
-        docs = [doc] if isinstance(doc, ProcessedDocument) else doc
-        
+        # Patch: robustly wrap non-list docs
+        if not isinstance(doc, list):
+            docs = [doc]
+        else:
+            docs = doc
         # Create chunks for all documents
         chunks = []
         for d in docs:
             chunks.extend(list(self.chunk_document(d)))
-        
         # Process chunks sequentially
         results = []
         for chunk in chunks:
             result = self.process_chunk(chunk)
             if result is not None:
                 results.append(result)
-        
         return results
 
     def save_results(self, 
                     results: List[Any], 
-                    output_path: Path) -> None:
+                    output_path: Union[str, Path]) -> None:
         """Save extraction results to JSON file"""
+        output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Convert Pydantic models to dictionaries
@@ -315,55 +314,6 @@ class InfoExtractor:
             except Exception as e:
                 print(f"Error processing document: {e}")
                 continue
-
-
-def extract_info_from_file(
-    file_path,
-    output_schema,
-    system_prompt=None,
-    llm_api=None,
-    chunk_size=None,
-    chunk_overlap=None,
-    document_output_type='text',
-    doc_processor=None,
-):
-    """
-    Extract structured information from a file using LLM, without requiring config objects.
-
-    Args:
-        file_path (str or Path): Path to input document (PDF, etc).
-        output_schema (pydantic.BaseModel class): Pydantic model class with expected output structure.
-        system_prompt (str, optional): Custom prompt for the LLM.
-        llm_api (LangchainAPI, optional): Custom LLM api instance.
-        chunk_size (int, optional): How large each chunk should be.
-        chunk_overlap (int, optional): Number of chars to overlap between chunks.
-        document_output_type (str, optional): "text" or "image" (default: "text").
-        doc_processor (DocumentProcessor, optional): Custom document processor.
-
-    Returns:
-        List[output_schema]: Results parsed and validated by the output_schema.
-
-    Example Usage:
-        from IE_agent_extractor import extract_info_from_file
-        from my_schema_module import MyPydanticSchema
-        results = extract_info_from_file(
-            file_path="path/to/file.pdf",
-            output_schema=MyPydanticSchema,
-            system_prompt="Extract model hyperparameters from research paper."
-        )
-        # results is a list of schema objects
-    """
-    ie = InfoExtractor.from_params(
-        output_schema=output_schema,
-        llm_api=llm_api,
-        system_prompt=system_prompt,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        doc_processor=doc_processor,
-        document_output_type=document_output_type
-    )
-    doc = ie.doc_processor.process_file(file_path)
-    return ie.process_document(doc)
 
 
 if __name__ == "__main__":
@@ -411,7 +361,6 @@ if __name__ == "__main__":
         raise ValueError(f"Generated schema does not contain class {schema_class_name}")
     SchemaClass = getattr(module, schema_class_name)
 
-    # 2. CONFIG-BASED (FULL) USAGE
     # ----- Specify ALL config arguments explicitly
     document_input_dir = r"c:/Users/deng_jg/work/16centralized_agents/test_data/test"
     document_file_pattern = "*.pdf"
@@ -421,6 +370,11 @@ if __name__ == "__main__":
     chunk_size = 80000      # how large (chars) each text chunk should be
     chunk_overlap = 10000   # how much chunks overlap (chars)
 
+    output_schema = SchemaClass  # REQUIRED
+    llm_api = LangchainAPI(model_provider="azure-openai", temperature=0.1)  # OPTIONAL, or None for default
+
+
+#%%    # 2. CONFIG-BASED (FULL) USAGE
     # Build ALL config objects with all fields
     extractor_config = ExtractorConfig(
         chunk_size=chunk_size,
@@ -437,67 +391,57 @@ if __name__ == "__main__":
         document=document_config,
         extractor=extractor_config
     )
-    output_schema = SchemaClass  # REQUIRED
-    llm_api = LangchainAPI(model_provider="azure-openai", temperature=0.1)  # OPTIONAL, or None for default
 
-    # --- Process single file (with all InfoExtractor vars shown)
-    single_doc_path = os.path.join(document_input_dir, "lstm_low_flow.pdf")
     extractor = InfoExtractor(
         config=config,                  # REQUIRED (when using config route)
         output_schema=output_schema,    # REQUIRED
         llm_api=llm_api                 # Optional
     )
+    
+    # --- 2a. Process single file (with all InfoExtractor vars shown)
+    single_doc_path = os.path.join(document_input_dir, "lstm_low_flow.pdf")
+
     doc = extractor.doc_processor.process_file(single_doc_path)  # Uses DocumentProcessor config
     if doc:
         results = extractor.process_document(doc)
-        output_path = os.path.join(document_output_dir, "lstm_low_flow_extracted.json")
+        output_path = Path(document_output_dir) / "lstm_low_flow_extracted.json"  # fix: Path object
         extractor.save_results(results, output_path)
         print(f"[CONFIG] Single file results saved to {output_path}")
-    # --- Directory mode (all config-driven)
+
+    # --- 2b. Directory mode (all config-driven)
     extractor.process_all()
     print(f"[CONFIG] Directory batch complete! Check {document_output_dir}")
 
-
+#%%
     # ------- Explicit Example: Direct/no-config (all args shown) -----------
     print("\nExample 2: Direct, no config objects (all params explicit)")
     # Define for direct mode:
     direct_system_prompt = "Extract model hyperparameters from research paper."
     direct_doc_processor = DocumentProcessor(
-        DocumentConfig(
-            input_dir=document_input_dir,
-            file_pattern=document_file_pattern,
-            output_type=document_output_type,
-            output_dir=document_output_dir
-        )
+        input_dir=document_input_dir,
+        file_pattern=document_file_pattern,
+        output_type=document_output_type,
+        output_dir=document_output_dir
     )
-    # --- Process single file ---
-    results = extract_info_from_file(
-        file_path=single_doc_path,
+    # Create InfoExtractor using keyword arguments (no config)
+    direct_extractor = InfoExtractor(
         output_schema=output_schema,
-        system_prompt=direct_system_prompt,
         llm_api=llm_api,
+        system_prompt=direct_system_prompt,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         doc_processor=direct_doc_processor,
         document_output_type=document_output_type
     )
+
+    # --- Process single file ---
+    single_doc_path = os.path.join(document_input_dir, "lstm_low_flow.pdf")
+    doc = direct_extractor.doc_processor.process_file(single_doc_path)
+    results = direct_extractor.process_document(doc)
     print(f"[DIRECT] Single-file direct results (first result): {results[0] if results else None}")
+    output_path = os.path.join(document_output_dir, "lstm_low_flow_extracted.json")
+    direct_extractor.save_results(results, output_path)
+    
     # --- Directory mode (loop) ---
-    output_dir2 = r"c:/Users/deng_jg/work/16centralized_agents/test_data/output_noconfig_explicit"
-    os.makedirs(output_dir2, exist_ok=True)
-    file_list = glob(os.path.join(document_input_dir, "*.pdf"))
-    for fpath in file_list:
-        results = extract_info_from_file(
-            file_path=fpath,
-            output_schema=output_schema,
-            system_prompt=direct_system_prompt,
-            llm_api=llm_api,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            doc_processor=direct_doc_processor,
-            document_output_type=document_output_type
-        )
-        output_path = os.path.join(output_dir2, f"{Path(fpath).stem}_extracted.json")
-        with open(output_path, "w", encoding="utf-8") as fp:
-            json.dump([r.dict() if hasattr(r, 'dict') else r for r in results], fp, indent=2, ensure_ascii=False)
-        print(f"[DIRECT] Saved results for {fpath} -> {output_path}")
+    direct_extractor.process_all()
+    direct_extractor.save_results(results, output_path)

@@ -31,13 +31,40 @@ class ProcessedDocument:
 class DocumentProcessor:
     """Class for preprocessing documents into text or images"""
     
-    def __init__(self, config: DocumentConfig):
+    def __init__(self, config: Optional[DocumentConfig] = None,
+                 input_dir: Optional[Union[str, Path]] = None,
+                 file_pattern: Optional[str] = None,
+                 output_type: Optional[str] = None,
+                 output_dir: Optional[Union[str, Path]] = None):
         """Initialize document processor
-        
         Args:
-            config: Document processing configuration
+            config: Document processing configuration (DocumentConfig)
+            input_dir: Input directory (overrides config if given)
+            file_pattern: File pattern (overrides config if given)
+            output_type: Processing type (overrides config if given)
+            output_dir: Output directory (overrides config if given)
         """
-        self.config = config
+        if config is not None:
+            self.config = config.copy() if hasattr(config, 'copy') else config
+            # If additional direct args are set, they take precedence over config fields
+            if input_dir is not None:
+                self.config.input_dir = Path(input_dir)
+            if file_pattern is not None:
+                self.config.file_pattern = file_pattern
+            if output_type is not None:
+                self.config.output_type = output_type
+            if output_dir is not None:
+                self.config.output_dir = Path(output_dir) if output_dir else None
+        else:
+            # Construct DocumentConfig from direct args
+            if input_dir is None or file_pattern is None or output_type is None:
+                raise ValueError("When not using a config object, must supply input_dir, file_pattern, and output_type.")
+            self.config = DocumentConfig(
+                input_dir=Path(input_dir),
+                file_pattern=file_pattern,
+                output_type=output_type,
+                output_dir=Path(output_dir) if output_dir is not None else None
+            )
         self.document_loader = DocumentLoader()
 
     def process_to_text(self, file_path: Union[str, Path]) -> ProcessedDocument:
@@ -118,6 +145,7 @@ class DocumentProcessor:
         Returns:
             Single ProcessedDocument for text or list of ProcessedDocument for images
         """
+        file_path = Path(file_path)
         if self.config.output_type == 'text':
             return self.process_to_text(file_path)
         elif self.config.output_type == 'image':
@@ -127,7 +155,10 @@ class DocumentProcessor:
 
     def process_directory(self) -> List[Union[ProcessedDocument, List[ProcessedDocument]]]:
         """Process all matching files in the configured directory"""
-        input_dir = Path(self.config.input_dir)
+        if hasattr(self.config, 'input_dir'):
+            input_dir = Path(self.config.input_dir)
+        else:
+            input_dir = Path('.')
         
         # Find all matching files
         files = list(input_dir.glob(self.config.file_pattern))
