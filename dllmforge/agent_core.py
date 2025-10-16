@@ -5,14 +5,11 @@ This module provides simple, elegant utilities for creating LangGraph agents
 following the pattern established in water_management_agent_simple.py.
 """
 
-import os
 import logging
-from typing import List, Dict, Any, Callable, Literal
+from typing import List, Callable, Literal
 from dotenv import load_dotenv
 
 # LangChain and LangGraph imports
-from langchain_openai import AzureChatOpenAI
-from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import StateGraph, MessagesState, START, END
@@ -25,25 +22,25 @@ logger = logging.getLogger(__name__)
 class SimpleAgent:
     """Simple agent class for LangGraph workflows."""
     
-    def __init__(self, system_message: str = None, temperature: float = 0.1):
+    def __init__(self, system_message: str = None, temperature: float = 0.1, model_provider: str = "azure-openai"):
         """
         Initialize a simple LangGraph agent.
         
         Args:
             system_message: System message for the agent
             temperature: LLM temperature setting
+            model_provider: LLM provider ("azure-openai", "openai", "mistral")
         """
         # Load environment variables
         load_dotenv()
         
-        # Initialize Azure OpenAI
-        self.llm = AzureChatOpenAI(
-            azure_deployment=os.getenv('AZURE_OPENAI_DEPLOYMENT_GPT41'),
-            api_version=os.getenv('AZURE_OPENAI_API_VERSION'),
-            azure_endpoint=os.getenv('AZURE_OPENAI_API_BASE'),
-            api_key=os.getenv('AZURE_OPENAI_API_KEY'),
+        # Initialize LLM using DLLMForge's LangchainAPI
+        from .langchain_api import LangchainAPI
+        llm_api = LangchainAPI(
+            model_provider=model_provider,
             temperature=temperature
         )
+        self.llm = llm_api.llm
         
         # Store system message
         self.system_message = system_message or "You are a helpful AI assistant."
@@ -121,8 +118,8 @@ class SimpleAgent:
             response = llm_with_tools.invoke(messages)
             return {"messages": messages + [response]}
         
-        def should_continue(state: MessagesState) -> Literal["tools", "agent", END]:
-            """Determine if we should continue to tools, back to agent, or end."""
+        def should_continue(state: MessagesState) -> Literal["tools", END]:
+            """Determine if we should continue to tools or end."""
             messages = state["messages"]
             last_message = messages[-1]
             
@@ -130,22 +127,7 @@ class SimpleAgent:
             if self.tools and hasattr(last_message, 'tool_calls') and last_message.tool_calls:
                 return "tools"
             
-            # Check if we need to continue processing after human interaction
-            # Look for workflow continuation signals in recent messages
-            for msg in reversed(messages[-3:]):  # Check last 3 messages
-                if hasattr(msg, 'content') and msg.content:
-                    content = str(msg.content).lower()
-                    # If ask_human was called, we need to wait for human input
-                    if "workflow_paused" in content or "human input requested" in content:
-                        return END  # Stop here and wait for human response
-                    # If workflow is continuing after feedback, go back to agent
-                    elif "workflow_continuing" in content or "feedback received" in content:
-                        return "agent"
-                    # If final approval granted, end the workflow
-                    elif "final_approval_granted" in content or "user is satisfied" in content:
-                        return END
-            
-            # Default: if no special signals, end the workflow
+            # Otherwise, end the workflow
             return END
         
         # Add nodes
@@ -153,21 +135,25 @@ class SimpleAgent:
         if tool_node:
             self.add_node("tools", tool_node)
         
-        # Add edges with proper routing
+        # Add edges with simple routing
         self.add_edge(START, "agent")
         if tool_node:
             # Agent can go to tools or end
             self.add_conditional_edge("agent", should_continue)
-            # Tools always go back to agent for continued processing
+            # Tools go back to agent, then agent ends
             self.add_edge("tools", "agent")
         else:
-            # If no tools, agent can still continue processing
-            self.add_conditional_edge("agent", should_continue)
+            # If no tools, agent goes directly to end
+            self.add_edge("agent", END)
         
         logger.info("Simple workflow created with human interaction support")
     
     def compile(self, checkpointer=None) -> None:
         """Compile the workflow."""
+        # Automatically create simple workflow if not already created
+        if not hasattr(self, 'app') or self.app is None:
+            self.create_simple_workflow()
+        
         if checkpointer:
             self.app = self.workflow.compile(checkpointer=checkpointer)
         else:
@@ -222,18 +208,19 @@ class SimpleAgent:
         print("\nGoodbye! 🤖")
 
 
-def create_basic_agent(system_message: str = None, temperature: float = 0.1) -> SimpleAgent:
+def create_basic_agent(system_message: str = None, temperature: float = 0.1, model_provider: str = "azure-openai") -> SimpleAgent:
     """
     Create a basic agent with standard setup.
     
     Args:
         system_message: System message for the agent
         temperature: LLM temperature
+        model_provider: LLM provider ("azure-openai", "openai", "mistral")
         
     Returns:
         SimpleAgent: Configured agent instance
     """
-    agent = SimpleAgent(system_message, temperature)
+    agent = SimpleAgent(system_message, temperature, model_provider)
     agent.create_simple_workflow()
     agent.compile()
     return agent
