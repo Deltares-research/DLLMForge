@@ -120,6 +120,19 @@ class Retriever:
         )
         return list(results)
 
+    def invoke(self, query_text, top_k=5):
+        query_vectorized = self.get_embeddings(query_text)
+        vector_query = VectorizedQuery(vector=query_vectorized, k_nearest_neighbors=top_k, fields="text_vector")
+        results = self.search_client.search(
+            search_text=
+            None,  # pure vector search, no text search. If you want to do text search, set search_text=query_text.
+            vector_queries=[vector_query],
+            select=["chunk_id", "chunk", "page_number", "file_name"],  # The list of fields to retrieve.
+            top=top_k  # The number of auto-completed terms to retrieve.
+            # This must be a value between 1 and 100. The default is 5.
+        )
+        return list(results)
+
 
 class LLMResponder:
 

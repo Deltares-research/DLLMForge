@@ -184,6 +184,8 @@ class DeltaresOllamaLLM(BaseChatModel):
                 raise ValueError(f"Unexpected response format: {data}")
             # Chat API response format
             content = data.get("message", {}).get("content", "")
+            if content == "":
+                content = data.get("response", "")
             # Return OpenAI-style response format
             return {
                 "choices": [{
