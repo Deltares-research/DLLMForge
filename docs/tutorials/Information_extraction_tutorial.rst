@@ -4,7 +4,7 @@ Information Extraction with LLMs Tutorial
 
 This tutorial demonstrates how to build a complete information extraction (IE) pipeline using Large Language Models (LLMs) from the DLLMForge library. The pipeline uses LLMs to automatically extract structured data from unstructured documents like PDFs, research papers, and technical reports.
 
-For a full end-to-end code example, see the Jupyter notebook: :doc:`information_extration.ipynb`
+For a full end-to-end code example, see the Jupyter notebook: `information_extration.ipynb <../../workflows/information_extration.ipynb>`_
 
 Overview
 ========
