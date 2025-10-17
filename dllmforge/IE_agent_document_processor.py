@@ -169,9 +169,14 @@ class DocumentProcessor:
         for file_path in files:
             try:
                 processed_doc = self.process_file(file_path)
+                if processed_doc is None:
+                    print(f"Warning: process_file returned None for {file_path}")
+                    continue
                 processed_docs.append(processed_doc)
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
 
         return processed_docs
