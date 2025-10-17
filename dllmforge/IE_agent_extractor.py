@@ -245,11 +245,23 @@ class InfoExtractor:
 
     def process_document(self, doc: Union[ProcessedDocument, List[ProcessedDocument]]) -> List[Dict[str, Any]]:
         """Process document and extract information, merging in chunk metadata."""
+        # Handle None documents
+        if doc is None:
+            print("Warning: Received None document, skipping")
+            return []
+        
         # Patch: robustly wrap non-list docs
         if not isinstance(doc, list):
             docs = [doc]
         else:
             docs = doc
+        
+        # Filter out any None documents in the list
+        docs = [d for d in docs if d is not None]
+        if not docs:
+            print("Warning: All documents in list were None, skipping")
+            return []
+        
         # Create chunks for all documents
         chunks = []
         for d in docs:
@@ -280,7 +292,9 @@ class InfoExtractor:
         # Convert Pydantic models to dictionaries
         json_results = []
         for result in results:
-            if hasattr(result, 'model_dump'):  # Pydantic v2
+            if isinstance(result, dict):
+                json_results.append(result)  # Preserve merged dict with metadata
+            elif hasattr(result, 'model_dump'):  # Pydantic v2
                 json_results.append(result.model_dump())
             elif hasattr(result, 'dict'):  # Pydantic v1
                 json_results.append(result.dict())
@@ -292,8 +306,13 @@ class InfoExtractor:
         
         print(f"Results saved to {output_path}")
 
-    def process_all(self) -> None:
-        """Process all documents in configured directory"""
+    def process_all(self, save_individual: bool = False, combined_output_name: str = "all_extracted.json") -> None:
+        """Process all documents in configured directory
+        
+        Args:
+            save_individual: If True, save each document to a separate JSON file (old behavior)
+            combined_output_name: Name of the combined output file (default: "all_extracted.json")
+        """
         # Process documents
         processed_docs = self.doc_processor.process_directory()
         
@@ -301,23 +320,75 @@ class InfoExtractor:
             print("No documents to process")
             return
         
+        # Determine output directory
+        if self.config is not None and hasattr(self.config, 'document'):
+            output_dir = self.config.document.output_dir
+        elif self.doc_processor.config is not None and hasattr(self.doc_processor.config, 'output_dir'):
+            output_dir = self.doc_processor.config.output_dir
+        else:
+            output_dir = Path('.')
+        
+        # Collect all results
+        all_results = []
+        
         # Process each document
         for doc in processed_docs:
             try:
+                # Skip None documents
+                if doc is None:
+                    print("Warning: Skipping None document in batch")
+                    continue
+                
                 results = self.process_document(doc)
                 
-                # Generate output path from source file name
+                # Skip if no results were extracted
+                if not results:
+                    print("Warning: No results extracted from document")
+                    continue
+                
+                # Get source file name for metadata
                 if isinstance(doc, list):
-                    source_file = Path(doc[0].metadata['source_file']).stem
+                    if doc and doc[0] is not None:
+                        source_file = Path(doc[0].metadata['source_file']).stem
+                    else:
+                        print("Warning: Cannot determine source file name for empty/None document list")
+                        continue
                 else:
                     source_file = Path(doc.metadata['source_file']).stem
-                    
-                output_path = Path(self.config.document.output_dir) / f"{source_file}_extracted.json"
-                self.save_results(results, output_path)
+                
+                # Save individual file if requested
+                if save_individual:
+                    output_path = Path(output_dir) / f"{source_file}_extracted.json"
+                    self.save_results(results, output_path)
+                
+                # Add to combined results with document identifier
+                for result in results:
+                    result['_source_document'] = source_file
+                all_results.extend(results)
                 
             except Exception as e:
-                print(f"Error processing document: {e}")
+                # Get document info for better error messages
+                doc_info = "unknown"
+                try:
+                    if isinstance(doc, list) and doc:
+                        doc_info = doc[0].metadata.get('source_file', 'unknown')
+                    elif doc is not None:
+                        doc_info = doc.metadata.get('source_file', 'unknown')
+                except:
+                    pass
+                print(f"Error processing document {doc_info}: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
+        
+        # Save combined results
+        if all_results:
+            combined_output_path = Path(output_dir) / combined_output_name
+            self.save_results(all_results, combined_output_path)
+            print(f"\n✓ Combined results saved to {combined_output_path}")
+            print(f"  Total extractions: {len(all_results)}")
+        else:
+            print("\nNo results to save")
 
 
 if __name__ == "__main__":
