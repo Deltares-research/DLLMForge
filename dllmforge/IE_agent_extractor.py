@@ -244,7 +244,7 @@ class InfoExtractor:
             return self.process_image_chunk(chunk)
 
     def process_document(self, doc: Union[ProcessedDocument, List[ProcessedDocument]]) -> List[Dict[str, Any]]:
-        """Process document and extract information"""
+        """Process document and extract information, merging in chunk metadata."""
         # Patch: robustly wrap non-list docs
         if not isinstance(doc, list):
             docs = [doc]
@@ -259,7 +259,15 @@ class InfoExtractor:
         for chunk in chunks:
             result = self.process_chunk(chunk)
             if result is not None:
-                results.append(result)
+                # Convert Pydantic result to dict if needed, then merge with metadata
+                if hasattr(result, 'model_dump'):
+                    schema_dict = result.model_dump()
+                elif hasattr(result, 'dict'):
+                    schema_dict = result.dict()
+                else:
+                    schema_dict = dict(result) if isinstance(result, dict) else {"value": result}
+                merged = {**schema_dict, "metadata": chunk.metadata}
+                results.append(merged)
         return results
 
     def save_results(self, 
