@@ -34,8 +34,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
-    - name: version_yapf
-      run: yapf --version
     - name: Test with tox
       run: tox
   code_coverage:
