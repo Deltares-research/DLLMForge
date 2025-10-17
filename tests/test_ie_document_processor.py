@@ -3,14 +3,18 @@ from unittest.mock import MagicMock, patch, mock_open
 from dllmforge.IE_agent_document_processor import DocumentProcessor, ProcessedDocument
 import io
 
+
 @pytest.fixture
 def doc_config(tmp_path):
+
     class MockConfig:
         input_dir = tmp_path
         file_pattern = "*.pdf"
         output_type = "text"
         output_dir = tmp_path
+
     return MockConfig()
+
 
 @patch("dllmforge.IE_agent_document_processor.DocumentLoader")
 def test_process_to_text_doc(mock_loader_class, doc_config, tmp_path):
@@ -25,17 +29,24 @@ def test_process_to_text_doc(mock_loader_class, doc_config, tmp_path):
     assert pd.content_type == "text"
     assert "source_file" in pd.metadata
 
+
 @patch("dllmforge.IE_agent_document_processor.Image")
 @patch("dllmforge.IE_agent_document_processor.fitz.open")
 def test_process_to_image_pdf(mock_fitz_open, mock_Image, doc_config, tmp_path):
     doc_config.output_type = "image"
     # Setup fake fitz+PIL chain
     fake_page = MagicMock()
-    fake_pix = MagicMock(width=1, height=1, samples=b"\xff"*3, get_pixmap=MagicMock(return_value=MagicMock(width=1, height=1, samples=b'\x00'*3)))
+    fake_pix = MagicMock(width=1,
+                         height=1,
+                         samples=b"\xff" * 3,
+                         get_pixmap=MagicMock(return_value=MagicMock(width=1, height=1, samples=b'\x00' * 3)))
     fake_page.get_pixmap.return_value = fake_pix
+
     class FakeFitzDoc(list):
+
         def close(self):
             pass
+
     fake_fitzdoc = FakeFitzDoc([fake_page])
     mock_fitz_open.return_value = fake_fitzdoc
     mock_img = MagicMock()
@@ -49,6 +60,7 @@ def test_process_to_image_pdf(mock_fitz_open, mock_Image, doc_config, tmp_path):
     out = proc.process_to_image(str(path))
     assert out[0].content_type == "image"
     assert isinstance(out[0].content, bytes) or hasattr(out[0].content, "__class__")
+
 
 @patch("dllmforge.IE_agent_document_processor.DocumentLoader")
 def test_process_file_branching(mock_loader_class, doc_config, tmp_path):
@@ -67,6 +79,7 @@ def test_process_file_branching(mock_loader_class, doc_config, tmp_path):
         out2 = proc.process_file(path)
         assert isinstance(out2, list)
 
+
 @patch("dllmforge.IE_agent_document_processor.DocumentLoader")
 def test_process_directory_glob(mock_loader_class, doc_config, tmp_path):
     mock_loader = MagicMock()
@@ -83,6 +96,7 @@ def test_process_directory_glob(mock_loader_class, doc_config, tmp_path):
     assert len(results) == 2
     assert all(r.content == "stuff" for r in results)
 
+
 @patch("dllmforge.IE_agent_document_processor.DocumentLoader")
 def test_process_directory_no_files(mock_loader_class, doc_config, tmp_path):
     mock_loader_class.return_value = MagicMock()
@@ -90,6 +104,7 @@ def test_process_directory_no_files(mock_loader_class, doc_config, tmp_path):
     # No pdfs present
     results = proc.process_directory()
     assert results == []
+
 
 @patch("dllmforge.IE_agent_document_processor.DocumentLoader")
 def test_process_to_text_error_handling(mock_loader_class, doc_config, tmp_path):

@@ -2,14 +2,18 @@ import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from dllmforge.IE_agent_schema_generator import SchemaGenerator
 
+
 @pytest.fixture
 def schema_config(tmp_path):
+
     class DummyConfig:
         task_description = "Extract widgets."
         example_doc = "foo.pdf"
         user_schema_path = tmp_path / "user.py"
         output_path = tmp_path / "file.py"
+
     return DummyConfig()
+
 
 @patch("dllmforge.IE_agent_schema_generator.LangchainAPI")
 def test_schema_generator_init(mock_lc, schema_config):
@@ -17,6 +21,7 @@ def test_schema_generator_init(mock_lc, schema_config):
     assert s.config == schema_config
     assert s.llm_api is not None
     assert hasattr(s, "output_parser")
+
 
 @patch("dllmforge.IE_agent_schema_generator.LangchainAPI")
 def test_generate_schema_user_schema(mock_lc, schema_config):
@@ -26,6 +31,7 @@ def test_generate_schema_user_schema(mock_lc, schema_config):
         g = SchemaGenerator(schema_config, llm_api=MagicMock())
         out = g.generate_schema()
         assert out == schema_code
+
 
 @patch("dllmforge.IE_agent_schema_generator.LangchainAPI")
 def test_generate_schema_fallback_to_llm(mock_lc, schema_config):
@@ -48,6 +54,7 @@ def test_generate_schema_fallback_to_llm(mock_lc, schema_config):
         out = g.generate_schema()
         assert "class Foo" in out
 
+
 @patch("dllmforge.IE_agent_schema_generator.DocumentLoader")
 def test_load_example_doc_file(mock_doc_loader, schema_config, tmp_path):
     # Simulate .pdf exists, loader works
@@ -59,6 +66,7 @@ def test_load_example_doc_file(mock_doc_loader, schema_config, tmp_path):
     result = g._load_example_doc()
     assert result == "some text"
 
+
 @patch("builtins.open", new_callable=mock_open)
 def test_save_schema_opens_and_writes(mock_file, schema_config):
     g = SchemaGenerator(schema_config, llm_api=MagicMock())
@@ -69,12 +77,14 @@ def test_save_schema_opens_and_writes(mock_file, schema_config):
     handle = mock_file()
     handle.write.assert_called()
 
+
 def test__load_user_schema_reads(schema_config, tmp_path):
     g = SchemaGenerator(schema_config, llm_api=MagicMock())
     p = tmp_path / "abc.py"
     p.write_text("class Foo: ...")
     out = g._load_user_schema(p)
     assert out == "class Foo: ..."
+
 
 @patch("builtins.open", new_callable=mock_open)
 def test__load_user_schema_file_missing(mock_file, schema_config, tmp_path):
