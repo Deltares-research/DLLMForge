@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Union, Optional
 import importlib.util
 
+
 class DocumentLoader:
     """Class for loading and extracting text from various document formats"""
-    
+
     def __init__(self):
         """Initialize document loader and check available handlers"""
         self.handlers = {
@@ -19,7 +20,7 @@ class DocumentLoader:
             '.xls': self._extract_from_excel if self._check_excel_support() else None,
             '.csv': self._extract_from_csv if self._check_csv_support() else None
         }
-        
+
         # Print available handlers
         available = [ext for ext, handler in self.handlers.items() if handler is not None]
         print(f"Document loader initialized with support for: {', '.join(available)}")
@@ -27,9 +28,8 @@ class DocumentLoader:
     @staticmethod
     def _check_pdf_support() -> bool:
         """Check if PDF support is available"""
-        return (importlib.util.find_spec('PyPDF2') is not None and 
-                importlib.util.find_spec('pdf2image') is not None and
-                importlib.util.find_spec('pytesseract') is not None)
+        return (importlib.util.find_spec('PyPDF2') is not None and importlib.util.find_spec('pdf2image') is not None
+                and importlib.util.find_spec('pytesseract') is not None)
 
     @staticmethod
     def _check_docx_support() -> bool:
@@ -60,17 +60,15 @@ class DocumentLoader:
         """
         file_path = Path(file_path)
         suffix = file_path.suffix.lower()
-        
+
         handler = self.handlers.get(suffix)
         if handler is None:
             if suffix in self.handlers:
-                raise ValueError(
-                    f"Required packages for {suffix} files are not installed. "
-                    f"Please install the necessary packages."
-                )
+                raise ValueError(f"Required packages for {suffix} files are not installed. "
+                                 f"Please install the necessary packages.")
             else:
                 raise ValueError(f"Unsupported file format: {suffix}")
-        
+
         return handler(file_path)
 
     def _extract_from_pdf(self, file_path: Path) -> str:
@@ -78,33 +76,33 @@ class DocumentLoader:
         from PyPDF2 import PdfReader
         from pdf2image import convert_from_path
         import pytesseract
-        
+
         # First try direct PDF text extraction
         pdf = PdfReader(str(file_path))
         text = ""
         for page in pdf.pages:
             text += page.extract_text()
-        
+
         # If no text was extracted, use OCR
         if not text.strip():
             images = convert_from_path(str(file_path))
             text = ""
             for image in images:
                 text += pytesseract.image_to_string(image)
-        
+
         return text
 
     def _extract_from_word(self, file_path: Path) -> str:
         """Extract text from Word documents"""
         from docx import Document
-        
+
         doc = Document(str(file_path))
         text = []
-        
+
         # Extract text from paragraphs
         for paragraph in doc.paragraphs:
             text.append(paragraph.text)
-        
+
         # Extract text from tables
         for table in doc.tables:
             for row in table.rows:
@@ -112,7 +110,7 @@ class DocumentLoader:
                 for cell in row.cells:
                     row_text.append(cell.text.strip())
                 text.append(" | ".join(row_text))
-        
+
         return "\n".join(text)
 
     def _extract_from_excel(self, file_path: Path) -> str:

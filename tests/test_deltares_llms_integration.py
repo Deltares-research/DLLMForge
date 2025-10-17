@@ -111,7 +111,7 @@ class TestDeltaresOllamaLLMIntegration:
         llm = DeltaresOllamaLLM(base_url="https://chat-api.directory.intra", model_name="llava-phi3:latest")
 
         # Load and encode image as base64
-        image_path = "tests/test_input/cat.jpg"  # Replace with actual image path
+        image_path = "tests/test_input/clipped_image.png"  # Replace with actual image path
         with open(image_path, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
 
@@ -121,7 +121,7 @@ class TestDeltaresOllamaLLMIntegration:
             "images": [image_base64]  # Move the image data to the images field
         }]
 
-        result = llm.chat_completion(messages, temperature=0.7, max_tokens=500)
+        result = llm.chat_completion(messages, temperature=0.7, max_tokens=1000)
         assert result['model'] == "llava-phi3:latest"
         assert 'choices' in result
         assert len(result['choices']) > 0

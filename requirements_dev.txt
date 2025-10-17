@@ -32,3 +32,5 @@ llama-index-llms-mistralai
 streamlit
 python-dotenv
 langgraph
+PyPDF2
+PyMuPDF
