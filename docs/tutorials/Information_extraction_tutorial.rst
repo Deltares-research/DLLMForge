@@ -2,7 +2,9 @@
 Information Extraction with LLMs Tutorial
 =========================================
 
-This tutorial demonstrates how to build a complete information extraction (IE) pipeline using Large Language Models (LLMs) from the DLLMForge library. The pipeline uses LLMs to automatically extract structured data from unstructured documents like PDFs, research papers, and technical reports. You could think of several use cases like extracting experimental parameters from research papers, pulling technical specifications from engineering documents, gathering statistical data from reports, extracting structured information from forms and invoices, or collecting metadata from scientific publications.
+This tutorial demonstrates how to build a complete information extraction (IE) pipeline using Large Language Models (LLMs) from the DLLMForge library. The pipeline uses LLMs to automatically extract structured data from unstructured documents like PDFs, research papers, and technical reports.
+
+For a full end-to-end code example, see the Jupyter notebook: :doc:`information_extration.ipynb`
 
 Overview
 ========
@@ -98,7 +100,7 @@ If you use this approach, skip to step 3 (Understanding Document Processing).
 
 Let the LLM automatically generate a schema based on your task description. This is useful when you're not sure about the exact structure or want to explore what fields to extract.
 
-In this example, we'll use the LLM to generate a schema for extracting machine learning model hyperparameters from research papers. First, define your task description and set up the schema generator:
+In this example, we'll use the LLM to generate a schema for extracting machine learning model hyperparameters from research papers:
 
 .. code-block:: python
 
@@ -115,7 +117,7 @@ In this example, we'll use the LLM to generate a schema for extracting machine l
     schema_dir.mkdir(exist_ok=True)
     schema_file = schema_dir / "model_hyperparameters.py"
     
-    # Create schema generator with direct arguments
+    # Create schema generator with direct arguments (no config object needed)
     schema_generator = SchemaGenerator(
         task_description=schema_task_description,
         output_path=str(schema_file)
@@ -189,7 +191,7 @@ You can improve schema generation by providing an example document. The LLM will
     Training ran for 50 epochs using the Adam optimizer.
     """
     
-    # Create schema generator with example document
+    # Create schema generator with example document (no config object needed)
     schema_generator = SchemaGenerator(
         task_description="Extract model hyperparameters from this paper",
         example_doc=example_text,  # Can also be a file path to PDF
@@ -215,7 +217,7 @@ The ``DocumentProcessor`` can convert documents in two ways:
 
 **Configuring Document Processing**
 
-You configure the ``DocumentProcessor`` by specifying:
+You configure the ``DocumentProcessor`` by passing parameters directly (no config object needed):
 
 .. code-block:: python
 
@@ -223,7 +225,7 @@ You configure the ``DocumentProcessor`` by specifying:
     document_input_dir = r"path/to/your/documents"
     document_output_dir = r"path/to/output"
     
-    # Configure document processor for text or image extraction
+    # Configure document processor for text or image extraction (direct arguments)
     doc_processor = DocumentProcessor(
         input_dir=document_input_dir,
         file_pattern="*.pdf",              # Pattern to match files
@@ -439,7 +441,7 @@ In most cases, you'll let ``InfoExtractor`` handle document processing automatic
     from dllmforge.IE_agent_document_processor import DocumentProcessor
     from pathlib import Path
     
-    # Create document processor
+    # Create document processor (direct arguments, no config object needed)
     doc_processor = DocumentProcessor(
         input_dir=document_input_dir,
         file_pattern="*.pdf",
@@ -485,7 +487,7 @@ For documents with complex layouts, you can process to images manually:
 
 .. code-block:: python
 
-    # Create image processor
+    # Create image processor (direct arguments, no config object needed)
     image_processor = DocumentProcessor(
         input_dir=document_input_dir,
         file_pattern="*.pdf",
@@ -577,7 +579,7 @@ Provide example documents to help the LLM understand the data structure:
     # Load an example document
     example_pdf_path = Path("examples/sample_paper.pdf")
     
-    # Create schema generator with example PDF
+    # Create schema generator with example PDF (direct arguments, no config object needed)
     schema_generator = SchemaGenerator(
         task_description="Extract model hyperparameters from ML research papers",
         example_doc=str(example_pdf_path),  # Provide example PDF
@@ -617,7 +619,7 @@ Best for documents with linear text structure:
 
 .. code-block:: python
 
-    # Step 3: Configure for text extraction
+    # Step 3: Configure for text extraction (direct arguments, no config object needed)
     text_processor = DocumentProcessor(
         input_dir="documents/research_papers",
         file_pattern="*.pdf",
@@ -655,7 +657,7 @@ Best for documents with complex visual elements:
 
 .. code-block:: python
 
-    # Step 3: Configure for image extraction
+    # Step 3: Configure for image extraction (direct arguments, no config object needed)
     image_processor = DocumentProcessor(
         input_dir="documents/forms_and_tables",
         file_pattern="*.pdf",
@@ -715,218 +717,3 @@ For challenging documents, you can try text extraction first and fall back to im
     else:
         final_results = text_results
 
-Complete Example: Research Paper Extraction
-============================================
-
-Here's a full end-to-end example extracting model hyperparameters from machine learning research papers:
-
-.. code-block:: python
-
-    from dllmforge.IE_agent_schema_generator import SchemaGenerator
-    from dllmforge.IE_agent_document_processor import DocumentProcessor
-    from dllmforge.IE_agent_extractor import InfoExtractor
-    from dllmforge.langchain_api import LangchainAPI
-    from pathlib import Path
-    import importlib.util
-    import re
-    import json
-    
-    # ========== 1. GENERATE SCHEMA ==========
-    print("Step 1: Generating extraction schema...")
-    
-    schema_task_description = (
-        "Generate a Pydantic schema class named ModelHyperparameters to extract "
-        "machine learning model hyperparameters from research papers. "
-        "Extract: model architecture (type, layers, neurons), "
-        "training parameters (learning rate, batch size, epochs), "
-        "optimization settings (optimizer, loss function), "
-        "and regularization techniques (dropout, weight decay)."
-    )
-    
-    schema_dir = Path("generated_schemas")
-    schema_dir.mkdir(exist_ok=True)
-    schema_file = schema_dir / "model_hyperparameters.py"
-    
-    # Create schema generator with direct arguments
-    schema_generator = SchemaGenerator(
-        task_description=schema_task_description,
-        output_path=str(schema_file)
-    )
-    
-    schema_code = schema_generator.generate_schema()
-    schema_generator.save_schema(schema_code)
-    
-    # Load the schema class
-    class_matches = re.finditer(r"class\s+(\w+)\s*\(", schema_code)
-    class_names = [match.group(1) for match in class_matches]
-    schema_class_name = class_names[-1]
-    
-    spec = importlib.util.spec_from_file_location("model_hyperparameters", schema_file)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    SchemaClass = getattr(module, schema_class_name)
-    
-    print(f"✓ Schema generated and loaded: {schema_class_name}")
-    
-    # ========== 2. DEFINE PATHS ==========
-    print("\nStep 2: Defining paths...")
-    
-    document_input_dir = r"path/to/research/papers"
-    document_output_dir = r"path/to/output"
-    
-    print(f"✓ Paths configured")
-    
-    # ========== 3. CONFIGURE DOCUMENT PROCESSOR ==========
-    print("\nStep 3: Configuring document processor...")
-    
-    doc_processor = DocumentProcessor(
-        input_dir=document_input_dir,
-        file_pattern="*.pdf",
-        output_type="text",              # Choose "text" or "image"
-        output_dir=document_output_dir
-    )
-    
-    print(f"✓ Document processor configured (will be used by InfoExtractor)")
-    
-    # ========== 4. INITIALIZE LLM ==========
-    print("\nStep 4: Initializing LLM...")
-    
-    llm_api = LangchainAPI(
-        model_provider="azure-openai",
-        temperature=0.1
-    )
-    
-    print(f"✓ LLM initialized: {llm_api.model_provider}")
-    
-    # ========== 5. CREATE EXTRACTOR ==========
-    print("\nStep 5: Creating information extractor...")
-    
-    system_prompt = """Extract machine learning model hyperparameters from the research paper.
-    Only extract explicitly stated values. Use None for fields not found.
-    Be precise with numeric values and units."""
-    
-    # InfoExtractor will use doc_processor internally for document processing
-    extractor = InfoExtractor(
-        output_schema=SchemaClass,
-        llm_api=llm_api,
-        system_prompt=system_prompt,
-        chunk_size=80000,
-        chunk_overlap=10000,
-        doc_processor=doc_processor,     # Handles document processing automatically
-        document_output_type="text"
-    )
-    
-    print(f"✓ Extractor ready (includes document processing)")
-    
-    # ========== 6. EXTRACT FROM SINGLE DOCUMENT ==========
-    print("\nStep 6: Extracting from single document...")
-    
-    single_doc_path = Path(document_input_dir) / "lstm_rainfall_runoff.pdf"
-    
-    if single_doc_path.exists():
-        # InfoExtractor handles both document processing and extraction
-        doc = extractor.doc_processor.process_file(single_doc_path)  # Converts to text
-        results = extractor.process_document(doc)                     # Extracts data
-        
-        print(f"✓ Extracted {len(results)} result(s)")
-        print("\nExtracted Data:")
-        print(json.dumps(results[0], indent=2))
-        
-        # Save results
-        output_path = Path(document_output_dir) / "lstm_extracted.json"
-        extractor.save_results(results, output_path)
-        print(f"\n✓ Results saved to {output_path}")
-    
-    # ========== 7. BATCH PROCESS ALL DOCUMENTS ==========
-    print("\nStep 7: Batch processing all documents...")
-    
-    # process_all() handles both document processing and extraction for all files
-    extractor.process_all()
-    
-    print(f"\n✓ All documents processed and extracted!")
-    print(f"Check output directory: {document_output_dir}")
-    
-    # ========== 8. AGGREGATE RESULTS ==========
-    print("\nStep 8: Aggregating results...")
-    
-    import pandas as pd
-    
-    # Collect all JSON results
-    result_files = list(Path(document_output_dir).glob("*_extracted.json"))
-    all_results = []
-    
-    for result_file in result_files:
-        with open(result_file, 'r') as f:
-            data = json.load(f)
-            all_results.extend(data)
-    
-    # Create DataFrame
-    df = pd.DataFrame(all_results)
-    
-    # Save to CSV
-    csv_path = Path(document_output_dir) / "all_hyperparameters.csv"
-    df.to_csv(csv_path, index=False)
-    
-    print(f"✓ Aggregated results saved to {csv_path}")
-    print(f"\nSummary Statistics:")
-    print(df.describe())
-    print(f"\nExtracted from {len(result_files)} documents")
-    print(f"Total records: {len(all_results)}")
-
-**Sample Output:**
-
-.. code-block:: text
-
-    Step 1: Generating extraction schema...
-    ✓ Schema generated and loaded: ModelHyperparameters
-    
-    Step 2: Defining paths...
-    ✓ Paths configured
-    
-    Step 3: Configuring document processor...
-    ✓ Document processor configured (will be used by InfoExtractor)
-    
-    Step 4: Initializing LLM...
-    ✓ LLM initialized: azure-openai
-    
-    Step 5: Creating information extractor...
-    ✓ Extractor ready (includes document processing)
-    
-    Step 6: Extracting from single document...
-    ✓ Extracted 1 result(s)
-    
-    Extracted Data:
-    {
-      "model_type": "LSTM",
-      "num_layers": 1,
-      "hidden_units": 256,
-      "learning_rate": 0.001,
-      "batch_size": 256,
-      "epochs": 100,
-      "optimizer": "Adam",
-      "loss_function": "MSE",
-      "dropout_rate": 0.4
-    }
-    
-    ✓ Results saved to path/to/output/lstm_extracted.json
-    
-    Step 7: Batch processing all documents...
-    Found 15 files to process
-    Processing: lstm_rainfall_runoff.pdf
-    Processing: cnn_image_classification.pdf
-    ...
-    ✓ All documents processed and extracted!
-    
-    Step 8: Aggregating results...
-    ✓ Aggregated results saved to path/to/output/all_hyperparameters.csv
-    
-    Summary Statistics:
-           num_layers  hidden_units  learning_rate  batch_size    epochs
-    count        15.0          15.0           15.0        15.0      15.0
-    mean          2.4         178.7         0.0023        48.3      87.5
-    std           1.1          89.2         0.0015        29.8      38.2
-    min           1.0          32.0         0.0001         8.0      20.0
-    max           5.0         512.0         0.0100       128.0     200.0
-    
-    Extracted from 15 documents
-    Total records: 15
