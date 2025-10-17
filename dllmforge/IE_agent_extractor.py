@@ -70,11 +70,6 @@ class InfoExtractor:
                     input_dir=Path('.'), file_pattern="*.pdf", output_type=document_output_type
                 ))
 
-    @classmethod
-    def from_params(cls, *, output_schema, llm_api=None, system_prompt=None, chunk_size=None, chunk_overlap=None, doc_processor=None, document_output_type='text'):
-        """Alternate constructor for direct use without config objects"""
-        return cls(config=None, output_schema=output_schema, llm_api=llm_api, system_prompt=system_prompt, chunk_size=chunk_size, chunk_overlap=chunk_overlap, doc_processor=doc_processor, document_output_type=document_output_type)
-
     def refine_system_prompt(self, task_description: str) -> str:
         """Use LLM to refine user's task description into a proper system prompt"""
         system_template = """You are an expert at creating clear and effective system prompts for LLMs.
@@ -328,6 +323,7 @@ if __name__ == "__main__":
     from dllmforge.langchain_api import LangchainAPI
     from glob import glob
     import json
+    import re
 
     # 1. PREPARE SCHEMA (always required)
     current_dir = Path(__file__).parent
@@ -348,7 +344,6 @@ if __name__ == "__main__":
     )
     schema_generator = SchemaGenerator(schema_config)
     schema_code = schema_generator.generate_schema()
-    import re
     class_matches = re.finditer(r"class\s+(\w+)\s*\(", schema_code)
     class_names = [match.group(1) for match in class_matches]
     if not class_names:

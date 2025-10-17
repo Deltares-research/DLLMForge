@@ -39,16 +39,70 @@ class PythonCodeOutputParser(BaseOutputParser[str]):
         return "Wrap your Python code in ```python ... ``` markdown blocks."
 
 class SchemaGenerator:
-    """Class for generating Pydantic schemas using LLM"""
+    """Class for generating Pydantic schemas using LLM
     
-    def __init__(self, config: SchemaConfig, llm_api: Optional[LangchainAPI] = None):
-        """Initialize the schema generator
+    This class supports two usage modes:
+    
+    1. CONFIG MODE: Pass a SchemaConfig object
+       ```python
+       config = SchemaConfig(
+           task_description="Extract person info",
+           output_path="schema.py"
+       )
+       generator = SchemaGenerator(config=config)
+       ```
+    
+    2. DIRECT MODE: Pass arguments directly (no config object)
+       ```python
+       generator = SchemaGenerator(
+           task_description="Extract person info",
+           output_path="schema.py"
+       )
+       ```
+    
+    Both modes support all parameters:
+    - task_description (REQUIRED in direct mode)
+    - example_doc (optional: text or file path)
+    - user_schema_path (optional: load existing schema)
+    - output_path (optional: where to save generated schema)
+    - llm_api (optional: custom LLM configuration)
+    """
+    
+    def __init__(self, 
+                 config: Optional[SchemaConfig] = None,
+                 llm_api: Optional[LangchainAPI] = None,
+                 # Plain-argument mode:
+                 task_description: Optional[str] = None,
+                 example_doc: Optional[str] = None,
+                 user_schema_path: Optional[Path] = None,
+                 output_path: Optional[Union[str, Path]] = None):
+        """Initialize the schema generator.
+        
+        You can use either `config` (SchemaConfig), or pass the individual parameters directly.
         
         Args:
-            config: Schema generation configuration
+            config: Schema generation configuration (if provided, individual params are ignored)
             llm_api: Optional pre-configured LangchainAPI instance
+            task_description: Description of the information extraction task (direct mode)
+            example_doc: Example document to help with schema generation (direct mode)
+            user_schema_path: Path to user-provided schema Python file (direct mode)
+            output_path: Path to save generated schema (direct mode)
         """
-        self.config = config
+        if config:
+            self.config = config
+            self.task_description = config.task_description
+            self.example_doc = config.example_doc
+            self.user_schema_path = config.user_schema_path
+            self.output_path = config.output_path
+        else:
+            if task_description is None:
+                raise ValueError('task_description is required if config is not given')
+            self.config = None
+            self.task_description = task_description
+            self.example_doc = example_doc
+            self.user_schema_path = user_schema_path
+            self.output_path = output_path
+        
         self.llm_api = llm_api or LangchainAPI()
         self.document_loader = DocumentLoader()
         self.setup_parser()
@@ -59,18 +113,18 @@ class SchemaGenerator:
 
     def _load_example_doc(self) -> Optional[str]:
         """Load and convert example document to text if provided as a file path"""
-        if not self.config.example_doc:
+        if not self.example_doc:
             print("No example document provided")
             return None
             
         # If example_doc is already a string of text, return it
-        if not any(self.config.example_doc.endswith(ext) for ext in ['.pdf', '.docx', '.xlsx', '.csv']):
+        if not any(self.example_doc.endswith(ext) for ext in ['.pdf', '.docx', '.xlsx', '.csv']):
             print("Example document is already a string of text")
-            return self.config.example_doc
+            return self.example_doc
             
         try:
             # If it's a file path, try to load and convert to text
-            example_path = Path(self.config.example_doc)
+            example_path = Path(self.example_doc)
             if example_path.exists():
                 print(f"Loading example document from {example_path}")
                 return self.document_loader.load_document(example_path)
@@ -130,10 +184,10 @@ class SchemaGenerator:
     def generate_schema(self) -> str:
         """Generate Pydantic schema based on task description and optional example document"""
         # If user provided a schema file, load and return it
-        if self.config.user_schema_path:
-            schema_code = self._load_user_schema(self.config.user_schema_path)
+        if self.user_schema_path:
+            schema_code = self._load_user_schema(self.user_schema_path)
             if schema_code:
-                print(f"Loaded user schema from {self.config.user_schema_path}")
+                print(f"Loaded user schema from {self.user_schema_path}")
                 return schema_code
             # If loading fails, fall back to generation
             print("Failed to load user schema, falling back to generation")
@@ -145,7 +199,7 @@ class SchemaGenerator:
         prompt = self.create_schema_generation_prompt()
         format_instructions = self.output_parser.get_format_instructions()
         messages = prompt.format_messages(
-            task_description=self.config.task_description,
+            task_description=self.task_description,
             example_doc=example_doc_text if example_doc_text else "No example provided",
             format_instructions=format_instructions
         )
@@ -160,10 +214,10 @@ class SchemaGenerator:
 
     def save_schema(self, schema_code: str) -> None:
         """Save generated schema to a Python file"""
-        if not self.config.output_path:
+        if not self.output_path:
             return
             
-        output_path = Path(self.config.output_path)
+        output_path = Path(self.output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Add imports and any necessary wrapper code
@@ -179,8 +233,15 @@ Generated Pydantic schema for information extraction
 
 
 if __name__ == "__main__":
-    # Example 1: Generate schema from task description only
+    print("=" * 80)
+    print("SCHEMA GENERATOR EXAMPLES: Config-based vs Direct Arguments")
+    print("=" * 80)
+    
+    # Example 1: Generate schema from task description only (CONFIG MODE)
     #-----------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 1: CONFIG MODE - Schema from task description only")
+    print("="*80)
     config_simple = SchemaConfig(
         task_description="""
         Extract flood event information from reports. We need to capture:
@@ -196,12 +257,38 @@ if __name__ == "__main__":
     generator_simple = SchemaGenerator(config_simple)
     schema_code = generator_simple.generate_schema()
     generator_simple.save_schema(schema_code)
-    print("\nExample 1: Schema generated from task description")
+    print("\nGenerated Schema:")
     print("-" * 50)
     print(schema_code)
     
-    # Example 2: Generate schema with example document as text
+    # Example 2: DIRECT MODE - Generate schema from task description only
+    #-----------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 2: DIRECT MODE - Schema from task description only")
+    print("="*80)
+    generator_direct = SchemaGenerator(
+        task_description="""
+        Extract flood event information from reports. We need to capture:
+        1. Event dates (start and end)
+        2. Location details
+        3. Rainfall measurements
+        4. Damage assessment
+        5. Response actions taken
+        """,
+        output_path="generated_flood_schema_direct.py"
+    )
+    
+    schema_code = generator_direct.generate_schema()
+    generator_direct.save_schema(schema_code)
+    print("\nGenerated Schema:")
+    print("-" * 50)
+    print(schema_code)
+    
+    # Example 3: CONFIG MODE - Generate schema with example document as text
     #------------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 3: CONFIG MODE - Schema with example document as text")
+    print("="*80)
     config_with_example = SchemaConfig(
         task_description="Extract technical specifications from engineering reports",
         example_doc="""
@@ -230,12 +317,51 @@ if __name__ == "__main__":
     generator_with_example = SchemaGenerator(config_with_example)
     schema_code = generator_with_example.generate_schema()
     generator_with_example.save_schema(schema_code)
-    print("\nExample 2: Schema generated with example text")
+    print("\nGenerated Schema:")
     print("-" * 50)
     print(schema_code)
     
-    # Example 3: Generate schema from PDF example
+    # Example 4: DIRECT MODE - Generate schema with example document as text
+    #------------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 4: DIRECT MODE - Schema with example document as text")
+    print("="*80)
+    generator_with_example_direct = SchemaGenerator(
+        task_description="Extract technical specifications from engineering reports",
+        example_doc="""
+        Technical Report: Bridge Assessment
+        Date: 2024-02-15
+        Author: John Smith
+        
+        Structural Parameters:
+        - Load capacity: 200 tons
+        - Span length: 150 meters
+        - Material: Reinforced concrete
+        
+        Safety Assessment:
+        1. Current condition: Good
+        2. Maintenance needed: Minor repairs
+        3. Weight restrictions: None
+        
+        Recommendations:
+        - Schedule routine inspection
+        - Update load monitoring system
+        - Replace worn expansion joints
+        """,
+        output_path="generated_technical_schema_direct.py"
+    )
+    
+    schema_code = generator_with_example_direct.generate_schema()
+    generator_with_example_direct.save_schema(schema_code)
+    print("\nGenerated Schema:")
+    print("-" * 50)
+    print(schema_code)
+    
+    # Example 5: CONFIG MODE - Generate schema from PDF example
     #-----------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 5: CONFIG MODE - Schema from PDF example")
+    print("="*80)
     try:
         config_from_pdf = SchemaConfig(
             task_description="Extract rainfall event information from the following document",
@@ -246,25 +372,72 @@ if __name__ == "__main__":
         generator_from_pdf = SchemaGenerator(config_from_pdf)
         schema_code = generator_from_pdf.generate_schema()
         generator_from_pdf.save_schema(schema_code)
-        print("\nExample 3: Schema generated from PDF example")
+        print("\nGenerated Schema:")
         print("-" * 50)
         print(schema_code)
     except Exception as e:
-        print(f"\nExample 3 failed: {e}")
+        print(f"\nExample 5 failed (PDF not found or other error): {e}")
     
-    # Example 4: Use pre-defined schema
+    # Example 6: DIRECT MODE - With custom LLM API settings
     #-----------------------------------------------------------------------------------------
-    predefined_schema = r'c:\Users\deng_jg\work\16centralized_agents\DLLMForge\dllmforge\weather_schema.py'
+    print("\n" + "="*80)
+    print("Example 6: DIRECT MODE - With custom LLM API settings")
+    print("="*80)
+    from dllmforge.langchain_api import LangchainAPI
     
-    config_predefined = SchemaConfig(
-        task_description="Extract weather event information",
-        user_schema_path=Path(predefined_schema),
-        output_path="weather_schema_from_file.py"
+    custom_llm = LangchainAPI(model_provider="azure-openai", temperature=0.1)
+    generator_custom_llm = SchemaGenerator(
+        task_description="Extract weather event information including date, location, temperature, and precipitation",
+        output_path="generated_weather_schema_custom_llm.py",
+        llm_api=custom_llm
     )
     
-    generator_predefined = SchemaGenerator(config_predefined)
-    schema_code = generator_predefined.generate_schema()
-    generator_predefined.save_schema(schema_code)
-    print("\nExample 4: Using pre-defined schema")
+    schema_code = generator_custom_llm.generate_schema()
+    generator_custom_llm.save_schema(schema_code)
+    print("\nGenerated Schema:")
     print("-" * 50)
     print(schema_code)
+    
+    # Example 7: CONFIG MODE - Use pre-defined schema
+    #-----------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 7: CONFIG MODE - Using pre-defined schema file")
+    print("="*80)
+    predefined_schema = r'c:\Users\deng_jg\work\16centralized_agents\DLLMForge\dllmforge\weather_schema.py'
+    
+    try:
+        config_predefined = SchemaConfig(
+            task_description="Extract weather event information",
+            user_schema_path=Path(predefined_schema),
+            output_path="weather_schema_from_file.py"
+        )
+        
+        generator_predefined = SchemaGenerator(config_predefined)
+        schema_code = generator_predefined.generate_schema()
+        generator_predefined.save_schema(schema_code)
+        print("\nLoaded Schema:")
+        print("-" * 50)
+        print(schema_code)
+    except Exception as e:
+        print(f"\nExample 7 failed (schema file not found): {e}")
+    
+    # Example 8: DIRECT MODE - Use pre-defined schema
+    #-----------------------------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("Example 8: DIRECT MODE - Using pre-defined schema file")
+    print("="*80)
+    
+    try:
+        generator_predefined_direct = SchemaGenerator(
+            task_description="Extract weather event information",
+            user_schema_path=Path(predefined_schema),
+            output_path="weather_schema_from_file_direct.py"
+        )
+        
+        schema_code = generator_predefined_direct.generate_schema()
+        generator_predefined_direct.save_schema(schema_code)
+        print("\nLoaded Schema:")
+        print("-" * 50)
+        print(schema_code)
+    except Exception as e:
+        print(f"\nExample 8 failed (schema file not found): {e}")
