@@ -10,13 +10,33 @@ from typing import List, Callable, Literal
 from dotenv import load_dotenv
 
 # LangChain and LangGraph imports
-from langchain_core.tools import tool
+from langchain_core.tools import tool as langchain_tool
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import StateGraph, MessagesState, START, END
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def tool(func):
+    """
+    DLLMForge wrapper around LangChain's @tool decorator.
+    
+    This decorator provides a consistent interface for creating tools
+    within the DLLMForge ecosystem while maintaining compatibility
+    with LangChain's tool system.
+    
+    Args:
+        func: Function to be converted into a tool
+        
+    Returns:
+        Tool function that can be used with SimpleAgent
+    """
+    logger.info(f"Registering DLLMForge tool: {func.__name__}")
+    
+    # Apply the original LangChain decorator
+    return langchain_tool(func)
 
 
 class SimpleAgent:
