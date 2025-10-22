@@ -122,6 +122,23 @@ Run it::
 
     python pizza_course_tutorial_ultra_simple.py
 
+Testing the agent
+~~~~~~~~~~~~~~~~~
+
+Once your agent is compiled, you can test it with various queries. Here's an example that demonstrates the agent's ability to handle complex calculations involving pizza prices and fractions::
+
+    agent.process_query("If I had half a pepperoni pizza and 1/4 of a margherita pizza and I paid for both pizzas. How much should I Tikkie my friend?", stream=True)
+
+This query will:
+1. Calculate the price of a pepperoni pizza (15.99)
+2. Calculate the price of a margherita pizza (12.99)
+3. Determine half of the pepperoni price (7.995)
+4. Determine 1/4 of the margherita price (3.2475)
+5. Calculate the total amount your friend owes (11.2425)
+6. Generate a friendly summary using the LLM
+
+The agent uses its maths and pizza tools for calculations and the summary tool to provide a conversational response.
+
 Switching providers
 -------------------
 
