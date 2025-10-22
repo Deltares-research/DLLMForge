@@ -1,5 +1,5 @@
-Tutorial: LLM capabilities of DLLMForge
-======================================
+Tutorial: Building a Simple Agent with DLLMForge
+================================================
 
 This tutorial shows how to use DLLMForge to build a tiny tool-using agent and ask questions via different LLM providers (Azure OpenAI, OpenAI, Mistral, or Deltares-hosted models). You will learn how to configure providers with environment variables, run the ultra-simple pizza agent, and switch providers without changing your business logic.
 
