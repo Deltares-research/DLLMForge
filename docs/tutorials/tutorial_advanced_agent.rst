@@ -33,7 +33,7 @@ Core Concepts Demonstrated
 Workflow Overview
 -----------------
 
-The water management agent uses intelligent routing to determine the appropriate processing path:
+The water management agent uses intelligent routing to determine the appropriate processing path (copy the code into mermaid.live to visualize the workflow to view the grap):
 
 .. mermaid::
    :align: center
@@ -239,6 +239,34 @@ This will:
 1. Display the workflow structure
 2. Run the test cases
 3. Show the routing decisions for each query type
+
+Testing with Custom Queries
+----------------------------
+
+Once the agent is compiled, you can test it with your own water management queries:
+
+.. code-block:: python
+
+   # Test flow rate calculation
+   agent.process_query("What's the flow rate for a channel with area 15 m² and velocity 1.5 m/s?", stream=True)
+   
+   # Test aquifer information
+   agent.process_query("Tell me about the Ogallala aquifer", stream=True)
+   
+   # Test complex analysis requiring both calculations and information
+   agent.process_query("Calculate groundwater storage for area 2000 km², thickness 30 m, porosity 0.25 and tell me about the Floridan aquifer", stream=True)
+   
+   # Test water balance calculation
+   agent.process_query("Calculate the water balance for precipitation 1000 mm, evapotranspiration 600 mm, and runoff 200 mm", stream=True)
+   
+   # Test Darcy velocity
+   agent.process_query("What's the Darcy velocity for hydraulic conductivity 0.01 m/s and hydraulic gradient 0.05?", stream=True)
+
+The agent will automatically:
+1. **Analyze the query** to determine which tools are needed
+2. **Route to the appropriate node** (calculation, info, or unified)
+3. **Execute the required tools** for calculations or information retrieval
+4. **Generate a comprehensive summary** of the results
 
 Key Benefits for Water Professionals
 ------------------------------------
