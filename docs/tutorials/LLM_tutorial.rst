@@ -96,15 +96,15 @@ Then the messages can be passed to the `chat_completions` method of the differen
 .. code-block:: python
 
     # Using LlamaIndex API with OpenAI
-    response_llama_openai = api_llama_openai.chat_completions(messages)
+    response_llama_openai = api_llama_openai.chat_completion(messages)
     print("LlamaIndex OpenAI Response:", response_llama_openai)
 
     # Using LangChain API with OpenAI
-    response_langchain_openai = api_langchain_openai.chat_completions(messages)
+    response_langchain_openai = api_langchain_openai.chat_completion(messages)
     print("LangChain OpenAI Response:", response_langchain_openai)
 
     # Using Deltares hosted model
-    response_deltares = llm.chat_completions(messages)
+    response_deltares = llm.chat_completion(messages)
     print("Deltares Model Response:", response_deltares)
 
 This tutorial demonstrates how to use a simple LLM to ask questions using DLLMForge.
