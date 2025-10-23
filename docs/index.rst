@@ -117,6 +117,8 @@ The following tutorials are available:
 
 - :doc:`tutorials/LLM_tutorial`
 - :doc:`tutorials/RAG_tutorial`
+- :doc:`tutorials/tutorial_simple_agent.rst`
+- :doc:`tutorials/tutorial_advanced_agent.rst`
 
 Background Information
 ----------------------
@@ -136,6 +138,9 @@ API Reference
 
    tutorials/LLM_tutorial
    tutorials/RAG_tutorial
+   tutorials/tutorial_simple_agent
+   tutorials/tutorial_advanced_agent
+   tutorials/Information_extraction_tutorial
    modules
    background/LLM_explained
    background/RAGS_explained

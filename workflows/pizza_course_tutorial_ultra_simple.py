@@ -10,38 +10,39 @@ from dllmforge.agent_core import SimpleAgent, tool
 # 1. DEFINE TOOLS
 # ============================================================================
 
+
 # Start with some basic maths tools
 @tool
 def add(a: float, b: float) -> float:
     """Add two numbers together."""
     return a + b
 
+
 @tool
 def multiply(a: float, b: float) -> float:
     """Divide two numbers."""
     return a * b
-    
+
+
 @tool
 def divide(a: float, b: float) -> float:
     """Divide two numbers."""
     return a / b
+
 
 @tool
 def subtract(a: float, b: float) -> float:
     """Subtract two numbers from each other."""
     return a - b
 
+
 # Now some pizza tools, get the price of a pizza type
 @tool
 def get_pizza_price(pizza_type: str) -> float:
     """Get the price of a pizza type."""
-    prices = {
-        "margherita": 12.99,
-        "pepperoni": 15.99,
-        "vegetarian": 14.99,
-        "supreme": 17.99
-    }
+    prices = {"margherita": 12.99, "pepperoni": 15.99, "vegetarian": 14.99, "supreme": 17.99}
     return prices.get(pizza_type.lower(), 10.99)
+
 
 # Now a tool to make a summary of the result
 @tool
@@ -61,8 +62,12 @@ def make_summary(question: str, result: str) -> str:
 
         llm_api = LangchainAPI()  # defaults to azure-openai with your .env, or as configured
         messages = [
-            ("system", "You are a helpful assistant. Create a concise, friendly summary of the provided result in the context of the question. Mention all of the tools that you used"),
-            ("human", f"Question:\n{question}\n\nResult:\n{result}\n\nPlease return a brief, conversational summary (1-3 sentences).")
+            ("system",
+             "You are a helpful assistant. Create a concise, friendly summary of the provided result in the context of the question. Mention all of the tools that you used"
+             ),
+            ("human",
+             f"Question:\n{question}\n\nResult:\n{result}\n\nPlease return a brief, conversational summary (1-3 sentences)."
+             )
         ]
         response = llm_api.llm.invoke(messages)
         return getattr(response, "content", str(response))
@@ -77,8 +82,7 @@ def make_summary(question: str, result: str) -> str:
 agent = SimpleAgent(
     "You are a helpful assistant that can do math and tell you about pizza prices. Only use the tools, do not try to do maths in your head. ",
     model_provider="azure-openai",
-    temperature=0.1
-)
+    temperature=0.1)
 
 # ============================================================================
 # 3. ADD TOOLS
@@ -115,23 +119,21 @@ with open("pizza_course_ultra_simple.png", "wb") as f:
     f.write(graph_image)
 print("✅ Graph saved as 'pizza_course_ultra_simple.png'")
 
-
-
 # ============================================================================
 # 6. TEST IT!
 # ============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TESTING THE ULTRA SIMPLE AGENT")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Test cases
     test_queries = [
         "What is the total price of a pepperoni pizza and a margherita pizza?",
         "My friend ate 2/3 of a pepperoni pizza and I ate 1/2 of a margherita pizza and I paid for both pizzas. How much should I Tikkie her for share?"
     ]
-    
+
     for i, query in enumerate(test_queries, 1):
         print(f"\n🧪 TEST {i}: {query}")
         print("-" * 40)
@@ -140,4 +142,3 @@ if __name__ == "__main__":
             agent.process_query(query, stream=True)
         except Exception as e:
             print(f"Error: {e}")
-    
