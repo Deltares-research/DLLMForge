@@ -31,7 +31,8 @@ jobs:
       - name: Build docs
         run: | 
           cd docs/
-          make html
+          make clean
+          sphinx-build -b html . _build/html -v
       
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}
