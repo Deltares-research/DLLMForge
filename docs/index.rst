@@ -177,11 +177,39 @@ API Reference
   background/LLM_explained
   background/RAGS_explained
 
-.. toctree::
-   :maxdepth: 2
-   :caption:  API Reference:
+API Reference
+=============
 
-  dllmforge
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   dllmforge
+
+Modules
+-------
+
+.. automodule:: dllmforge.agent_core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: dllmforge.IE_agent_schema_generator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: dllmforge.IE_agent_document_processor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: dllmforge.IE_agent_extractor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 
 Indices and tables
 ==================

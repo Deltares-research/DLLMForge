@@ -31,12 +31,13 @@ jobs:
       - name: Build docs
         run: | 
           cd docs/
-          make html
+          make clean
+          sphinx-build -b html . _build/html -v
       
       - name: Upload to GitHub Pages
         if: ${{ github.event_name != 'pull_request'}}
         uses: peaceiris/actions-gh-pages@v3.8.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
+          publish_dir: ./docs/_build/html
           force_orphan: true

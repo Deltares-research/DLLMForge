@@ -6,6 +6,11 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('..'))  # Add this line
+
 import dllmforge
 
 project = 'dllmforge'
@@ -21,7 +26,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinxcontrib.bibtex',
     'sphinx.ext.viewcode',  # Add source code links
-    'sphinx.ext.napoleon'  # For Google/NumPy style docstrings
+    'sphinx.ext.napoleon',  # For Google/NumPy style docstrings
+    'sphinx.ext.autosummary'
 ]
 
 # Add autodoc settings
