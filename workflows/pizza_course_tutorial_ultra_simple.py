@@ -102,24 +102,6 @@ agent.add_tool(get_pizza_price)
 agent.compile()
 
 # ============================================================================
-# 5. THAT'S IT! Ready to use!
-# ============================================================================
-
-print("🍕 Pizza Course Tutorial - Simple DLLMForge Version")
-# Display the graph
-print("\nGraph Visualization:")
-
-from IPython.display import Image, display
-# Access the compiled graph, not the raw workflow
-graph_image = agent.app.get_graph().draw_mermaid_png()
-display(Image(graph_image))
-
-# Save the image
-with open("pizza_course_ultra_simple.png", "wb") as f:
-    f.write(graph_image)
-print("✅ Graph saved as 'pizza_course_ultra_simple.png'")
-
-# ============================================================================
 # 6. TEST IT!
 # ============================================================================
 
