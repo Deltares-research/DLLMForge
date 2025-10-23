@@ -26,7 +26,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinxcontrib.bibtex',
     'sphinx.ext.viewcode',  # Add source code links
-    'sphinx.ext.napoleon'  # For Google/NumPy style docstrings
+    'sphinx.ext.napoleon',  # For Google/NumPy style docstrings
+    'sphinx.ext.autosummary'
 ]
 
 # Add autodoc settings
