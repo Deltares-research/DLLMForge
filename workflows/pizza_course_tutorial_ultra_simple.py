@@ -4,6 +4,11 @@ Pizza Course Tutorial - Ultra Simple DLLMForge Version
 Super high-level and simple - demonstrates the power of DLLMForge abstraction
 """
 
+# Load environment variables from .env file for API keys and endpoints
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import dllmforge simple agent and tool decorator
 from dllmforge.agent_core import SimpleAgent, tool
 
 # ============================================================================
@@ -20,7 +25,7 @@ def add(a: float, b: float) -> float:
 
 @tool
 def multiply(a: float, b: float) -> float:
-    """Divide two numbers."""
+    """Multiply two numbers."""
     return a * b
 
 

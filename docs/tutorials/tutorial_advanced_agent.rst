@@ -21,10 +21,16 @@ Core Concepts Demonstrated
    - Calculation node: Handles water calculations
    - Info node: Retrieves aquifer and watershed information
    - Unified node: Handles complex queries requiring both calculations and information
+   - Concise summary node: Generates a brief, numeric-faithful summary
+   - Extended summary node: Generates a single-paragraph, detailed summary
+   - Steps taken node: Prints routing decisions, tool calls, results (and unified toolset when applicable)
 
 **Edges**: Connections between nodes, this control is what makes it more advanced than the simple agent, as it allows explicit routing rather than relying on the prompt only.
-   - Regular edges: Direct connections (calculation_node → summary)
-   - Conditional edges: AI decides which path to take based on the query
+   - Conditional edges (agentic): Agent decides which tool node to use → ``calculation_node`` | ``info_node`` | ``unified_node``
+   - Regular edges (deterministic):
+     - ``calculation_node`` → ``concise_summary`` → ``steps_taken`` → END
+     - ``info_node`` → ``concise_summary`` → ``steps_taken`` → END
+     - ``unified_node`` → ``extended_summary`` → ``steps_taken`` → END
 
 **Tools**: Grouped by domain for clarity
    - Water calculation tools: Flow rate, groundwater storage, water balance, Darcy velocity
@@ -33,41 +39,43 @@ Core Concepts Demonstrated
 Workflow Overview
 -----------------
 
-The water management agent uses intelligent routing to determine the appropriate processing path (copy the code into mermaid.live to visualize the workflow to view the grap):
+The water management agent uses intelligent routing to determine the appropriate processing path (copy the code into mermaid.live to visualize the workflow):
 
 .. mermaid::
    :align: center
 
    graph TD
        START([START]) --> agent[Agent Decision<br/>💧 Water Management AI]
-       
+
+       %% Agentic routing to tool nodes
        agent -->|"Water calculations needed<br/>(flow rate, storage, balance, Darcy)"| calculation_node[Calculation Node<br/>🔢 calculate_flow_rate<br/>calculate_groundwater_storage<br/>calculate_water_balance<br/>calculate_darcy_velocity]
-       
-       agent -->|"Aquifer/watershed info needed<br/>(RAG system placeholders)"| info_node[Info Node<br/>📚 get_aquifer_info<br/>get_watershed_info]
-       
+       agent -->|"Aquifer/watershed info needed<br/>(RAG placeholders)"| info_node[Info Node<br/>📚 get_aquifer_info<br/>get_watershed_info]
        agent -->|"Both calculations & info needed"| unified_node[Unified Node<br/>🔄 All Tools Available<br/>Calculations + Information]
-       
-       agent -->|"No tools needed"| summary[Summary<br/>💧 Water Analysis Complete]
-       
-       calculation_node --> summary
-       info_node --> summary
-       unified_node --> summary
-       
-       summary --> END([END])
-       
+       agent -->|"No tools needed"| concise_summary[Concise Summary]
+
+       %% Deterministic routing to summaries and end
+       calculation_node --> concise_summary
+       info_node --> concise_summary
+       unified_node --> extended_summary[Extended Summary]
+
+        %% Steps taken and END
+       concise_summary --> steps_taken[Steps Taken]
+       extended_summary --> steps_taken
+       steps_taken --> END([END])
+
        classDef startEnd fill:#e1f5fe,stroke:#01579b,stroke-width:3px
        classDef agent fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
        classDef calculation fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
        classDef info fill:#fff3e0,stroke:#e65100,stroke-width:2px
        classDef unified fill:#fff8e1,stroke:#f57c00,stroke-width:2px
        classDef summary fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-       
+
        class START,END startEnd
        class agent agent
        class calculation_node calculation
        class info_node info
        class unified_node unified
-       class summary summary
+       class concise_summary,extended_summary,steps_taken summary
 
 Water Calculation Tools
 -----------------------
@@ -75,20 +83,42 @@ Water Calculation Tools
 The agent includes four essential water calculation tools based on fundamental hydrological equations:
 
 **Flow Rate Calculation**
-   .. code-block:: python
+     .. code-block:: python
 
       @tool
       def calculate_flow_rate(area: float, velocity: float) -> float:
           """Calculate flow rate using Q = A × V (discharge = area × velocity)."""
           return area * velocity
 
+   Inputs/Units:
+      - ``area``: channel cross-sectional area (e.g., m²)
+      - ``velocity``: mean flow velocity (e.g., m/s)
+
+   Returns:
+      - Discharge (e.g., m³/s)
+
+   Example:
+      - ``Q = 15 m² × 1.5 m/s = 22.5 m³/s``
+
 **Groundwater Storage Calculation**
    .. code-block:: python
 
       @tool
-      def calculate_groundwater_storage(aquifer_area: float, thickness: float, porosity: float) -> float:
-          """Calculate groundwater storage volume using V = A × h × n."""
-          return aquifer_area * thickness * porosity
+      def calculate_groundwater_storage(aquifer_area: float, thickness: float, porosity: float) -> str:
+          """Calculate groundwater storage volume using V = A × h × n and return a readable result."""
+          volume = aquifer_area * thickness * porosity
+          return f"Groundwater storage V = A×h×n = {aquifer_area} × {thickness} × {porosity} = {volume}"
+
+   Inputs/Units:
+      - ``aquifer_area`` (A): plan-view area (e.g., m² or km² converted to m²)
+      - ``thickness`` (h): saturated thickness (e.g., m)
+      - ``porosity`` (n): effective porosity (0–1)
+
+   Returns:
+      - Readable string containing the computed groundwater storage volume (e.g., m³)
+
+   Example:
+      - ``V = 2,000 × 30 × 0.25 = 15,000`` (units depend on input units)
 
 **Water Balance Calculation**
    .. code-block:: python
@@ -98,6 +128,17 @@ The agent includes four essential water calculation tools based on fundamental h
           """Calculate water balance: P - ET - R = ΔS (change in storage)."""
           return precipitation - evapotranspiration - runoff
 
+   Inputs/Units:
+      - ``precipitation`` (P): total precipitation (e.g., mm)
+      - ``evapotranspiration`` (ET): actual ET (e.g., mm)
+      - ``runoff`` (R): surface runoff (e.g., mm)
+
+   Returns:
+      - ``ΔS`` (change in storage), in same units as inputs
+
+   Example:
+      - ``ΔS = 1000 - 600 - 200 = 200 (mm)``
+
 **Darcy Velocity Calculation**
    .. code-block:: python
 
@@ -105,6 +146,16 @@ The agent includes four essential water calculation tools based on fundamental h
       def calculate_darcy_velocity(hydraulic_conductivity: float, hydraulic_gradient: float) -> float:
           """Calculate Darcy velocity using v = K × i."""
           return hydraulic_conductivity * hydraulic_gradient
+
+   Inputs/Units:
+      - ``hydraulic_conductivity`` (K): e.g., m/s
+      - ``hydraulic_gradient`` (i): dimensionless
+
+   Returns:
+      - Darcy velocity (specific discharge), e.g., m/s
+
+   Example:
+      - ``v = 0.01 × 0.05 = 5×10⁻⁴ m/s``
 
 Information Retrieval Tools
 ---------------------------
@@ -121,6 +172,8 @@ The agent includes information tools with placeholders for connecting to RAG (Re
           aquifer_data = {
               "ogallala": "The Ogallala Aquifer is a major water source...",
               "floridan": "The Floridan Aquifer System is one of the world's most productive aquifers...",
+              "edwards": "The Edwards Aquifer is a karst limestone system supplying water to San Antonio; known for rapid recharge and springflows.",
+              "high plains": "The High Plains (Ogallala) Aquifer underlies parts of 8 U.S. states and supports extensive irrigation."
               # Additional aquifer data
           }
           return aquifer_data.get(aquifer_name.lower(), f"Sorry, I don't have specific information about the {aquifer_name} aquifer.")
@@ -135,6 +188,8 @@ The agent includes information tools with placeholders for connecting to RAG (Re
           watershed_data = {
               "mississippi": "The Mississippi River watershed drains 41% of the continental US...",
               "colorado": "The Colorado River watershed spans 7 US states...",
+              "amazon": "The Amazon watershed is the largest on Earth, with vast biodiversity and significant discharge to the Atlantic.",
+              "nile": "The Nile watershed spans 11 countries, sustaining agriculture and livelihoods along the river corridor."
               # Additional watershed data
           }
           return watershed_data.get(watershed_name.lower(), f"Sorry, I don't have specific information about the {watershed_name} watershed.")
@@ -150,28 +205,28 @@ The conditional edge function determines which node to route to based on the too
        """Conditional edge: AI decides which node to use based on the water problem."""
        messages = state["messages"]
        last_message = messages[-1]
-       
+
        # Check if the agent wants to call tools
        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
            tool_calls = last_message.tool_calls
            tool_names = [tool_call['name'] for tool_call in tool_calls]
-           
+
            # Check which type of tools are needed
            calculation_tools_needed = any(tool in ['calculate_flow_rate', 'calculate_groundwater_storage', 'calculate_water_balance', 'calculate_darcy_velocity'] for tool in tool_names)
            info_tools_needed = any(tool in ['get_aquifer_info', 'get_watershed_info'] for tool in tool_names)
-           
+
            # Route based on tool types
            if calculation_tools_needed and info_tools_needed:
                return "unified_node"  # Both calculation and info needed
            elif calculation_tools_needed:
-               return "calculation_node"      # Only calculations needed
+               return "calculation_node"  # Only calculations needed
            elif info_tools_needed:
-               return "info_node"      # Only info needed
+               return "info_node"  # Only info needed
            else:
-               return "unified_node"   # Default fallback
+               return "unified_node"  # Default fallback
        else:
-           # No tools needed, go directly to summary
-           return "summary"
+           # No tools needed, route to concise summary
+           return "concise_summary"
 
 Workflow Assembly
 -----------------
@@ -194,17 +249,21 @@ The workflow is assembled by adding nodes and edges:
    agent.add_node("calculation_node", calculation_node)
    agent.add_node("info_node", info_node)
    agent.add_node("unified_node", unified_node)
-   agent.add_node("summary", create_summary)
+   agent.add_node("concise_summary", concise_summary)
+   agent.add_node("extended_summary", extended_summary)
+   agent.add_node("steps_taken", steps_taken)
 
    # Add conditional edge
    agent.add_conditional_edge("agent", route_to_node)
 
    # Add regular edges
    agent.add_edge(START, "agent")
-   agent.add_edge("calculation_node", "summary")
-   agent.add_edge("info_node", "summary")
-   agent.add_edge("unified_node", "summary")
-   agent.add_edge("summary", END)
+   agent.add_edge("calculation_node", "concise_summary")
+   agent.add_edge("info_node", "concise_summary")
+   agent.add_edge("unified_node", "extended_summary")
+   agent.add_edge("concise_summary", "steps_taken")
+   agent.add_edge("extended_summary", "steps_taken")
+   agent.add_edge("steps_taken", END)
 
 Testing the Workflow
 --------------------
@@ -213,18 +272,41 @@ The tutorial includes test cases that demonstrate different routing scenarios:
 
 **Test Case 1: Flow Rate Calculation**
    - Query: "What's the flow rate for a channel with area 15 m² and velocity 1.5 m/s?"
-   - Route: Agent → Calculation Node → Summary → End
+   - Route: Agent → Calculation Node → Concise Summary → Steps Taken → End
    - Tools Used: calculate_flow_rate
 
 **Test Case 2: Aquifer Information**
    - Query: "Tell me about the Ogallala aquifer"
-   - Route: Agent → Info Node → Summary → End
+   - Route: Agent → Info Node → Concise Summary → Steps Taken → End
    - Tools Used: get_aquifer_info
 
 **Test Case 3: Complex Analysis**
    - Query: "Calculate groundwater storage for area 2000 km², thickness 30 m, porosity 0.25 and tell me about the Floridan aquifer"
-   - Route: Agent → Unified Node → Summary → End
+   - Route: Agent → Unified Node → Extended Summary → Steps Taken → End
    - Tools Used: calculate_groundwater_storage + get_aquifer_info
+
+Additional Examples
+-------------------
+
+**Test Case 4: Water Balance**
+   - Query: "Calculate the water balance for precipitation 1200 mm, evapotranspiration 700 mm, and runoff 350 mm"
+   - Route: Agent → Calculation Node → Concise Summary → Steps Taken → End
+   - Tools Used: calculate_water_balance
+
+**Test Case 5: Darcy Velocity**
+   - Query: "What's the Darcy velocity for hydraulic conductivity 0.008 m/s and hydraulic gradient 0.04?"
+   - Route: Agent → Calculation Node → Concise Summary → Steps Taken → End
+   - Tools Used: calculate_darcy_velocity
+
+**Test Case 6: Watershed Context + Calculation**
+   - Query: "Give me the Colorado watershed context and compute Darcy velocity for K=0.01 m/s, i=0.03"
+   - Route: Agent → Unified Node → Extended Summary → Steps Taken → End
+   - Tools Used: get_watershed_info + calculate_darcy_velocity
+
+**Test Case 7: No Tools Needed (Direct Summary)**
+   - Query: "Summarize your capabilities in one sentence"
+   - Route: Agent → Concise Summary → Steps Taken → End
+   - Tools Used: none
 
 Running the Tutorial
 --------------------
