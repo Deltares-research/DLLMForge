@@ -33,7 +33,7 @@ Core Concepts Demonstrated
 Workflow Overview
 -----------------
 
-The water management agent uses intelligent routing to determine the appropriate processing path:
+The water management agent uses intelligent routing to determine the appropriate processing path (copy the code into mermaid.live to visualize the workflow to view the grap):
 
 .. mermaid::
    :align: center

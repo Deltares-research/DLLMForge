@@ -1,63 +1,75 @@
-Tutorial: Building a Simple Agent with DLLMForge
-================================================
+=========================================
+Building a Simple Agent with DLLMForge
+=========================================
 
-This tutorial shows how to use DLLMForge to build a tiny tool-using agent and ask questions via different LLM providers (Azure OpenAI, OpenAI, Mistral, or Deltares-hosted models). You will learn how to configure providers with environment variables, run the ultra-simple pizza agent, and switch providers without changing your business logic.
+This tutorial demonstrates how to build a simple tool-using agent using DLLMForge. You will learn how to configure different LLM providers (Azure OpenAI, OpenAI, Mistral, or Deltares-hosted models), create custom tools, and build an agent that can perform calculations and answer questions about pizza prices.
 
-What you will use
-------------------
+Overview
+========
 
-- :class:`~dllmforge.langchain_api.LangchainAPI` — LangChain integration for Azure OpenAI, OpenAI, and Mistral.
-- :class:`~dllmforge.llamaindex_api.LlamaIndexAPI` — LlamaIndex integration for the same providers.
-- :class:`~dllmforge.LLMs.Deltares_LLMs.DeltaresOllamaLLM` — Deltares-hosted models (no external API key required; Deltares network/VPN needed).
+The simple agent tutorial consists of several key components:
+
+1. **Environment Setup**: Configure API keys and credentials for different LLM providers
+2. **Tool Creation**: Define custom tools using the DLLMForge ``@tool`` decorator
+3. **Agent Initialization**: Create a SimpleAgent with your chosen LLM provider
+4. **Tool Integration**: Add tools to the agent and compile the agent
+5. **Query Processing**: Test the agent with various queries and observe tool routing
+6. **Provider Switching**: Change between different LLM providers without code changes
+
 
 Prerequisites
 -------------
 
-1. Python environment with the project requirements installed.
-2. A ``.env`` file in your project root with provider credentials (see below).
-3. Optional: IPython/Jupyter if you want to display the LangGraph diagram.
+1. Python environment with the project requirements installed
+2. A ``.env`` file in your project root with provider credentials (see below)
+3. Optional: IPython/Jupyter if you want to display the LangGraph diagram
 
-Environment setup
------------------
+Step-by-Step Implementation
+===========================
+
+1. Environment Setup
+---------------------
 
 Create or update your ``.env`` with the variables for the providers you plan to use.
 
-Azure OpenAI (default in DLLMForge examples)::
+Azure OpenAI (default in DLLMForge examples):
+
+.. code-block:: bash
 
     AZURE_OPENAI_ENDPOINT=https://your-azure-endpoint
     AZURE_OPENAI_API_KEY=your_azure_openai_api_key
     AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
     AZURE_OPENAI_API_VERSION=2024-12-01-preview
 
-OpenAI::
+OpenAI:
+
+.. code-block:: bash
 
     OPENAI_API_KEY=your_openai_api_key
     OPENAI_MODEL_NAME=gpt-4.1  # or gpt-4o, etc.
 
-Mistral::
+Mistral:
+
+.. code-block:: bash
 
     MISTRAL_API_KEY=your_mistral_api_key
     MISTRAL_MODEL_NAME=mistral-large-latest
 
-Deltares-hosted (no API key; requires Deltares network/VPN)::
+Deltares-hosted (no API key; requires Deltares network/VPN):
+
+.. code-block:: bash
 
     # No keys required; you will specify base_url and model at runtime
 
-Quick start: the ultra-simple pizza agent
-----------------------------------------
+2. Import Required Modules
+--------------------------
 
-The file ``pizza_course_tutorial_ultra_simple.py`` defines a minimal agent with a few tools (arithmetic, pizza pricing, and a summary generator that calls the configured LLM). It uses :class:`~dllmforge.agent_core.SimpleAgent` under the hood, which wires up a small LangGraph with optional tool routing.
+Start by importing all necessary components:
 
-Key elements
-~~~~~~~~~~~~
-
-- Tools are created with the DLLMForge ``@tool`` decorator (a thin wrapper over LangChain tools).
-- The agent is created once and tools are attached.
-- Provider selection is controlled by the ``model_provider`` argument and your ``.env`` file.
-
-Example (excerpt)::
+.. code-block:: python
 
     from dllmforge.agent_core import SimpleAgent, tool
+    from dllmforge.langchain_api import LangchainAPI
 
     # Basic math tools
     @tool
