@@ -39,6 +39,32 @@ The main package contains the following modules:
     * :func:`~dllmforge.agent_core.create_basic_agent` - Agent factory function
     * :func:`~dllmforge.agent_core.create_basic_tools` - Tool creation utilities
 
+**Information Extraction Framework**
+  - ``IE_agent_config.py`` - Configuration management for IE agents
+    
+    * :class:`~dllmforge.IE_agent_config.IEAgentConfig` - Main configuration class
+    * :class:`~dllmforge.IE_agent_config.SchemaConfig` - Schema generation configuration
+    * :class:`~dllmforge.IE_agent_config.DocumentConfig` - Document processing configuration
+    * :class:`~dllmforge.IE_agent_config.ExtractorConfig` - Information extraction configuration
+    
+  - ``IE_agent_schema_generator.py`` - Automatic schema generation for structured extraction
+    
+    * :class:`~dllmforge.IE_agent_schema_generator.SchemaGenerator` - Generate Pydantic schemas from task descriptions
+    
+  - ``IE_agent_document_processor.py`` - Document processing for information extraction
+    
+    * :class:`~dllmforge.IE_agent_document_processor.DocumentProcessor` - Convert documents to LLM-readable format
+    * :class:`~dllmforge.IE_agent_document_processor.ProcessedDocument` - Processed document container
+    
+  - ``IE_agent_extractor.py`` - Main information extraction orchestrator
+    
+    * :class:`~dllmforge.IE_agent_extractor.InfoExtractor` - Extract structured information from documents
+    * :class:`~dllmforge.IE_agent_extractor.DocumentChunk` - Document chunk container
+    
+  - ``IE_agent_extractor_docling.py`` - Enhanced extraction with Docling preprocessing
+    
+    * :class:`~dllmforge.IE_agent_extractor_docling.DoclingInfoExtractor` - Advanced document structure-aware extraction
+
 **LLM API Integrations**
   - ``openai_api.py`` - OpenAI API integration
     
@@ -117,8 +143,9 @@ The following tutorials are available:
 
 - :doc:`tutorials/LLM_tutorial`
 - :doc:`tutorials/RAG_tutorial`
-- :doc:`tutorials/tutorial_simple_agent.rst`
-- :doc:`tutorials/tutorial_advanced_agent.rst`
+- :doc:`tutorials/tutorial_simple_agent`
+- :doc:`tutorials/tutorial_advanced_agent`
+- :doc:`tutorials/Information_extraction_tutorial`
 
 Background Information
 ----------------------
@@ -133,17 +160,28 @@ API Reference
 -------------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Tutorials:
 
-   tutorials/LLM_tutorial
-   tutorials/RAG_tutorial
-   tutorials/tutorial_simple_agent
-   tutorials/tutorial_advanced_agent
-   tutorials/Information_extraction_tutorial
-   modules
-   background/LLM_explained
-   background/RAGS_explained
+    tutorials/LLM_tutorial
+    tutorials/RAG_tutorial
+    tutorials/tutorial_simple_agent
+    tutorials/tutorial_advanced_agent
+    tutorials/Information_extraction_tutorial
+
+
+.. toctree::
+  :maxdepth: 2
+  :caption:  Background:
+
+  background/LLM_explained
+  background/RAGS_explained
+
+.. toctree::
+   :maxdepth: 2
+   :caption:  API Reference:
+
+  dllmforge
 
 Indices and tables
 ==================
