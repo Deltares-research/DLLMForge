@@ -23,3 +23,5 @@ jinja2==3.1.6
 python-multipart==0.0.6
 langgraph==0.6.7
 langchain_docling==1.0.0
+pdf2image==1.17.0
+pytesseract==0.3.13
