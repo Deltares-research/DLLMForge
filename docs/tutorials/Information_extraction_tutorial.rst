@@ -17,7 +17,7 @@ The Information Extraction Workflow
 The DLLMForge IE pipeline consists of three main stages, each supported by specialized components:
 
 **Stage 1: Schema Definition**
-   Define what information you want to extract using Pydantic models. You can either define your own schema manually or use :class:`~dllmforge.IE_agent_schema_generator.SchemaGenerator` to automatically generate one based on your task description. The schema defines the structure of data you want to extract, including field names, types, and descriptions. If you already have a schema, save it as a .py file and skip to Stage 2.
+   Define what information you want to extract using Pydantic models. You can either define your own schema manually or use :class:`~dllmforge.IE_agent_schema_generator.SchemaGenerator` to let LLMs to automatically generate one based on your task description. The schema defines the structure of data you want to extract, including field names, types, and descriptions. If you already have a schema, save it as a .py file and skip to Stage 2.
 
 **Stage 2: Document Processing**
    Convert documents (currently supported: PDFs, docx, csv, images) into LLM-readable format. The :class:`~dllmforge.IE_agent_document_processor.DocumentProcessor` handles this automatically within the extraction pipeline:
@@ -63,7 +63,33 @@ Start by importing all necessary components:
     import re
     import json
 
-2. Define Output Schema
+2. Initialize the LLM
+---------------------
+
+Configure the LLM that will perform the extraction. DLLMForge supports multiple providers through a unified API:
+
+.. code-block:: python
+
+    # Example using Azure OpenAI
+    llm_api = LangchainAPI(
+        model_provider="azure-openai",
+        temperature=0.1  # Low temperature for consistent, factual extraction
+    )
+    
+    # Example: Using OpenAI
+    # llm_api = LangchainAPI(
+    #     model_provider="openai",
+    #     model_name="gpt-4",
+    #     temperature=0.1
+    # )
+
+**Temperature Settings:**
+
+- ``0.0-0.2``: Most deterministic, best for factual extraction
+- ``0.3-0.5``: Balanced, allows some interpretation
+- ``0.6-1.0``: More creative, may introduce inconsistencies (not recommended for IE)
+
+3. Define Output Schema
 -----------------------
 
 The first step is to define what information you want to extract. You have two options:
@@ -201,7 +227,7 @@ You can improve schema generation by providing an example document. The LLM will
     schema_code = schema_generator.generate_schema()
     schema_generator.save_schema(schema_code)
 
-3. Understanding Document Processing
+4. Understanding Document Processing
 -------------------------------------
 
 Before extraction can begin, documents must be converted into a format that LLMs can process. The ``DocumentProcessor`` component handles this conversion, supporting both text and image extraction modes.
@@ -235,33 +261,7 @@ You configure the ``DocumentProcessor`` by passing parameters directly (no confi
 
 You'll pass this configured processor to the ``InfoExtractor`` in Section 5, where it will be used automatically during extraction.
 
-1. Initialize the LLM
----------------------
-
-Configure the LLM that will perform the extraction. DLLMForge supports multiple providers through a unified API:
-
-.. code-block:: python
-
-    # Example using Azure OpenAI
-    llm_api = LangchainAPI(
-        model_provider="azure-openai",
-        temperature=0.1  # Low temperature for consistent, factual extraction
-    )
-    
-    # Example: Using OpenAI
-    # llm_api = LangchainAPI(
-    #     model_provider="openai",
-    #     model_name="gpt-4",
-    #     temperature=0.1
-    # )
-
-**Temperature Settings:**
-
-- ``0.0-0.2``: Most deterministic, best for factual extraction
-- ``0.3-0.5``: Balanced, allows some interpretation
-- ``0.6-1.0``: More creative, may introduce inconsistencies (not recommended for IE)
-
-1. Extract Information
+5. Extract Information
 ----------------------
 
 Now we can create the ``InfoExtractor`` to orchestrate the entire extraction pipeline. The ``InfoExtractor`` will use the ``DocumentProcessor`` we configured in Step 3 to automatically handle document processing, then perform the LLM-based extraction.
