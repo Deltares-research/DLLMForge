@@ -12,6 +12,12 @@ import os
 import sys
 import time
 import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env files
+# Try loading from multiple locations
+load_dotenv()  # Load from base directory
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))  # Load from streamlit_apps directory
 
 # Add the DLLMForge package to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +30,12 @@ st.set_page_config(page_title="🌊 Water Management Agent - Live Chat",
                    page_icon="🌊",
                    layout="wide",
                    initial_sidebar_state="expanded")
+
+# Ensure a non-interactive backend for reliable rendering in Streamlit
+try:
+    plt.switch_backend('Agg')
+except Exception:
+    pass
 
 # Custom CSS for clean styling
 st.markdown("""
@@ -91,6 +103,12 @@ if 'workflow_progress' not in st.session_state:
     st.session_state.workflow_progress = []
 if 'live_chat_active' not in st.session_state:
     st.session_state.live_chat_active = False
+if 'awaiting_feedback' not in st.session_state:
+    st.session_state.awaiting_feedback = False
+if 'current_plot_figure' not in st.session_state:
+    st.session_state.current_plot_figure = None
+if 'figure_gallery' not in st.session_state:
+    st.session_state.figure_gallery = []
 
 # === WORKFLOW MONITORING ===
 
@@ -136,8 +154,26 @@ def run_workflow_with_monitoring(agent, query: str):
         update_workflow_progress("Tool Selection", "completed", "Tools selected and configured")
         update_workflow_progress("RAG Search", "active", "Searching water management databases")
 
-        # Execute the actual workflow
-        result = agent.app.invoke({"messages": [{"role": "user", "content": query}]})
+        # Build conversation history from session state
+        conversation_messages = []
+        if 'messages' in st.session_state and st.session_state.messages:
+            # Convert session messages to LangChain format
+            for msg in st.session_state.messages:
+                conversation_messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+        else:
+            # If no history, just add the current query
+            conversation_messages = [{"role": "user", "content": query}]
+
+        # Execute the actual workflow with full conversation history
+        result = agent.app.invoke({"messages": conversation_messages})
+        try:
+            if result and isinstance(result, dict) and 'messages' in result:
+                log_agent_activity("workflow", f"Agent returned {len(result['messages'])} messages")
+        except Exception:
+            pass
 
         # Update progress based on result
         if result and isinstance(result, dict) and 'messages' in result:
@@ -156,13 +192,14 @@ def run_workflow_with_monitoring(agent, query: str):
 
             # Check for human interaction points
             needs_human_input = any(
-                "ask me" in msg.content.lower() or "review" in msg.content.lower() or "qc" in msg.content.lower()
+                ("ask me" in msg.content.lower() or "review" in msg.content.lower() or "qc" in msg.content.lower() or "workflow_paused" in msg.content.lower())
                 for msg in result['messages']
                 if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg)))
 
             if needs_human_input:
                 update_workflow_progress("Quality Control", "completed", "QC completed - waiting for human input")
                 update_workflow_progress("Human Interaction", "active", "Agent waiting for user feedback/review")
+                st.session_state.awaiting_feedback = True
             else:
                 update_workflow_progress("Quality Control", "completed", "QC passed - response ready")
                 update_workflow_progress("Finalization", "active", "Finalizing response")
@@ -182,15 +219,76 @@ def run_workflow_with_monitoring(agent, query: str):
         return None
 
 
+def _execute_inline_matplotlib_blocks_from_text(text: str) -> bool:
+    """Find and execute python fenced code blocks that import matplotlib.
+
+    Returns True if a figure was created and stored to session state.
+    """
+    try:
+        if not text or "```" not in text:
+            return False
+        blocks = []
+        lines = text.splitlines()
+        i = 0
+        while i < len(lines):
+            if lines[i].strip().startswith("```"):
+                lang = lines[i].strip().lstrip("`")
+                j = i + 1
+                while j < len(lines) and not lines[j].strip().startswith("```"):
+                    j += 1
+                code = "\n".join(lines[i+1:j])
+                if "matplotlib" in code or "plt." in code:
+                    blocks.append(code)
+                i = j + 1
+            else:
+                i += 1
+        created = False
+        for code in blocks:
+            local_vars = {}
+            try:
+                exec(code, globals(), local_vars)
+                fig = local_vars.get('fig')
+                if fig is None:
+                    fig = plt.gcf()
+                if fig is not None:
+                    if 'figure_gallery' not in st.session_state:
+                        st.session_state.figure_gallery = []
+                    st.session_state.figure_gallery.append(fig)
+                    created = True
+            except Exception:
+                continue
+        return created
+    except Exception:
+        return False
+
+
 # === RAG SEARCH TOOLS ===
 @tool
 def rag_search_short(query: str) -> str:
     """Search for specific water management facts using short context chunks."""
     try:
+        # Check if credentials are available
+        # Check for either AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT for embeddings
+        api_base = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        required_vars = ['AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY']
+        missing_vars = []
+        for var in required_vars:
+            if not os.getenv(var):
+                missing_vars.append(var)
+        if not api_base:
+            missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
+        
+        if missing_vars:
+            return f"RAG Search (Short): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
+
         from dllmforge.rag_search_and_response import Retriever
         from dllmforge.rag_embedding import AzureOpenAIEmbeddingModel
 
-        embedding_model = AzureOpenAIEmbeddingModel()
+        # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
+        api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        embedding_model = AzureOpenAIEmbeddingModel(
+            api_base=api_base_for_embeddings
+        )
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -223,10 +321,28 @@ def rag_search_short(query: str) -> str:
 def rag_search_medium(query: str) -> str:
     """Search for contextual water management information using medium chunks."""
     try:
+        # Check if credentials are available
+        # Check for either AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT for embeddings
+        api_base = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        required_vars = ['AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY']
+        missing_vars = []
+        for var in required_vars:
+            if not os.getenv(var):
+                missing_vars.append(var)
+        if not api_base:
+            missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
+        
+        if missing_vars:
+            return f"RAG Search (Medium): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
+
         from dllmforge.rag_search_and_response import Retriever
         from dllmforge.rag_embedding import AzureOpenAIEmbeddingModel
 
-        embedding_model = AzureOpenAIEmbeddingModel()
+        # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
+        api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        embedding_model = AzureOpenAIEmbeddingModel(
+            api_base=api_base_for_embeddings
+        )
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -259,10 +375,28 @@ def rag_search_medium(query: str) -> str:
 def rag_search_long(query: str) -> str:
     """Search for comprehensive water management analysis using long chunks."""
     try:
+        # Check if credentials are available
+        # Check for either AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT for embeddings
+        api_base = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        required_vars = ['AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY']
+        missing_vars = []
+        for var in required_vars:
+            if not os.getenv(var):
+                missing_vars.append(var)
+        if not api_base:
+            missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
+        
+        if missing_vars:
+            return f"RAG Search (Long): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
+
         from dllmforge.rag_search_and_response import Retriever
         from dllmforge.rag_embedding import AzureOpenAIEmbeddingModel
 
-        embedding_model = AzureOpenAIEmbeddingModel()
+        # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
+        api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
+        embedding_model = AzureOpenAIEmbeddingModel(
+            api_base=api_base_for_embeddings
+        )
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -312,19 +446,13 @@ def create_summary_with_references(summary_type: str) -> str:
 def generate_plot_script(plot_requirements: str) -> str:
     """Generate matplotlib Python script for water management visualizations based on user requirements."""
     try:
-        # Generate a simple plotting script that works with Streamlit
+        # Generic example; the agent decides when/what to render
         script = f'''
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-# Generate plot based on requirements: {plot_requirements}
-# This script is designed to work with Streamlit
-
-# Create sample data (replace with actual data as needed)
 fig, ax = plt.subplots(figsize=(10, 6))
 
-# Example visualization - modify based on requirements
 x = np.linspace(0, 10, 100)
 y = np.sin(x) * np.exp(-x/5)
 
@@ -337,10 +465,12 @@ ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 
-# Return the figure object for Streamlit to display
-return fig
 '''
-        return f"Generated Python matplotlib script for {plot_requirements}:\n\n```python\n{script}\n```\n\n**Note:** This script returns a matplotlib figure object that can be displayed in Streamlit."
+        try:
+            log_agent_activity("tool_call", f"generate_plot_script for: {plot_requirements}")
+        except Exception:
+            pass
+        return f"Generated Python matplotlib script for {plot_requirements}:\n\n```python\n{script}\n```\n\n**Note:** The script defines a variable 'fig' for display in Streamlit."
     except Exception as e:
         return f"Error generating plot script: {str(e)}"
 
@@ -349,24 +479,70 @@ return fig
 def execute_plot_script(script_content: str) -> str:
     """Execute the generated plot script and return the figure for Streamlit display."""
     try:
-        # Create a local namespace for execution
-        local_vars = {}
+        # Robustly extract code from fenced blocks if present anywhere
+        content = script_content or ""
+        if "```" in content:
+            lines = content.splitlines()
+            fence_indices = [i for i, ln in enumerate(lines) if ln.strip().startswith("```")]
+            if len(fence_indices) >= 2:
+                start = fence_indices[0] + 1
+                end = fence_indices[-1]
+                script_content = "\n".join(lines[start:end])
+            else:
+                # If only one fence, strip it
+                script_content = "\n".join(ln for ln in lines if not ln.strip().startswith("```") and not ln.strip().startswith("```python"))
+        else:
+            script_content = content
 
-        # Execute the Python script
+        # Ensure scripts that rely on plt.show() also work in this environment
+        script_content = script_content + "\n\n# Ensure figure is finalized for environments expecting plt.show()\ntry:\n    import matplotlib.pyplot as _plt\n    _plt.show()\nexcept Exception:\n    pass\n"
+
+        local_vars = {}
         exec(script_content, globals(), local_vars)
 
-        # Check if a figure was returned
-        if 'fig' in local_vars and local_vars['fig'] is not None:
-            # Store the figure in session state for Streamlit to display
+        # Try to find a figure: 'fig' or any figure created in current pyplot
+        fig = local_vars.get('fig')
+        if fig is None:
+            import matplotlib.pyplot as plt
+            fig = plt.gcf()
+
+        if fig is not None:
+            # Store the figure for display by the UI
             if 'current_plot_figure' not in st.session_state:
                 st.session_state.current_plot_figure = None
-
-            st.session_state.current_plot_figure = local_vars['fig']
-            return "Plot script executed successfully. Figure generated and ready for display."
+            st.session_state.current_plot_figure = fig
+            try:
+                st.session_state.last_plot_script = script_content
+                st.session_state.last_plot_status = "success"
+                log_agent_activity("tool_call", "execute_plot_script stored a figure")
+            except Exception:
+                pass
+            # Additionally, return an inline base64 image payload so the UI can render
+            try:
+                import io, base64
+                buf = io.BytesIO()
+                fig.savefig(buf, format='png', bbox_inches='tight')
+                buf.seek(0)
+                b64 = base64.b64encode(buf.read()).decode('utf-8')
+                data_uri = f"data:image/png;base64,{b64}"
+                return f"Plot script executed successfully. Figure stored for display in Streamlit.\nPLOT_IMAGE:{data_uri}"
+            except Exception:
+                return "Plot script executed successfully. Figure stored for display in Streamlit."
         else:
+            try:
+                st.session_state.last_plot_script = script_content
+                st.session_state.last_plot_status = "no_figure"
+                log_agent_activity("tool_call", "execute_plot_script produced no figure")
+            except Exception:
+                pass
             return "Plot script executed but no figure was returned. Check the script content."
-
     except Exception as e:
+        try:
+            st.session_state.last_plot_script = script_content
+            st.session_state.last_plot_status = f"error: {str(e)}"
+            log_agent_activity("error", f"execute_plot_script error: {str(e)}")
+        except Exception:
+            pass
         return f"Error executing plot script: {str(e)}"
 
 
@@ -471,12 +647,13 @@ CRITICAL RULES FOR EFFICIENT EXECUTION:
 4. **COMPLETE TASKS**: Finish what you start unless explicitly told to stop.
 5. **USE YOUR JUDGMENT**: Make reasonable assumptions and proceed confidently.
 6. **PLOTTING LIMITS**: Only generate ONE plot per request. Do not create multiple plots or loop plotting operations.
+7. **PLOT DISPLAY**: When you call execute_plot_script, it automatically displays the figure in Streamlit. You don't need to do anything else - the plot will appear in the chat interface.
 
 WORKFLOW PATTERN:
 - Receive query → Analyze → Execute → Present results
 - Only pause for human input at critical decision points
 - Complete comprehensive analysis without constant interruptions
-- For plots: generate script → execute once → display result → stop
+- For plots: generate script → execute once → result appears automatically → stop
 
 Use these tools to provide accurate, data-driven responses to water management queries efficiently and decisively."""
 
@@ -493,8 +670,7 @@ Use these tools to provide accurate, data-driven responses to water management q
     for tool in tools:
         agent.add_tool(tool)
 
-    # Create and compile workflow with recursion limits
-    agent.create_simple_workflow()
+    # Compile workflow (this will automatically create the workflow if not already created)
     agent.compile()
 
     # Set recursion limits to prevent infinite loops
@@ -873,13 +1049,15 @@ def process_live_chat_queue(agent):
                     result = agent.app.invoke({"messages": conversation_context})
 
                     if result and isinstance(result, dict) and 'messages' in result and result['messages']:
-                        # Get agent's response
-                        agent_response = ""
-                        for msg in result['messages']:
-                            if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg)):
-                                agent_response += str(msg.content) + "\n\n"
+                        # Get the most recent AI response only (avoid duplicating previous content)
+                        ai_messages = [
+                            str(msg.content)
+                            for msg in result['messages']
+                            if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg))
+                        ]
+                        agent_response = ai_messages[-1].strip() if ai_messages else ""
 
-                        if agent_response.strip():
+                        if agent_response:
                             # Add to live chat history
                             st.session_state.live_chat_history.append({
                                 "type": "agent",
@@ -888,7 +1066,7 @@ def process_live_chat_queue(agent):
                             })
 
                             # Add to main conversation
-                            st.session_state.messages.append({"role": "assistant", "content": agent_response.strip()})
+                            st.session_state.messages.append({"role": "assistant", "content": agent_response})
 
                 except Exception as e:
                     st.error(f"Error processing live chat: {str(e)}")
@@ -995,12 +1173,73 @@ def main():
     # Initialize agent if not already done
     if 'agent' not in st.session_state:
         try:
-            with st.spinner("Initializing Water Management Agent..."):
-                st.session_state.agent = create_water_management_agent()
-            st.success("Agent initialized successfully!")
+            # Check if required credentials are available
+            # Check for either endpoint variable (some files use different names)
+            endpoint_set = os.getenv('AZURE_OPENAI_ENDPOINT') or os.getenv('AZURE_OPENAI_API_BASE')
+            required_vars = ['AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_DEPLOYMENT_NAME']
+            missing_vars = [var for var in required_vars if not os.getenv(var)]
+            
+            if not endpoint_set:
+                missing_vars.append('AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_API_BASE')
+            
+            if missing_vars:
+                st.error(f"Missing required credentials: {', '.join(missing_vars)}")
+                
+                # Show debug information
+                with st.expander("🔍 Debug: Check loaded environment variables"):
+                    all_vars = {
+                        'AZURE_OPENAI_API_KEY': '***' if os.getenv('AZURE_OPENAI_API_KEY') else 'NOT SET',
+                        'AZURE_OPENAI_ENDPOINT': os.getenv('AZURE_OPENAI_ENDPOINT') or 'NOT SET',
+                        'AZURE_OPENAI_API_BASE': os.getenv('AZURE_OPENAI_API_BASE') or 'NOT SET',
+                        'AZURE_OPENAI_DEPLOYMENT_NAME': os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME') or 'NOT SET',
+                        'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION') or 'NOT SET'
+                    }
+                    for key, value in all_vars.items():
+                        st.text(f"{key}: {value}")
+                    
+                    # Check for .env files
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    app_dir = os.path.dirname(os.path.abspath(__file__))
+                    
+                    st.text(f"\nLooking for .env files in:")
+                    st.text(f"Base directory: {base_dir}")
+                    st.text(f"  .env exists: {os.path.exists(os.path.join(base_dir, '.env'))}")
+                    st.text(f"Streamlit directory: {app_dir}")
+                    st.text(f"  .env exists: {os.path.exists(os.path.join(app_dir, '.env'))}")
+                
+                st.info("""
+                Please set the following environment variables in a `.env` file:
+                **Required:**
+                - AZURE_OPENAI_API_KEY
+                - AZURE_OPENAI_ENDPOINT (or AZURE_OPENAI_API_BASE)
+                - AZURE_OPENAI_DEPLOYMENT_NAME
+                - AZURE_OPENAI_API_VERSION
+                
+                **Optional (for RAG features):**
+                - AZURE_SEARCH_ENDPOINT
+                - AZURE_SEARCH_API_KEY
+                - AZURE_SEARCH_INDEX_NAME
+                - AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS
+                
+                Place the `.env` file in either:
+                - Project root directory
+                - streamlit_apps directory
+                """)
+                st.session_state.agent = None
+            else:
+                with st.spinner("Initializing Water Management Agent..."):
+                    st.session_state.agent = create_water_management_agent()
+                st.success("Agent initialized successfully!")
 
         except Exception as e:
             st.error(f"Failed to initialize agent: {e}")
+            st.info("""
+            Troubleshooting:
+            1. Check that all Azure OpenAI credentials are set correctly
+            2. Verify that the deployment name exists
+            3. Ensure the API version is correct
+            4. Check network connectivity to Azure endpoints
+            """)
             st.session_state.agent = None
 
     # Create two-column layout
@@ -1014,71 +1253,11 @@ def main():
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
 
-        # Human Feedback Section - Only when needed
-        if st.session_state.messages and any(
-                "ask me" in msg.get("content", "").lower() or "review" in msg.get("content", "").lower()
-                or "qc" in msg.get("content", "").lower()
-                for msg in st.session_state.messages[-2:] if msg.get("role") == "assistant"):
-            st.markdown("---")
-            st.markdown("### 💬 **Agent needs your input**")
-
-            # Create a text area for detailed responses
-            user_feedback = st.text_area("Your feedback:", placeholder="Type your feedback or approval...", height=100)
-
-            # Simple feedback submission
-            if st.button("📤 Submit Feedback"):
-                if user_feedback.strip():
-                    # Add the feedback as a user message
-                    st.session_state.messages.append({"role": "user", "content": f"USER FEEDBACK: {user_feedback}"})
-
-                    # Show the feedback in the chat
-                    with st.chat_message("user"):
-                        st.markdown(f"**Feedback:** {user_feedback}")
-
-                    # Process the feedback with the agent
-                    with st.chat_message("assistant"):
-                        with st.spinner("Processing your feedback..."):
-                            try:
-                                # Send the feedback to the agent
-                                feedback_result = st.session_state.agent.app.invoke(
-                                    {"messages": [{
-                                        "role": "user",
-                                        "content": f"USER FEEDBACK: {user_feedback}"
-                                    }]})
-
-                                if feedback_result and isinstance(
-                                        feedback_result,
-                                        dict) and 'messages' in feedback_result and feedback_result['messages']:
-                                    # Display the agent's response to feedback
-                                    for message in feedback_result['messages']:
-                                        if hasattr(message, 'content') and message.content and 'AIMessage' in str(
-                                                type(message)):
-                                            st.markdown(message.content)
-
-                                    # Store the response
-                                    feedback_response = "\n\n".join([
-                                        msg.content for msg in feedback_result['messages']
-                                        if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg))
-                                    ])
-                                    st.session_state.messages.append({
-                                        "role": "assistant",
-                                        "content": feedback_response
-                                    })
-
-                                    # Clear the feedback input
-                                    st.rerun()
-                                else:
-                                    st.error("No response from agent after feedback")
-
-                            except Exception as e:
-                                st.error(f"Error processing feedback: {str(e)}")
-                else:
-                    st.warning("Please enter some feedback before submitting.")
-
         # Simple clear chat button
         if st.button("🗑️ Clear Chat"):
             st.session_state.messages = []
             st.session_state.workflow_progress = []
+            st.session_state.awaiting_feedback = False
             st.rerun()
 
         # Chat Input - At the bottom
@@ -1091,76 +1270,114 @@ def main():
                 with st.chat_message("user"):
                     st.markdown(prompt)
 
+                # Let the agent decide if/what to plot via its tools
+
                 # Get agent response with live monitoring
+                with st.spinner("🔄 **Processing your request...**"):
+                    try:
+                        result = run_workflow_with_monitoring(st.session_state.agent, prompt)
+                    except Exception as e:
+                        error_msg = f"Error in live chat processing: {str(e)}"
+                        st.error(error_msg)
+                        st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                        result = None
+                
+                # Display the response in chat message
                 with st.chat_message("assistant"):
-                    with st.spinner("🔄 **Processing your request...**"):
+                    if result and isinstance(result, dict) and 'messages' in result and result['messages']:
+                        all_responses = []
+                        tool_text_blobs = []
+                        raw_messages_debug = []
+                        for message in result['messages']:
+                            if hasattr(message, 'content') and message.content and 'AIMessage' in str(type(message)):
+                                all_responses.append(message.content)
+                            elif hasattr(message, 'content') and message.content and 'ToolMessage' in str(type(message)):
+                                tool_text_blobs.append(str(message.content))
+                            # Collect raw message debug
+                            try:
+                                role = getattr(message, 'type', 'AIMessage')
+                                raw_messages_debug.append({
+                                    "type": str(type(message)),
+                                    "role": role,
+                                    "content_preview": str(getattr(message, 'content', ''))[:500]
+                                })
+                            except Exception:
+                                pass
+
+                        # Combine response - show only the most recent AI message to avoid duplication
+                        if all_responses:
+                            response = all_responses[-1]
+                        else:
+                            response = "Processing... please wait for the complete response."
+
+                        # Display text response
+                        st.markdown(response)
+
+                        # If the tool returned an inline base64 image, render it directly
                         try:
-                            # Run workflow with live monitoring
-                            result = run_workflow_with_monitoring(st.session_state.agent, prompt)
-
-                            if result and isinstance(result, dict) and 'messages' in result and result['messages']:
-                                all_responses = []
-                                total_steps = len([
-                                    msg for msg in result['messages']
-                                    if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg))
-                                ])
-
-                                # Display the final response
-                                for i, message in enumerate(result['messages']):
-                                    if hasattr(message, 'content') and message.content and 'AIMessage' in str(
-                                            type(message)):
-                                        st.markdown(message.content)
-                                        all_responses.append(message.content)
-
-                                # Check if figures were generated and show them inline
-                                import glob
-                                png_files = glob.glob("*.png")
-
-                                # Check for generated plots in session state
-                                if 'current_plot_figure' in st.session_state and st.session_state.current_plot_figure is not None:
-                                    st.markdown("**📊 Generated Visualization:**")
-                                    try:
-                                        # Display the matplotlib figure inline
-                                        fig = st.session_state.current_plot_figure
-                                        st.pyplot(fig)
-                                        plt.close(fig)  # Close to prevent memory issues
-                                        # Clear the stored figure
-                                        st.session_state.current_plot_figure = None
-                                    except Exception as e:
-                                        st.warning(f"Could not display generated plot: {e}")
-                                        st.session_state.current_plot_figure = None
-
-                                # Fallback to saved PNG files if they exist
-                                elif png_files:
-                                    st.markdown("**📊 Generated Visualizations:**")
-                                    cols = st.columns(min(len(png_files), 3))
-                                    for idx, png_file in enumerate(png_files):
-                                        try:
-                                            with cols[idx % len(cols)]:
-                                                st.image(png_file, caption=png_file, use_container_width=True)
-                                        except Exception as e2:
-                                            st.warning(f"Could not display {png_file}: {e2}")
-
-                                # Store the combined response in session state
-                                if all_responses:
-                                    response = "\n\n".join(all_responses)
-                                    st.session_state.messages.append({"role": "assistant", "content": response})
-                                else:
-                                    response = "Processing... please wait for the complete response."
-                                    st.session_state.messages.append({"role": "assistant", "content": response})
-
+                            import re
+                            import base64
+                            match = re.search(r"PLOT_IMAGE:(data:image/png;base64,[A-Za-z0-9+/=]+)", response)
+                            if match:
+                                data_uri = match.group(1)
+                                st.image(data_uri)
+                                # Also keep it in the figures panel as a matplotlib figure if available
+                                # otherwise, store the data uri for future reference
+                                if 'figure_gallery' in st.session_state and not st.session_state.figure_gallery:
+                                    st.session_state.figure_gallery = st.session_state.figure_gallery
                             else:
-                                response = "No response generated. Please try again."
-                                st.error("❌ No response generated. Please try again.")
-                                st.session_state.messages.append({"role": "assistant", "content": response})
+                                # Check tool message contents as well
+                                blob = "\n\n".join(tool_text_blobs)
+                                match2 = re.search(r"PLOT_IMAGE:(data:image/png;base64,[A-Za-z0-9+/=]+)", blob)
+                                if match2:
+                                    data_uri2 = match2.group(1)
+                                    st.image(data_uri2)
+                        except Exception:
+                            pass
 
-                        except Exception as e:
-                            error_msg = f"Error in live chat processing: {str(e)}"
-                            st.error(error_msg)
-                            st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                        # Debug: agent raw output
+                        with st.expander("🔍 Debug: Agent raw output", expanded=False):
+                            try:
+                                st.json({
+                                    "num_messages": len(result.get('messages', [])),
+                                    "messages": raw_messages_debug
+                                })
+                            except Exception:
+                                st.write("Unable to render raw messages debug.")
+                        
+                        # If a plot was generated, move it to the gallery for rendering in the Figures panel
+                        if 'current_plot_figure' in st.session_state and st.session_state.current_plot_figure is not None:
+                            try:
+                                st.session_state.figure_gallery.append(st.session_state.current_plot_figure)
+                            finally:
+                                st.session_state.current_plot_figure = None
+
+                        # Fallback: parse any inline matplotlib code blocks from the assistant text
+                        if not st.session_state.figure_gallery:
+                            _execute_inline_matplotlib_blocks_from_text(response)
+
+                        # Debug: plot tool state
+                        with st.expander("🧪 Debug: Plot tool state", expanded=False):
+                            try:
+                                st.write({
+                                    "has_current_plot_figure": st.session_state.current_plot_figure is not None,
+                                    "figure_gallery_len": len(st.session_state.figure_gallery or []),
+                                    "last_plot_status": st.session_state.get("last_plot_status", "n/a")
+                                })
+                                if st.session_state.get("last_plot_script"):
+                                    st.code(st.session_state.last_plot_script, language='python')
+                            except Exception:
+                                st.write("Unable to render plot debug.")
+                        
+                        # Persist in chat history
+                        st.session_state.messages.append({"role": "assistant", "content": response})
+                    else:
+                        response = "No response generated. Please try again."
+                        st.error(response)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
 
     with col2:
-        # Right column: Workflow Progress and Status
+        # Right column: Workflow Progress, Status, and Figures
         st.markdown("### 🔴 **Live Status**")
 
         # Simple status indicator
