@@ -1,0 +1,15 @@
+dllmforge.IE\_agent\_extractor\_docling
+=======================================
+
+.. automodule:: dllmforge.IE_agent_extractor_docling
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DoclingDocumentProcessor
+      DoclingInfoExtractor
+      DoclingProcessedDocument
+      DocumentChunk
+   
