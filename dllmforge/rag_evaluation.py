@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from .openai_api import OpenAIAPI
 from .anthropic_api import AnthropicAPI
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
+from .langchain_api import LangchainAPI
 
 # Load environment variables
 load_dotenv()
@@ -72,9 +73,11 @@ class RAGEvaluator:
 
         # Initialize LLM APIs
         if self.llm_provider == "openai":
-            self.openai_api = OpenAIAPI()
+            self.openai_api = LangchainAPI(model_provider="openai")
         elif self.llm_provider == "anthropic":
             self.anthropic_api = AnthropicAPI()
+        elif self.llm_provider == "azure-openai":
+            self.azure_openai_api = LangchainAPI(model_provider="azure-openai")
         elif self.llm_provider == "deltares":
             if deltares_llm is None:
                 raise ValueError("Deltares LLM must be provided when using 'deltares' provider")
@@ -87,10 +90,12 @@ class RAGEvaluator:
         """Setup the LLM provider based on available credentials."""
         if self.llm_provider == "auto":
             # Check for available APIs
-            if os.getenv('AZURE_OPENAI_API_KEY') or os.getenv('OPENAI_API_KEY'):
+            if os.getenv('OPENAI_API_KEY'):
                 self.llm_provider = "openai"
             elif os.getenv('ANTHROPIC_API_KEY'):
                 self.llm_provider = "anthropic"
+            elif os.getenv('AZURE_OPENAI_API_KEY'):
+                self.llm_provider = "azure-openai"
             elif self.deltares_llm is not None:
                 self.llm_provider = "deltares"
             else:
@@ -116,6 +121,9 @@ class RAGEvaluator:
                 response = self.anthropic_api.chat_completion(messages=messages,
                                                               temperature=temperature,
                                                               max_tokens=1000)
+                return response.get("response", "")
+            elif self.llm_provider == "azure-openai":
+                response = self.azure_openai_api.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "deltares":
                 return self.deltares_llm.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
