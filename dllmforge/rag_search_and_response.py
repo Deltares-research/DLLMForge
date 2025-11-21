@@ -141,7 +141,7 @@ class LLMResponder:
 
     def generate(self, query_text, retrieved_chunks):
         prompt = self.augment_prompt_with_context(query_text, retrieved_chunks)
-        response = self.llm(prompt)
+        response = self.llm.invoke(prompt)
         return response.content.strip()
 
 
