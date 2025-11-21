@@ -23,7 +23,11 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (SearchField, SearchFieldDataType, VectorSearch,
                                                    HnswAlgorithmConfiguration, VectorSearchProfile,
                                                    AzureOpenAIVectorizer, AzureOpenAIVectorizerParameters, SearchIndex)
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 import os
 from dotenv import load_dotenv
 from .rag_embedding import AzureOpenAIEmbeddingModel
