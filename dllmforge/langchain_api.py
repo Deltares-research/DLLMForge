@@ -7,7 +7,16 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_mistralai import ChatMistralAI
-
+from langchain.schema import (
+    AIMessage,
+    ChatGeneration,
+    ChatResult,
+    HumanMessage,
+    SystemMessage,
+)
+from typing import Any, List, Optional
+import requests
+import json
 
 class LangchainAPI:
     """Class to interact with various LLM providers using Langchain."""
@@ -59,6 +68,7 @@ class LangchainAPI:
         else:
             raise ValueError(
                 f"Unsupported model provider: {model_provider}. Choose from 'azure-openai', 'openai', or 'mistral'")
+
 
     def check_server_status(self):
         """Check if the LLM service is accessible."""
@@ -125,3 +135,23 @@ class LangchainAPI:
         except Exception as e:
             print(f"Error getting chat completion: {e}")
             return None
+
+    def ask_with_retriever(self, question: str, retriever):
+        """
+        Ask a question using the retriever to get context.
+
+        Args:
+            question (str): The question to ask.
+            retriever: A rag retriever object that can retrieve relevant context.
+            **kwargs: Additional keyword arguments to pass to the LLM (e.g., temperature, max_tokens).
+
+        Returns:
+            The response from the LLM.
+        """
+        context = retriever.invoke(question)
+        prompt = [
+            SystemMessage(content="You are a helpful assistant that answers questions based on the provided context. As you are thinking reflect on the question."),
+            HumanMessage(content=f"Question: {question} \nContext: {context}"),
+        ]
+        response = self.llm(prompt)
+        return response.content.strip()

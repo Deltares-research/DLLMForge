@@ -23,7 +23,11 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (SearchField, SearchFieldDataType, VectorSearch,
                                                    HnswAlgorithmConfiguration, VectorSearchProfile,
                                                    AzureOpenAIVectorizer, AzureOpenAIVectorizerParameters, SearchIndex)
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 import os
 from dotenv import load_dotenv
 from .rag_embedding import AzureOpenAIEmbeddingModel
@@ -107,19 +111,6 @@ class Retriever:
         text_vectorized = self.embedding_model.embed(text)
         return text_vectorized
 
-    def search(self, query_text, top_k=5):
-        query_vectorized = self.get_embeddings(query_text)
-        vector_query = VectorizedQuery(vector=query_vectorized, k_nearest_neighbors=top_k, fields="text_vector")
-        results = self.search_client.search(
-            search_text=
-            None,  # pure vector search, no text search. If you want to do text search, set search_text=query_text.
-            vector_queries=[vector_query],
-            select=["chunk_id", "chunk", "page_number", "file_name"],  # The list of fields to retrieve.
-            top=top_k  # The number of auto-completed terms to retrieve.
-            # This must be a value between 1 and 100. The default is 5.
-        )
-        return list(results)
-
     def invoke(self, query_text, top_k=5):
         query_vectorized = self.get_embeddings(query_text)
         vector_query = VectorizedQuery(vector=query_vectorized, k_nearest_neighbors=top_k, fields="text_vector")
@@ -150,7 +141,7 @@ class LLMResponder:
 
     def generate(self, query_text, retrieved_chunks):
         prompt = self.augment_prompt_with_context(query_text, retrieved_chunks)
-        response = self.llm(prompt)
+        response = self.llm.invoke(prompt)
         return response.content.strip()
 
 
@@ -190,7 +181,7 @@ if __name__ == "__main__":
     retriever = Retriever(model, index_name, search_client_endpoint, search_api_key)
     query = "What is the area of the Rhine basin?"
     top_k = 5
-    results = retriever.search(query, top_k=top_k)
+    results = retriever.invoke(query, top_k=top_k)
     print(results)
 
     from langchain_openai import AzureChatOpenAI

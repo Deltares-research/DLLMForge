@@ -3,13 +3,9 @@ from typing import Any, List, Optional
 
 import requests
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    AIMessage,
-    ChatGeneration,
-    ChatResult,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
 from pydantic import BaseModel
 import urllib3
 
