@@ -154,28 +154,28 @@ class RAGEvaluator:
 
         prompt = f"""/no_think You are evaluating the relevancy of retrieved contexts for a question-answering system.
 
-    Question: {question}
+Question: {question}
 
-    Retrieved Contexts:
-    {context_text}
+Retrieved Contexts:
+{context_text}
 
-    Your task is to:
-    1. Identify which sentences from the retrieved contexts are actually needed to answer the question
-    2. Calculate the ratio: (number of relevant sentences) / (total number of sentences)
+Your task is to:
+1. Identify which sentences from the retrieved contexts are actually needed to answer the question
+2. Calculate the ratio: (number of relevant sentences) / (total number of sentences)
 
-    Instructions:
-    - A sentence is relevant if it contains information that directly helps answer the question
-    - Ignore sentences that are just background information or don't contribute to answering the question
-    - Count sentences carefully and provide the exact ratio
+Instructions:
+- A sentence is relevant if it contains information that directly helps answer the question
+- Ignore sentences that are just background information or don't contribute to answering the question
+- Count sentences carefully and provide the exact ratio
 
-    Please respond in the following JSON format:
-    {{
-        "relevant_sentences": ["sentence 1", "sentence 2", ...],
-        "total_sentences": number,
-        "relevant_count": number,
-        "ratio": float,
-        "explanation": "Brief explanation of your reasoning"
-    }}"""
+Please respond in the following JSON format:
+{{
+    "relevant_sentences": ["sentence 1", "sentence 2", ...],
+    "total_sentences": number,
+    "relevant_count": number,
+    "ratio": float,
+    "explanation": "Brief explanation of your reasoning"
+}}"""
 
         messages = [
             {"role": "system", "content": "You are a helpful assistant that evaluates the relevancy of text contexts."},
@@ -274,8 +274,6 @@ Your task is to:
 Please respond in the following JSON format:
 {{
     "relevance_indicators": [0 or 1 for each rank],
-    "relevant_chunks": ["excerpt or short justification for each relevant chunk"],
-    "irrelevant_chunks": ["excerpt or reason for each irrelevant chunk"],
     "precision_at_k": float,
     "explanation": "Brief explanation of your reasoning"
 }}"""
@@ -287,26 +285,22 @@ Please respond in the following JSON format:
 
         response = self._call_llm(messages)
 
-        print("LLM RAW RESPONSE:", response)
+        if isinstance(response, dict) and "choices" in response:
+            response_text = response["choices"][0]["message"]["content"]
+        else:
+            response_text = str(response).strip()  # remove leading/trailing whitespace
 
         try:
-            if isinstance(response, dict):
-                response = response["choices"][0]["message"]["content"]
-            result = json.loads(response)
+            result = json.loads(response_text)
             relevance = result.get("relevance_indicators", [])
             explanation = result.get("explanation", "No explanation provided")
-
         except json.JSONDecodeError:
-            # Try to extract JSON from malformed response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
+            # fallback extraction
+            json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if json_match:
-                try:
-                    result = json.loads(json_match.group())
-                    relevance = result.get("relevance_indicators", [])
-                    explanation = result.get("explanation", "Extracted from response")
-                except json.JSONDecodeError:
-                    relevance = []
-                    explanation = "Could not parse LLM response (JSON extraction failed)"
+                result = json.loads(json_match.group())
+                relevance = result.get("relevance_indicators", [])
+                explanation = result.get("explanation", "Extracted from response")
             else:
                 relevance = []
                 explanation = "Could not parse LLM response (no JSON found)"

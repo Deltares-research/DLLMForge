@@ -7,13 +7,10 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_mistralai import ChatMistralAI
-from langchain.schema import (
-    AIMessage,
-    ChatGeneration,
-    ChatResult,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.prompts import PromptTemplate
+from langchain_core.outputs import LLMResult
 from typing import Any, List, Optional
 import requests
 import json
