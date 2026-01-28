@@ -10,6 +10,8 @@ you can :
 
 - Use an simple LLM to ask questions.
 - Build your RAG with HuggingFace or AZURE embeddings and vector stores.
+- Create agents that can use tools to answer complex questions.
+- Extract structured information from documents using LLMs.
 
 Features
 --------
