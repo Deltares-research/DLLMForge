@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dllmforge.IE_agent_extractor &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dllmforge.IE_agent_extractor</h1><div class="highlight"><pre>
+<span></span><span class="c1">#TODO: add async version of this module</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Synchronous Information Extractor module for extracting structured information from documents using LLM.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Generator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain.output_parsers</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticOutputParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain.output_parsers.json</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_json_markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain.prompts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatPromptTemplate</span><span class="p">,</span> <span class="n">SystemMessagePromptTemplate</span><span class="p">,</span> <span class="n">HumanMessagePromptTemplate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.langchain_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainAPI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">IEAgentConfig</span><span class="p">,</span> <span class="n">ExtractorConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_document_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessedDocument</span><span class="p">,</span> <span class="n">DocumentProcessor</span>
+
+
+<div class="viewcode-block" id="DocumentChunk">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.DocumentChunk">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DocumentChunk</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class representing a chunk of document content&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DocumentChunk.__init__">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.DocumentChunk.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">content_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="InfoExtractor">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InfoExtractor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for extracting information from documents using LLM&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="InfoExtractor.__init__">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IEAgentConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_schema</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">llm_api</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LangchainAPI</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="c1"># Plain-argument mode:</span>
+        <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">chunk_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">chunk_overlap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">doc_processor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DocumentProcessor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">document_output_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the information extractor.</span>
+
+<span class="sd">        You can use either `config` (IEAgentConfig), or pass the individual parameters directly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_schema</span> <span class="o">=</span> <span class="n">output_schema</span> <span class="ow">or</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">llm_api</span> <span class="o">=</span> <span class="n">llm_api</span> <span class="ow">or</span> <span class="n">LangchainAPI</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span> <span class="o">=</span> <span class="n">doc_processor</span> <span class="ow">or</span> <span class="n">DocumentProcessor</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">document</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_parser</span> <span class="o">=</span> <span class="n">PydanticOutputParser</span><span class="p">(</span><span class="n">pydantic_object</span><span class="o">=</span><span class="n">output_schema</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">chunk_size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">chunk_overlap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refine_system_prompt</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">task_description</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;output_schema is required if config is not given&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_schema</span> <span class="o">=</span> <span class="n">output_schema</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">llm_api</span> <span class="o">=</span> <span class="n">llm_api</span> <span class="ow">or</span> <span class="n">LangchainAPI</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_parser</span> <span class="o">=</span> <span class="n">PydanticOutputParser</span><span class="p">(</span><span class="n">pydantic_object</span><span class="o">=</span><span class="n">output_schema</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="n">chunk_size</span> <span class="ow">or</span> <span class="mi">80000</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap</span> <span class="o">=</span> <span class="n">chunk_overlap</span> <span class="ow">or</span> <span class="mi">10000</span>
+            <span class="c1"># NOTE: direct mode must require plain prompt string</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">=</span> <span class="n">system_prompt</span> <span class="ow">or</span> <span class="s2">&quot;You are an information extraction LLM.&quot;</span>
+            <span class="k">if</span> <span class="n">doc_processor</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span> <span class="o">=</span> <span class="n">doc_processor</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># create a very basic DocumentProcessor (assume user will provide method input)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+                    <span class="n">DocumentConfig</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span> <span class="n">output_type</span><span class="o">=</span><span class="n">document_output_type</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.refine_system_prompt">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.refine_system_prompt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refine_system_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use LLM to refine user&#39;s task description into a proper system prompt&quot;&quot;&quot;</span>
+        <span class="n">system_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are an expert at creating clear and effective system prompts for LLMs.</span>
+<span class="s2">        Your task is to refine a user&#39;s task description into a well-structured system prompt.</span>
+<span class="s2">        </span>
+<span class="s2">        Guidelines for prompt refinement:</span>
+<span class="s2">        1. Maintain the core objective of the task</span>
+<span class="s2">        2. Add clear instructions and constraints</span>
+<span class="s2">        3. Include relevant context and examples if needed</span>
+<span class="s2">        4. Structure the prompt in a logical order</span>
+<span class="s2">        5. Use clear, unambiguous language</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="n">human_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Please refine this task description into a proper system prompt:</span>
+<span class="s2">        </span>
+<span class="s2">        </span><span class="si">{task_description}</span>
+<span class="s2">        </span>
+<span class="s2">        Create a well-structured system prompt that will guide the LLM in extracting information</span>
+<span class="s2">        according to the task requirements. Be thorough but concise.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="n">ChatPromptTemplate</span><span class="o">.</span><span class="n">from_messages</span><span class="p">([</span>
+            <span class="n">SystemMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">system_template</span><span class="p">),</span>
+            <span class="n">HumanMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">human_template</span><span class="p">)</span>
+        <span class="p">])</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">format_messages</span><span class="p">(</span><span class="n">task_description</span><span class="o">=</span><span class="n">task_description</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+        <span class="n">refined_prompt</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">response</span> <span class="k">else</span> <span class="n">task_description</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Refined system prompt: </span><span class="si">{</span><span class="n">refined_prompt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">refined_prompt</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.chunk_document">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.chunk_document">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chunk_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="n">ProcessedDocument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">DocumentChunk</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split document into chunks if needed based on thresholds&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="o">.</span><span class="n">content_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">content</span>
+            <span class="n">chunk_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;chunk_size&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">chunk_size</span>
+            <span class="n">overlap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;chunk_overlap&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">extractor</span><span class="o">.</span><span class="n">chunk_overlap</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span>
+                <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+                    <span class="c1"># Try to find a space to break at</span>
+                    <span class="k">while</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="n">end</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39; &#39;</span><span class="p">:</span>
+                        <span class="n">end</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="n">start</span><span class="p">:</span>  <span class="c1"># No space found</span>
+                        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">chunk_size</span>
+                <span class="k">yield</span> <span class="n">DocumentChunk</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">],</span>
+                                    <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                                    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+                                        <span class="o">**</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;chunk_start&#39;</span><span class="p">:</span> <span class="n">start</span><span class="p">,</span>
+                                        <span class="s1">&#39;chunk_end&#39;</span><span class="p">:</span> <span class="n">end</span>
+                                    <span class="p">})</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">overlap</span>
+        <span class="k">elif</span> <span class="n">doc</span><span class="o">.</span><span class="n">content_type</span> <span class="o">==</span> <span class="s1">&#39;image&#39;</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">DocumentChunk</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">doc</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">DocumentChunk</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">doc</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="n">doc</span><span class="o">.</span><span class="n">content_type</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.create_text_extraction_prompt">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.create_text_extraction_prompt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_text_extraction_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatPromptTemplate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create prompt template for text-based information extraction&quot;&quot;&quot;</span>
+        <span class="n">system_message_prompt</span> <span class="o">=</span> <span class="n">SystemMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span><span class="p">)</span>
+
+        <span class="n">human_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Please extract the required information from the following text:</span>
+<span class="s2">        </span>
+<span class="s2">        </span><span class="si">{content}</span>
+<span class="s2">        </span>
+<span class="s2">        Extract the information according to this schema:</span>
+<span class="s2">        </span><span class="si">{format_instructions}</span>
+<span class="s2">        </span>
+<span class="s2">        Return the extracted information in the specified JSON format.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="n">human_message_prompt</span> <span class="o">=</span> <span class="n">HumanMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">human_template</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ChatPromptTemplate</span><span class="o">.</span><span class="n">from_messages</span><span class="p">([</span><span class="n">system_message_prompt</span><span class="p">,</span> <span class="n">human_message_prompt</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.process_text_chunk">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.process_text_chunk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_text_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">:</span> <span class="n">DocumentChunk</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a text document chunk&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_text_extraction_prompt</span><span class="p">()</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">format_messages</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">chunk</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+                                              <span class="n">format_instructions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_parser</span><span class="o">.</span><span class="n">get_format_instructions</span><span class="p">())</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">parsed_json</span> <span class="o">=</span> <span class="n">parse_json_markdown</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">])</span>
+            <span class="c1"># print(&quot;PARSED JSON TO VALIDATE:&quot;, parsed_json)  # DEBUG LINE</span>
+            <span class="c1"># Validate against schema</span>
+            <span class="n">validated_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_schema</span><span class="p">(</span><span class="o">**</span><span class="n">parsed_json</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">validated_response</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing text chunk: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.create_image_extraction_prompt">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.create_image_extraction_prompt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_image_extraction_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatPromptTemplate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create prompt template for image-based information extraction&quot;&quot;&quot;</span>
+        <span class="n">system_message_prompt</span> <span class="o">=</span> <span class="n">SystemMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Note: The input will include images that you should analyze.&quot;</span><span class="p">)</span>
+
+        <span class="n">human_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Please extract the required information from the provided image.</span>
+<span class="s2">        </span>
+<span class="s2">        Extract the information according to this schema:</span>
+<span class="s2">        </span><span class="si">{format_instructions}</span>
+<span class="s2">        </span>
+<span class="s2">        Return the extracted information in the specified JSON format as above.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="n">human_message_prompt</span> <span class="o">=</span> <span class="n">HumanMessagePromptTemplate</span><span class="o">.</span><span class="n">from_template</span><span class="p">(</span><span class="n">human_template</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ChatPromptTemplate</span><span class="o">.</span><span class="n">from_messages</span><span class="p">([</span><span class="n">system_message_prompt</span><span class="p">,</span> <span class="n">human_message_prompt</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.process_image_chunk">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.process_image_chunk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_image_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">:</span> <span class="n">DocumentChunk</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process an image document chunk&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_image_extraction_prompt</span><span class="p">()</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;data:image/jpeg;base64,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">encode_image_base64</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="n">messages</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">format_messages</span><span class="p">(</span><span class="n">format_instructions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_parser</span><span class="o">.</span><span class="n">get_format_instructions</span><span class="p">())</span>
+
+            <span class="c1"># Convert to multimodal format</span>
+            <span class="n">messages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="p">[{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">messages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">content</span>
+            <span class="p">},</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image_url&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image_url&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">content</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+            <span class="n">parsed_json</span> <span class="o">=</span> <span class="n">parse_json_markdown</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">])</span>
+            <span class="c1"># Validate against schema</span>
+            <span class="n">validated_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_schema</span><span class="p">(</span><span class="o">**</span><span class="n">parsed_json</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">validated_response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing image chunk: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.process_chunk">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.process_chunk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">:</span> <span class="n">DocumentChunk</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a document chunk based on its type&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">content_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_text_chunk</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># image</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_image_chunk</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.process_document">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.process_document">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ProcessedDocument</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">ProcessedDocument</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process document and extract information, merging in chunk metadata.&quot;&quot;&quot;</span>
+        <span class="c1"># Handle None documents</span>
+        <span class="k">if</span> <span class="n">doc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Received None document, skipping&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># Patch: robustly wrap non-list docs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="n">doc</span>
+
+        <span class="c1"># Filter out any None documents in the list</span>
+        <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">docs</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: All documents in list were None, skipping&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># Create chunks for all documents</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
+            <span class="n">chunks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_document</span><span class="p">(</span><span class="n">d</span><span class="p">)))</span>
+        <span class="c1"># Process chunks sequentially</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_chunk</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Convert Pydantic result to dict if needed, then merge with metadata</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;model_dump&#39;</span><span class="p">):</span>
+                    <span class="n">schema_dict</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">):</span>
+                    <span class="n">schema_dict</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">schema_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}</span>
+                <span class="n">merged</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">schema_dict</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">}</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">merged</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.save_results">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.save_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save extraction results to JSON file&quot;&quot;&quot;</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+        <span class="n">output_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Convert Pydantic models to dictionaries</span>
+        <span class="n">json_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">json_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  <span class="c1"># Preserve merged dict with metadata</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;model_dump&#39;</span><span class="p">):</span>  <span class="c1"># Pydantic v2</span>
+                <span class="n">json_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">):</span>  <span class="c1"># Pydantic v1</span>
+                <span class="n">json_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">json_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  <span class="c1"># Already a dict or other JSON-serializable object</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">json_results</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Results saved to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InfoExtractor.process_all">
+<a class="viewcode-back" href="../../index.html#dllmforge.IE_agent_extractor.InfoExtractor.process_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_individual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">combined_output_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all_extracted.json&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process all documents in configured directory</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            save_individual: If True, save each document to a separate JSON file (old behavior)</span>
+<span class="sd">            combined_output_name: Name of the combined output file (default: &quot;all_extracted.json&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Process documents</span>
+        <span class="n">processed_docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">process_directory</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">processed_docs</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No documents to process&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Determine output directory</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;document&#39;</span><span class="p">):</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">output_dir</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">):</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">output_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Collect all results</span>
+        <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Process each document</span>
+        <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">processed_docs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Skip None documents</span>
+                <span class="k">if</span> <span class="n">doc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Skipping None document in batch&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+
+                <span class="c1"># Skip if no results were extracted</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: No results extracted from document&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Get source file name for metadata</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">doc</span> <span class="ow">and</span> <span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">source_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source_file&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">stem</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Cannot determine source file name for empty/None document list&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">source_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source_file&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">stem</span>
+
+                <span class="c1"># Save individual file if requested</span>
+                <span class="k">if</span> <span class="n">save_individual</span><span class="p">:</span>
+                    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">source_file</span><span class="si">}</span><span class="s2">_extracted.json&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+
+                <span class="c1"># Add to combined results with document identifier</span>
+                <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;_source_document&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_file</span>
+                <span class="n">all_results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># Get document info for better error messages</span>
+                <span class="n">doc_info</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">doc</span><span class="p">:</span>
+                        <span class="n">doc_info</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;source_file&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">doc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">doc_info</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;source_file&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing document </span><span class="si">{</span><span class="n">doc_info</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+                <span class="k">continue</span>
+
+        <span class="c1"># Save combined results</span>
+        <span class="k">if</span> <span class="n">all_results</span><span class="p">:</span>
+            <span class="n">combined_output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">combined_output_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">all_results</span><span class="p">,</span> <span class="n">combined_output_path</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">✓ Combined results saved to </span><span class="si">{</span><span class="n">combined_output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total extractions: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_results</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">No results to save&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># ------- Explicit Example: Using config objects (full control) -------</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">IEAgentConfig</span><span class="p">,</span> <span class="n">ExtractorConfig</span><span class="p">,</span> <span class="n">DocumentConfig</span><span class="p">,</span> <span class="n">SchemaConfig</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_schema_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaGenerator</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_document_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocumentProcessor</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.langchain_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainAPI</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">glob</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+    <span class="c1"># 1. PREPARE SCHEMA (always required)</span>
+    <span class="n">current_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">schema_dir</span> <span class="o">=</span> <span class="n">current_dir</span> <span class="o">/</span> <span class="s2">&quot;generated_schemas&quot;</span>
+    <span class="n">schema_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">schema_file</span> <span class="o">=</span> <span class="n">schema_dir</span> <span class="o">/</span> <span class="s2">&quot;model_hyperparameters.py&quot;</span>
+    <span class="n">schema_task_description</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Generate a Pydantic schema class named ModelHyperparameters to extract machine learning model hyperparameters from research papers and documentation. &quot;</span>
+        <span class="s2">&quot;The schema should capture: model architecture details (type, layers, neurons, etc.), &quot;</span>
+        <span class="s2">&quot;training parameters (learning rate, batch size, epochs), &quot;</span>
+        <span class="s2">&quot;optimization settings (optimizer, loss function), regularization techniques (dropout, etc.).&quot;</span><span class="p">)</span>
+    <span class="n">schema_config</span> <span class="o">=</span> <span class="n">SchemaConfig</span><span class="p">(</span>
+        <span class="n">task_description</span><span class="o">=</span><span class="n">schema_task_description</span><span class="p">,</span>  <span class="c1"># REQUIRED</span>
+        <span class="n">example_doc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># optional</span>
+        <span class="n">user_schema_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># optional</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">schema_file</span><span class="p">)</span>  <span class="c1"># optional for saving schema</span>
+    <span class="p">)</span>
+    <span class="n">schema_generator</span> <span class="o">=</span> <span class="n">SchemaGenerator</span><span class="p">(</span><span class="n">schema_config</span><span class="p">)</span>
+    <span class="n">schema_code</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">()</span>
+    <span class="n">class_matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;class\s+(\w+)\s*\(&quot;</span><span class="p">,</span> <span class="n">schema_code</span><span class="p">)</span>
+    <span class="n">class_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">class_matches</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">class_names</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not find any class names in generated schema&quot;</span><span class="p">)</span>
+    <span class="n">schema_class_name</span> <span class="o">=</span> <span class="n">class_names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">schema_generator</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="n">schema_code</span><span class="p">)</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="s2">&quot;model_hyperparameters&quot;</span><span class="p">,</span> <span class="n">schema_file</span><span class="p">)</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">schema_class_name</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated schema does not contain class </span><span class="si">{</span><span class="n">schema_class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">SchemaClass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">schema_class_name</span><span class="p">)</span>
+
+    <span class="c1"># ----- Specify ALL config arguments explicitly</span>
+    <span class="n">document_input_dir</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;c:/Users/deng_jg/work/16centralized_agents/test_data/test&quot;</span>
+    <span class="n">document_file_pattern</span> <span class="o">=</span> <span class="s2">&quot;*.pdf&quot;</span>
+    <span class="n">document_output_type</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
+    <span class="n">document_output_dir</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;c:/Users/deng_jg/work/16centralized_agents/test_data/output&quot;</span>
+
+    <span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">80000</span>  <span class="c1"># how large (chars) each text chunk should be</span>
+    <span class="n">chunk_overlap</span> <span class="o">=</span> <span class="mi">10000</span>  <span class="c1"># how much chunks overlap (chars)</span>
+
+    <span class="n">output_schema</span> <span class="o">=</span> <span class="n">SchemaClass</span>  <span class="c1"># REQUIRED</span>
+    <span class="n">llm_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span><span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># OPTIONAL, or None for default</span>
+
+    <span class="c1">#%%    # 2. CONFIG-BASED (FULL) USAGE</span>
+    <span class="c1"># Build ALL config objects with all fields</span>
+    <span class="n">extractor_config</span> <span class="o">=</span> <span class="n">ExtractorConfig</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span> <span class="n">chunk_overlap</span><span class="o">=</span><span class="n">chunk_overlap</span><span class="p">)</span>
+    <span class="n">document_config</span> <span class="o">=</span> <span class="n">DocumentConfig</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">document_input_dir</span><span class="p">,</span>
+                                     <span class="n">file_pattern</span><span class="o">=</span><span class="n">document_file_pattern</span><span class="p">,</span>
+                                     <span class="n">output_type</span><span class="o">=</span><span class="n">document_output_type</span><span class="p">,</span>
+                                     <span class="n">output_dir</span><span class="o">=</span><span class="n">document_output_dir</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">IEAgentConfig</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">schema_config</span><span class="p">,</span> <span class="n">document</span><span class="o">=</span><span class="n">document_config</span><span class="p">,</span> <span class="n">extractor</span><span class="o">=</span><span class="n">extractor_config</span><span class="p">)</span>
+
+    <span class="n">extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>  <span class="c1"># REQUIRED (when using config route)</span>
+        <span class="n">output_schema</span><span class="o">=</span><span class="n">output_schema</span><span class="p">,</span>  <span class="c1"># REQUIRED</span>
+        <span class="n">llm_api</span><span class="o">=</span><span class="n">llm_api</span>  <span class="c1"># Optional</span>
+    <span class="p">)</span>
+
+    <span class="c1"># --- 2a. Process single file (with all InfoExtractor vars shown)</span>
+    <span class="n">single_doc_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">document_input_dir</span><span class="p">,</span> <span class="s2">&quot;lstm_low_flow.pdf&quot;</span><span class="p">)</span>
+
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">single_doc_path</span><span class="p">)</span>  <span class="c1"># Uses DocumentProcessor config</span>
+    <span class="k">if</span> <span class="n">doc</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">document_output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;lstm_low_flow_extracted.json&quot;</span>  <span class="c1"># fix: Path object</span>
+        <span class="n">extractor</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[CONFIG] Single file results saved to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># --- 2b. Directory mode (all config-driven)</span>
+    <span class="n">extractor</span><span class="o">.</span><span class="n">process_all</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[CONFIG] Directory batch complete! Check </span><span class="si">{</span><span class="n">document_output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1">#%%</span>
+    <span class="c1"># ------- Explicit Example: Direct/no-config (all args shown) -----------</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Example 2: Direct, no config objects (all params explicit)&quot;</span><span class="p">)</span>
+    <span class="c1"># Define for direct mode:</span>
+    <span class="n">direct_system_prompt</span> <span class="o">=</span> <span class="s2">&quot;Extract model hyperparameters from research paper.&quot;</span>
+    <span class="n">direct_doc_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">document_input_dir</span><span class="p">,</span>
+                                             <span class="n">file_pattern</span><span class="o">=</span><span class="n">document_file_pattern</span><span class="p">,</span>
+                                             <span class="n">output_type</span><span class="o">=</span><span class="n">document_output_type</span><span class="p">,</span>
+                                             <span class="n">output_dir</span><span class="o">=</span><span class="n">document_output_dir</span><span class="p">)</span>
+    <span class="c1"># Create InfoExtractor using keyword arguments (no config)</span>
+    <span class="n">direct_extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span><span class="n">output_schema</span><span class="o">=</span><span class="n">output_schema</span><span class="p">,</span>
+                                     <span class="n">llm_api</span><span class="o">=</span><span class="n">llm_api</span><span class="p">,</span>
+                                     <span class="n">system_prompt</span><span class="o">=</span><span class="n">direct_system_prompt</span><span class="p">,</span>
+                                     <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+                                     <span class="n">chunk_overlap</span><span class="o">=</span><span class="n">chunk_overlap</span><span class="p">,</span>
+                                     <span class="n">doc_processor</span><span class="o">=</span><span class="n">direct_doc_processor</span><span class="p">,</span>
+                                     <span class="n">document_output_type</span><span class="o">=</span><span class="n">document_output_type</span><span class="p">)</span>
+
+    <span class="c1"># --- Process single file ---</span>
+    <span class="n">single_doc_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">document_input_dir</span><span class="p">,</span> <span class="s2">&quot;lstm_low_flow.pdf&quot;</span><span class="p">)</span>
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">direct_extractor</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">single_doc_path</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">direct_extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DIRECT] Single-file direct results (first result): </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">document_output_dir</span><span class="p">,</span> <span class="s2">&quot;lstm_low_flow_extracted.json&quot;</span><span class="p">)</span>
+    <span class="n">direct_extractor</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+
+    <span class="c1"># --- Directory mode (loop) ---</span>
+    <span class="n">direct_extractor</span><span class="o">.</span><span class="n">process_all</span><span class="p">()</span>
+    <span class="n">direct_extractor</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

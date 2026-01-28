@@ -1,0 +1,20 @@
+dllmforge.rag\_evaluation
+=========================
+
+.. automodule:: dllmforge.rag_evaluation
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      evaluate_rag_response
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      EvaluationResult
+      RAGEvaluationResult
+      RAGEvaluator
+   
