@@ -25,7 +25,7 @@ def mock_embedding_model():
 @pytest.fixture
 def mock_llm():
     llm = MagicMock()
-    llm.return_value.content = 'Mocked LLM response.'
+    llm.invoke.return_value.content.strip.return_value = 'Mocked LLM response.'
     return llm
 
 
@@ -52,7 +52,7 @@ def test_retriever_search(mock_search_client, mock_embedding_model):
         "file_name": "file"
     }]
     retriever = rag.Retriever(mock_embedding_model, 'test_index', 'endpoint', 'key')
-    results = retriever.search('query', top_k=1)
+    results = retriever.invoke('query', top_k=1)
     assert isinstance(results, list)
     assert results[0]["chunk_id"] == "id1"
     assert mock_embedding_model.embed.called
@@ -65,4 +65,4 @@ def test_llm_responder_generate(mock_llm):
     query = "What is this?"
     response = responder.generate(query, chunks)
     assert response == 'Mocked LLM response.'
-    assert mock_llm.called
+    assert mock_llm.invoke.called

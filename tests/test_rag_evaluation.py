@@ -55,42 +55,40 @@ class TestRAGEvaluator:
             "weaknesses": []
         }
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_initialization(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_initialization(self, mock_langchain):
         """Test evaluator initialization."""
         # Mock environment variables
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
             assert evaluator.llm_provider == "openai"
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
     @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_auto_provider_selection(self, mock_anthropic, mock_openai):
+    def test_auto_provider_selection(self, mock_anthropic, mock_langchain):
         """Test automatic provider selection."""
-        # Test OpenAI selection
+        # Test Azure OpenAI selection
         with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="auto")
-            assert evaluator.llm_provider == "openai"
+            evaluator = RAGEvaluator(llm_provider="auto", model_name="gpt-4")
+            assert evaluator.llm_provider == "azure-openai"
 
         # Test Anthropic selection
         with patch.dict(os.environ, {'ANTHROPIC_API_KEY': 'test_key'}, clear=True):
-            evaluator = RAGEvaluator(llm_provider="auto")
+            evaluator = RAGEvaluator(llm_provider="auto", model_name="claude-3-opus")
             assert evaluator.llm_provider == "anthropic"
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_context_relevancy_evaluation(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_context_relevancy_evaluation(self, mock_langchain):
         """Test context relevancy evaluation."""
         # Setup mock
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.return_value = {
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.return_value = {
             "response": json.dumps(self.sample_context_relevancy_response)
         }
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             question = "What is machine learning?"
             contexts = [
@@ -105,17 +103,18 @@ class TestRAGEvaluator:
             assert result.score == 0.333
             assert "Only one sentence is relevant" in result.explanation
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_faithfulness_evaluation(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_faithfulness_evaluation(self, mock_langchain):
         """Test faithfulness evaluation."""
         # Setup mock
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.return_value = {"response": json.dumps(self.sample_faithfulness_response)}
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.return_value = {
+            "response": json.dumps(self.sample_faithfulness_response)
+        }
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             question = "What is the population of Tokyo?"
             answer = "Tokyo has 14 million people."
@@ -128,19 +127,18 @@ class TestRAGEvaluator:
             assert result.score == 1.0
             assert "All statements are supported" in result.explanation
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_answer_relevancy_evaluation(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_answer_relevancy_evaluation(self, mock_langchain):
         """Test answer relevancy evaluation."""
         # Setup mock
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.return_value = {
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.return_value = {
             "response": json.dumps(self.sample_answer_relevancy_response)
         }
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             question = "What is the capital of France?"
             answer = "The capital of France is Paris."
@@ -152,13 +150,12 @@ class TestRAGEvaluator:
             assert result.score == 0.9
             assert "directly addresses the question" in result.explanation
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_context_recall_evaluation(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_context_recall_evaluation(self, mock_langchain):
         """Test context recall evaluation."""
         # Setup mock
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.return_value = {
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.return_value = {
             "response": json.dumps({
                 "statements": ["Paris is the capital of France"],
                 "supported_statements": ["Paris is the capital of France"],
@@ -168,10 +165,10 @@ class TestRAGEvaluator:
                 "explanation": "All statements are supported"
             })
         }
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             question = "What is the capital of France?"
             contexts = ["Paris is the capital and largest city of France."]
@@ -183,13 +180,12 @@ class TestRAGEvaluator:
             assert result.metric_name == "context_recall"
             assert result.score == 1.0
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_complete_pipeline_evaluation(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_complete_pipeline_evaluation(self, mock_langchain):
         """Test complete pipeline evaluation."""
         # Setup mock responses
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.side_effect = [{
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.side_effect = [{
             "response": json.dumps(self.sample_context_relevancy_response)
         }, {
             "response": json.dumps(self.sample_faithfulness_response)
@@ -205,10 +201,10 @@ class TestRAGEvaluator:
                 "explanation": "All statements supported"
             })
         }]
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             result = evaluator.evaluate_rag_pipeline(question="What is the capital of France?",
                                                      generated_answer="The capital of France is Paris.",
@@ -220,14 +216,13 @@ class TestRAGEvaluator:
             assert result.metadata["question"] == "What is the capital of France?"
             assert result.metadata["has_ground_truth"] is True
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_save_evaluation_results(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_save_evaluation_results(self, mock_langchain):
         """Test saving evaluation results to JSON."""
         # Create a mock evaluation result
-        context_relevancy = EvaluationResult(metric_name="context_relevancy",
+        context_precision = EvaluationResult(metric_name="context_precision",
                                              score=0.8,
-                                             explanation="Good relevancy",
+                                             explanation="Good precision",
                                              details={"test": "data"})
 
         context_recall = EvaluationResult(metric_name="context_recall",
@@ -245,7 +240,7 @@ class TestRAGEvaluator:
                                             explanation="Good relevancy",
                                             details={"test": "data"})
 
-        result = RAGEvaluationResult(context_relevancy=context_relevancy,
+        result = RAGEvaluationResult(context_precision=context_precision,
                                      context_recall=context_recall,
                                      faithfulness=faithfulness,
                                      answer_relevancy=answer_relevancy,
@@ -258,7 +253,7 @@ class TestRAGEvaluator:
             temp_file = f.name
 
         try:
-            evaluator = RAGEvaluator(llm_provider="openai")
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
             evaluator.save_evaluation_results(result, temp_file)
 
             # Verify file was created and contains expected data
@@ -268,25 +263,24 @@ class TestRAGEvaluator:
             assert saved_data["ragas_score"] == 0.825
             assert saved_data["evaluation_time"] == 5.0
             assert "metrics" in saved_data
-            assert "context_relevancy" in saved_data["metrics"]
-            assert saved_data["metrics"]["context_relevancy"]["score"] == 0.8
+            assert "context_precision" in saved_data["metrics"]
+            assert saved_data["metrics"]["context_precision"]["score"] == 0.8
 
         finally:
             # Clean up
             if os.path.exists(temp_file):
                 os.unlink(temp_file)
 
-    @patch('dllmforge.rag_evaluation.OpenAIAPI')
-    @patch('dllmforge.rag_evaluation.AnthropicAPI')
-    def test_error_handling(self, mock_anthropic, mock_openai):
+    @patch('dllmforge.rag_evaluation.LangchainAPI')
+    def test_error_handling(self, mock_langchain):
         """Test error handling in evaluation."""
         # Setup mock to raise exception
-        mock_openai_instance = Mock()
-        mock_openai_instance.chat_completion.side_effect = Exception("API Error")
-        mock_openai.return_value = mock_openai_instance
+        mock_langchain_instance = Mock()
+        mock_langchain_instance.chat_completion.side_effect = Exception("API Error")
+        mock_langchain.return_value = mock_langchain_instance
 
-        with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test_key'}):
-            evaluator = RAGEvaluator(llm_provider="openai")
+        with patch.dict(os.environ, {'OPENAI_API_KEY': 'test_key'}):
+            evaluator = RAGEvaluator(llm_provider="openai", model_name="gpt-4")
 
             # Should handle API errors gracefully
             result = evaluator.evaluate_context_relevancy("test", ["test"])
@@ -354,12 +348,12 @@ class TestIntegration:
         assert eval_result.details["key"] == "value"
 
         # Test RAGEvaluationResult creation
-        context_relevancy = EvaluationResult("context_relevancy", 0.8, "test", {})
+        context_precision = EvaluationResult("context_precision", 0.8, "test", {})
         context_recall = EvaluationResult("context_recall", 0.9, "test", {})
         faithfulness = EvaluationResult("faithfulness", 0.85, "test", {})
         answer_relevancy = EvaluationResult("answer_relevancy", 0.75, "test", {})
 
-        rag_result = RAGEvaluationResult(context_relevancy=context_relevancy,
+        rag_result = RAGEvaluationResult(context_precision=context_precision,
                                          context_recall=context_recall,
                                          faithfulness=faithfulness,
                                          answer_relevancy=answer_relevancy,
@@ -368,5 +362,5 @@ class TestIntegration:
                                          metadata={"test": "metadata"})
 
         assert rag_result.ragas_score == 0.825
-        assert rag_result.context_relevancy.score == 0.8
+        assert rag_result.context_precision.score == 0.8
         assert rag_result.context_recall.score == 0.9

@@ -64,7 +64,15 @@ class RAGEvaluator:
     - Answer Relevancy: Measures how relevant and to-the-point answers are
     """
 
-    def __init__(self, llm_provider: str = "auto", deltares_llm: Optional[DeltaresOllamaLLM] = None):
+    def __init__(self,
+                 llm_provider: str = "auto",
+                 deltares_llm: Optional[DeltaresOllamaLLM] = None,
+                 temperature: float = 0.1,
+                 api_key: Optional[str] = None,
+                 api_base: Optional[str] = None,
+                 api_version: Optional[str] = None,
+                 deployment_name: Optional[str] = None,
+                 model_name: Optional[str] = None):
         """
         Initialize the RAG evaluator.
 
@@ -75,11 +83,23 @@ class RAGEvaluator:
 
         # Initialize LLM APIs
         if self.llm_provider == "openai":
-            self.openai_api = LangchainAPI(model_provider="openai")
+            self.openai_api = LangchainAPI(model_provider="openai",
+                                           temperature=temperature,
+                                           api_key=api_key,
+                                           model_name=model_name,
+                                           api_base=api_base,
+                                           api_version=api_version,
+                                           deployment_name=deployment_name)
         elif self.llm_provider == "anthropic":
-            self.anthropic_api = AnthropicAPI()
+            self.anthropic_api = AnthropicAPI(api_key=api_key, model=model_name)
         elif self.llm_provider == "azure-openai":
-            self.azure_openai_api = LangchainAPI(model_provider="azure-openai")
+            self.azure_openai_api = LangchainAPI(model_provider="azure-openai",
+                                                 temperature=temperature,
+                                                 api_key=api_key,
+                                                 model_name=model_name,
+                                                 api_base=api_base,
+                                                 api_version=api_version,
+                                                 deployment_name=deployment_name)
         elif self.llm_provider == "deltares":
             if deltares_llm is None:
                 raise ValueError("Deltares LLM must be provided when using 'deltares' provider")
