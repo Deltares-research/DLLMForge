@@ -15,6 +15,7 @@ from typing import Any, List, Optional
 import requests
 import json
 
+
 class LangchainAPI:
     """Class to interact with various LLM providers using Langchain."""
 
@@ -65,7 +66,6 @@ class LangchainAPI:
         else:
             raise ValueError(
                 f"Unsupported model provider: {model_provider}. Choose from 'azure-openai', 'openai', or 'mistral'")
-
 
     def check_server_status(self):
         """Check if the LLM service is accessible."""
@@ -147,7 +147,10 @@ class LangchainAPI:
         """
         context = retriever.invoke(question)
         prompt = [
-            SystemMessage(content="You are a helpful assistant that answers questions based on the provided context. As you are thinking reflect on the question."),
+            SystemMessage(
+                content=
+                "You are a helpful assistant that answers questions based on the provided context. As you are thinking reflect on the question."
+            ),
             HumanMessage(content=f"Question: {question} \nContext: {context}"),
         ]
         response = self.llm(prompt)

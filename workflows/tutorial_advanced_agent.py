@@ -12,13 +12,13 @@ Fun and practical examples for water professionals!
 
 # Load environment variables from .env file for API keys and endpoints
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Import dllmforge simple agent and tool decorator
 from dllmforge.agent_core import SimpleAgent, tool
 import logging
 from dllmforge.openai_api import OpenAIAPI
-
 
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import START, END
@@ -115,7 +115,6 @@ calculation_node = ToolNode(calculation_tools)
 info_node = ToolNode(info_tools)
 unified_node = ToolNode(all_tools)
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -127,7 +126,7 @@ def concise_summary(state):
 
     tool_msgs = [m for m in messages if getattr(m, "type", "") == "tool"]
     tools_text = "\n".join([getattr(tm, "content", "") for tm in tool_msgs]) or ""
-    
+
     # Prefer summarizing tool outputs so calculated values are included; fallback to latest AI text
     if tools_text:
         text_to_summarize = tools_text
@@ -143,7 +142,9 @@ def concise_summary(state):
 
         llm_api = LangchainAPI()
         prompt_messages = [
-            ("system", "You are a helpful assistant. Summarize the following tool results concisely (1-2 sentences). Include any numeric values verbatim; do not omit calculated numbers."),
+            ("system",
+             "You are a helpful assistant. Summarize the following tool results concisely (1-2 sentences). Include any numeric values verbatim; do not omit calculated numbers."
+             ),
             ("human", text_to_summarize),
         ]
         response = llm_api.llm.invoke(prompt_messages)
@@ -163,7 +164,7 @@ def extended_summary(state):
 
     tool_msgs = [m for m in messages if getattr(m, "type", "") == "tool"]
     tools_text = "\n".join([getattr(tm, "content", "") for tm in tool_msgs]) or ""
-    
+
     # Prefer summarizing tool outputs so calculated values are included; fallback to latest AI text
     if tools_text:
         text_to_summarize = tools_text
@@ -179,7 +180,9 @@ def extended_summary(state):
 
         llm_api = LangchainAPI()
         prompt_messages = [
-            ("system", "You are a helpful assistant. Summarize the following tool convering all possible details. Max 1 paragraph. Include any numeric values verbatim; do not omit calculated numbers."),
+            ("system",
+             "You are a helpful assistant. Summarize the following tool convering all possible details. Max 1 paragraph. Include any numeric values verbatim; do not omit calculated numbers."
+             ),
             ("human", text_to_summarize),
         ]
         response = llm_api.llm.invoke(prompt_messages)
@@ -189,8 +192,6 @@ def extended_summary(state):
 
     summary_message = AIMessage(content=f"Summary: {summary_text}")
     return {"messages": messages + [summary_message]}
-
-
 
 
 def steps_taken(state):
@@ -258,7 +259,7 @@ def steps_taken(state):
                 combined.append("Unified toolset:")
                 combined.extend(unified_tool_names)
     if steps_lines:
-        combined.append("Tool calls:" )
+        combined.append("Tool calls:")
         combined.extend(steps_lines)
     if tool_result_lines:
         combined.append("Tool results:")

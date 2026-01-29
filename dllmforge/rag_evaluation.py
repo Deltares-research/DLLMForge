@@ -120,14 +120,14 @@ class RAGEvaluator:
                 response = self.openai_api.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "anthropic":
-                response = self.anthropic_api.chat_completion(
-                    messages=messages, temperature=temperature, max_tokens=1000
-                )
+                response = self.anthropic_api.chat_completion(messages=messages,
+                                                              temperature=temperature,
+                                                              max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "azure-openai":
-                response = self.azure_openai_api.chat_completion(
-                    messages=messages, temperature=temperature, max_tokens=1000
-                )
+                response = self.azure_openai_api.chat_completion(messages=messages,
+                                                                 temperature=temperature,
+                                                                 max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "deltares":
                 return self.deltares_llm.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
@@ -178,8 +178,14 @@ Please respond in the following JSON format:
 }}"""
 
         messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the relevancy of text contexts."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the relevancy of text contexts."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
         ]
 
         response = self._call_llm(messages)
@@ -228,9 +234,11 @@ Please respond in the following JSON format:
 
         return EvaluationResult(metric_name="context_relevancy", score=score, explanation=explanation, details=details)
 
-    def evaluate_context_precision(
-        self, question: str, retrieved_contexts: List[str], ground_truth_answer: Optional[str], top_k: int = 5
-    ) -> EvaluationResult:
+    def evaluate_context_precision(self,
+                                   question: str,
+                                   retrieved_contexts: List[str],
+                                   ground_truth_answer: Optional[str],
+                                   top_k: int = 5) -> EvaluationResult:
         """
         Evaluate Context Precision@k following the Ragas implementation.
 
@@ -279,8 +287,14 @@ Please respond in the following JSON format:
 }}"""
 
         messages = [
-            {"role": "system", "content": "You are a precise evaluator for RAG context precision."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": "You are a precise evaluator for RAG context precision."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
         ]
 
         response = self._call_llm(messages)
@@ -308,7 +322,7 @@ Please respond in the following JSON format:
         # --- Compute Average Precision (Ragas logic) ---
         verdict_list = [1 if r else 0 for r in relevance]
         denominator = sum(verdict_list) + 1e-10
-        numerator = sum([(sum(verdict_list[: i + 1]) / (i + 1)) * verdict_list[i] for i in range(len(verdict_list))])
+        numerator = sum([(sum(verdict_list[:i + 1]) / (i + 1)) * verdict_list[i] for i in range(len(verdict_list))])
         score = numerator / denominator if denominator > 0 else 0.0
 
         details = {
@@ -317,13 +331,13 @@ Please respond in the following JSON format:
             "top_contexts": top_contexts,
         }
 
-        return EvaluationResult(
-            metric_name=f"context_precision@{top_k}", score=score, explanation=explanation, details=details
-        )
+        return EvaluationResult(metric_name=f"context_precision@{top_k}",
+                                score=score,
+                                explanation=explanation,
+                                details=details)
 
-    def evaluate_context_recall(
-        self, question: str, retrieved_contexts: List[str], ground_truth_answer: str
-    ) -> EvaluationResult:
+    def evaluate_context_recall(self, question: str, retrieved_contexts: List[str],
+                                ground_truth_answer: str) -> EvaluationResult:
         """
         Evaluate the recall of retrieved contexts against a ground truth answer.
         This metric measures the ability of the retriever to retrieve all necessary information
@@ -369,8 +383,14 @@ Please respond in the following JSON format:
 }}"""
 
         messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the recall of text contexts."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the recall of text contexts."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
         ]
 
         response = self._call_llm(messages)
@@ -416,9 +436,8 @@ Please respond in the following JSON format:
 
         return EvaluationResult(metric_name="context_recall", score=score, explanation=explanation, details=details)
 
-    def evaluate_faithfulness(
-        self, question: str, generated_answer: str, retrieved_contexts: List[str]
-    ) -> EvaluationResult:
+    def evaluate_faithfulness(self, question: str, generated_answer: str,
+                              retrieved_contexts: List[str]) -> EvaluationResult:
         """
         Evaluate the faithfulness of the generated answer to the retrieved contexts.
 
@@ -470,7 +489,10 @@ Please respond in the following JSON format:
                 "role": "system",
                 "content": "You are a helpful assistant that evaluates the faithfulness of generated answers.",
             },
-            {"role": "user", "content": prompt},
+            {
+                "role": "user",
+                "content": prompt
+            },
         ]
 
         response = self._call_llm(messages)
@@ -554,8 +576,14 @@ Please respond in the following JSON format:
 }}"""
 
         messages = [
-            {"role": "system", "content": "You are a helpful assistant that evaluates the relevancy of answers."},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the relevancy of answers."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
         ]
 
         response = self._call_llm(messages)
@@ -599,9 +627,8 @@ Please respond in the following JSON format:
 
         return EvaluationResult(metric_name="answer_relevancy", score=score, explanation=explanation, details=details)
 
-    def calculate_ragas_score(
-        self, context_precision: float, context_recall: float, faithfulness: float, answer_relevancy: float
-    ) -> float:
+    def calculate_ragas_score(self, context_precision: float, context_recall: float, faithfulness: float,
+                              answer_relevancy: float) -> float:
         """
         Calculate the RAGAS score as the harmonic mean of all four metrics.
         Args:
@@ -684,9 +711,8 @@ Please respond in the following JSON format:
             )
 
         # Calculate RAGAS score
-        ragas_score = self.calculate_ragas_score(
-            context_precision.score, context_recall.score, faithfulness.score, answer_relevancy.score
-        )
+        ragas_score = self.calculate_ragas_score(context_precision.score, context_recall.score, faithfulness.score,
+                                                 answer_relevancy.score)
 
         evaluation_time = time.time() - start_time
 
