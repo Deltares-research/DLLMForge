@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dllmforge.IE_agent_config" href="dllmforge.IE_agent_config.html" />
+    <link rel="prev" title="Retrieval-Augmented Generation (RAG)" href="../background/RAGS_explained.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dllmforge">
+<span id="dllmforge"></span><h1>dllmforge<a class="headerlink" href="#module-dllmforge" title="Link to this heading">¶</a></h1>
+<p>DLLMForge - Deltares LLM Forge Toolkit</p>
+<p>A comprehensive toolkit for building and deploying LLM-based applications
+with RAG capabilities, agentic workflows, and enterprise-grade features.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">SimpleAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_text_tool_routing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tool_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent" title="Link to this definition">¶</a></dt>
+<dd><p>Simple agent class for LangGraph workflows.</p>
+<p>Initialize a simple LangGraph agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature setting</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_text_tool_routing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tool_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize a simple LangGraph agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature setting</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.add_tool">
+<span class="sig-name descname"><span class="pre">add_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.add_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.add_tool" title="Link to this definition">¶</a></dt>
+<dd><p>Add a tool to the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tool_func</strong> – Function decorated with &#64;tool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.add_node">
+<span class="sig-name descname"><span class="pre">add_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.add_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.add_node" title="Link to this definition">¶</a></dt>
+<dd><p>Add a node to the workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Node name</p></li>
+<li><p><strong>func</strong> – Node function</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.add_edge">
+<span class="sig-name descname"><span class="pre">add_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.add_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.add_edge" title="Link to this definition">¶</a></dt>
+<dd><p>Add a simple edge between nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from_node</strong> – Source node</p></li>
+<li><p><strong>to_node</strong> – Target node</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.add_conditional_edge">
+<span class="sig-name descname"><span class="pre">add_conditional_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.add_conditional_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.add_conditional_edge" title="Link to this definition">¶</a></dt>
+<dd><p>Add a conditional edge.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from_node</strong> – Source node</p></li>
+<li><p><strong>condition_func</strong> – Function that determines routing</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.create_simple_workflow">
+<span class="sig-name descname"><span class="pre">create_simple_workflow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.create_simple_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.create_simple_workflow" title="Link to this definition">¶</a></dt>
+<dd><p>Create a simple agent -&gt; tools workflow with optional text-based tool routing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.compile">
+<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checkpointer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.compile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.compile" title="Link to this definition">¶</a></dt>
+<dd><p>Compile the workflow.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.process_query">
+<span class="sig-name descname"><span class="pre">process_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.process_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.process_query" title="Link to this definition">¶</a></dt>
+<dd><p>Process a query with the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> – User query</p></li>
+<li><p><strong>stream</strong> – Whether to stream the response</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.SimpleAgent.run_interactive">
+<span class="sig-name descname"><span class="pre">run_interactive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#SimpleAgent.run_interactive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.SimpleAgent.run_interactive" title="Link to this definition">¶</a></dt>
+<dd><p>Run the agent in interactive mode.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.create_basic_agent">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">create_basic_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../index.html#dllmforge.agent_core.SimpleAgent" title="dllmforge.agent_core.SimpleAgent"><span class="pre">SimpleAgent</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#create_basic_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.create_basic_agent" title="Link to this definition">¶</a></dt>
+<dd><p>Create a basic agent with standard setup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured agent instance</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../dllmforge.html#dllmforge.SimpleAgent" title="dllmforge.SimpleAgent">SimpleAgent</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.create_basic_tools">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">create_basic_tools</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/agent_core.html#create_basic_tools"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.create_basic_tools" title="Link to this definition">¶</a></dt>
+<dd><p>Create basic utility tools for testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of tool functions</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.AzureOpenAIEmbeddingModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">AzureOpenAIEmbeddingModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'text-embedding-3-large'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name_embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_embedding.html#AzureOpenAIEmbeddingModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AzureOpenAIEmbeddingModel" title="Link to this definition">¶</a></dt>
+<dd><p>Class for embedding queries and document chunks using Azure OpenAI Embeddings.</p>
+<p>Initialize the embedding model using provided arguments or environment variables for Azure OpenAI.
+:param model: Name of the embedding model to use
+:param api_base: Azure OpenAI API base URL
+:param deployment_name_embeddings: Azure OpenAI deployment name for embeddings
+:param api_key: Azure OpenAI API key
+:param api_version: Azure OpenAI API version</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AzureOpenAIEmbeddingModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'text-embedding-3-large'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name_embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_embedding.html#AzureOpenAIEmbeddingModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AzureOpenAIEmbeddingModel.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the embedding model using provided arguments or environment variables for Azure OpenAI.
+:param model: Name of the embedding model to use
+:param api_base: Azure OpenAI API base URL
+:param deployment_name_embeddings: Azure OpenAI deployment name for embeddings
+:param api_key: Azure OpenAI API key
+:param api_version: Azure OpenAI API version</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AzureOpenAIEmbeddingModel.validate_embedding">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">validate_embedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_embedding.html#AzureOpenAIEmbeddingModel.validate_embedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AzureOpenAIEmbeddingModel.validate_embedding" title="Link to this definition">¶</a></dt>
+<dd><p>Validate that the embedding is not empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AzureOpenAIEmbeddingModel.encode_filename">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">encode_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_embedding.html#AzureOpenAIEmbeddingModel.encode_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AzureOpenAIEmbeddingModel.encode_filename" title="Link to this definition">¶</a></dt>
+<dd><p>Encode filename to be safe for Azure Cognitive Search document keys.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AzureOpenAIEmbeddingModel.embed">
+<span class="sig-name descname"><span class="pre">embed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_or_chunks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_embedding.html#AzureOpenAIEmbeddingModel.embed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AzureOpenAIEmbeddingModel.embed" title="Link to this definition">¶</a></dt>
+<dd><p>Embed a single query string or a list of document chunks.
+:param query_or_chunks: A string (query) or a list of dictionaries (document chunks)</p>
+<blockquote>
+<div><p>Each dictionary should have keys: “text”, “file_name”, “page_number”</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>list of floats (embedding vector)
+For document chunks: list of dictionaries with keys: “chunk_id”, “chunk”, “page_number”,</p>
+<blockquote>
+<div><p>”file_name”, “text_vector”</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>For a string query</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.PDFLoader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">PDFLoader</span></span><a class="reference internal" href="../_modules/dllmforge/rag_preprocess_documents.html#PDFLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.PDFLoader" title="Link to this definition">¶</a></dt>
+<dd><p>Loader for PDF documents using PyPDF2.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.PDFLoader.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_preprocess_documents.html#PDFLoader.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.PDFLoader.load" title="Link to this definition">¶</a></dt>
+<dd><p>Load a PDF document and extract text from its pages.
+:param file_path: Path to the PDF file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing (pages_with_text, file_name) where pages_with_text is a list of (page_number, text) pairs</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.TextChunker">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">TextChunker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_preprocess_documents.html#TextChunker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.TextChunker" title="Link to this definition">¶</a></dt>
+<dd><p>Class for chunking text into smaller segments with overlap.
+For detailed information about chunking strategies in RAG applications, including:
+- Why chunking is important
+- How to choose chunk size and overlap
+- Different splitting techniques
+- Evaluation methods
+See: <a class="reference external" href="https://www.mongodb.com/developer/products/atlas/choosing-chunking-strategy-rag/">https://www.mongodb.com/developer/products/atlas/choosing-chunking-strategy-rag/</a></p>
+<p>Initialize the TextChunker.
+:param chunk_size: Maximum size of each chunk in characters
+:param overlap_size: Number of characters to overlap between chunks (recommended: 5-20% of chunk_size)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.TextChunker.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_preprocess_documents.html#TextChunker.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.TextChunker.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the TextChunker.
+:param chunk_size: Maximum size of each chunk in characters
+:param overlap_size: Number of characters to overlap between chunks (recommended: 5-20% of chunk_size)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.TextChunker.chunk_text">
+<span class="sig-name descname"><span class="pre">chunk_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pages_with_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_preprocess_documents.html#TextChunker.chunk_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.TextChunker.chunk_text" title="Link to this definition">¶</a></dt>
+<dd><p>Split text into chunks while preserving sentence boundaries.
+:param pages_with_text: List of tuples containing (page_number, text) pairs
+:param file_name: Name of the source file (optional)
+:param metadata: Metadata information extracted from the document (optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>{</dt><dd><p>‘text’: str,           # The chunk text
+‘page_number’: int,    # Source page number
+‘chunk_index’: int,    # Index of the chunk
+‘total_chunks’: int,   # Total number of chunks from this document
+‘file_name’: str       # Name of the source file</p>
+</dd>
+</dl>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dictionaries containing chunks with metadata</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IndexManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">IndexManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IndexManager" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IndexManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IndexManager.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IndexManager.create_index">
+<span class="sig-name descname"><span class="pre">create_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name_embeddings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.create_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IndexManager.create_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IndexManager.upload_documents">
+<span class="sig-name descname"><span class="pre">upload_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorized_chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.upload_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IndexManager.upload_documents" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.Retriever">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">Retriever</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.Retriever" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.Retriever.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.Retriever.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.Retriever.get_embeddings">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.Retriever.get_embeddings" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.Retriever.invoke">
+<span class="sig-name descname"><span class="pre">invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.invoke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.Retriever.invoke" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.LLMResponder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">LLMResponder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LLMResponder" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LLMResponder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LLMResponder.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LLMResponder.augment_prompt_with_context">
+<span class="sig-name descname"><span class="pre">augment_prompt_with_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.augment_prompt_with_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LLMResponder.augment_prompt_with_context" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LLMResponder.generate">
+<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LLMResponder.generate" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">RAGEvaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltares_llm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DeltaresOllamaLLM</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator" title="Link to this definition">¶</a></dt>
+<dd><p>RAGAS-inspired evaluator for RAG pipelines.</p>
+<p>This evaluator provides four key metrics:
+- Context Precision:
+- Context Recall: Measures the ability to retrieve all necessary information
+- Faithfulness: Measures factual accuracy and absence of hallucinations
+- Answer Relevancy: Measures how relevant and to-the-point answers are</p>
+<p>Initialize the RAG evaluator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>llm_provider</strong> – LLM provider to use (“openai”, “anthropic”, “deltares” or “auto”)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltares_llm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DeltaresOllamaLLM</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the RAG evaluator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>llm_provider</strong> – LLM provider to use (“openai”, “anthropic”, “deltares” or “auto”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_context_relevancy">
+<span class="sig-name descname"><span class="pre">evaluate_context_relevancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_contexts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><span class="pre">EvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_context_relevancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_context_relevancy" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the relevancy of retrieved contexts to the question.</p>
+<p>This metric measures the signal-to-noise ratio in the retrieved contexts.
+It identifies which sentences from the context are actually needed to answer the question.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> – The user’s question</p></li>
+<li><p><strong>retrieved_contexts</strong> – List of retrieved context chunks</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EvaluationResult with score and explanation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_context_precision">
+<span class="sig-name descname"><span class="pre">evaluate_context_precision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_contexts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><span class="pre">EvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_context_precision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_context_precision" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate Context Precision&#64;k following the Ragas implementation.</p>
+<p>For each of the top-k retrieved chunks, the LLM judges whether the chunk
+supports the reference answer. Average Precision (AP) is then computed as:</p>
+<blockquote>
+<div><p>AP = sum(Precision&#64;i * rel_i) / (# relevant chunks)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> – The question to evaluate.</p></li>
+<li><p><strong>reference_answer</strong> – The correct or gold answer.</p></li>
+<li><p><strong>retrieved_contexts</strong> – Ranked list of retrieved chunks.</p></li>
+<li><p><strong>top_k</strong> – Number of top chunks to evaluate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EvaluationResult with precision&#64;k score and explanation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_context_recall">
+<span class="sig-name descname"><span class="pre">evaluate_context_recall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_contexts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><span class="pre">EvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_context_recall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_context_recall" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the recall of retrieved contexts against a ground truth answer.
+This metric measures the ability of the retriever to retrieve all necessary information
+needed to answer the question by checking if each statement from the ground truth
+can be found in the retrieved context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> – The user’s question</p></li>
+<li><p><strong>retrieved_contexts</strong> – List of retrieved context chunks</p></li>
+<li><p><strong>ground_truth_answer</strong> – The reference answer to compare against</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EvaluationResult with score and explanation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_faithfulness">
+<span class="sig-name descname"><span class="pre">evaluate_faithfulness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generated_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_contexts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><span class="pre">EvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_faithfulness"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_faithfulness" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the faithfulness of the generated answer to the retrieved contexts.</p>
+<p>This metric measures the factual accuracy of the generated answer by checking
+if all statements in the answer are supported by the retrieved contexts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> – The user’s question</p></li>
+<li><p><strong>generated_answer</strong> – The answer generated by the RAG system</p></li>
+<li><p><strong>retrieved_contexts</strong> – List of retrieved context chunks</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EvaluationResult with score and explanation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_answer_relevancy">
+<span class="sig-name descname"><span class="pre">evaluate_answer_relevancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generated_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><span class="pre">EvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_answer_relevancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_answer_relevancy" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the relevancy of the generated answer to the question.
+This metric measures how relevant and to-the-point the answer is by generating
+probable questions that the answer could answer and computing similarity to the actual question.
+:param question: The user’s question
+:param generated_answer: The answer generated by the RAG system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>EvaluationResult with score and explanation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.calculate_ragas_score">
+<span class="sig-name descname"><span class="pre">calculate_ragas_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context_precision</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_recall</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faithfulness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer_relevancy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.calculate_ragas_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.calculate_ragas_score" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the RAGAS score as the harmonic mean of all four metrics.
+:param context_precision: Context precision score
+:param context_recall: Context recall score
+:param faithfulness: Faithfulness score
+:param answer_relevancy: Answer relevancy score</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>RAGAS score (harmonic mean)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.evaluate_rag_pipeline">
+<span class="sig-name descname"><span class="pre">evaluate_rag_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generated_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_contexts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult" title="dllmforge.rag_evaluation.RAGEvaluationResult"><span class="pre">RAGEvaluationResult</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.evaluate_rag_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.evaluate_rag_pipeline" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate a complete RAG pipeline using all four metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> – The user’s question</p></li>
+<li><p><strong>generated_answer</strong> – The answer generated by the RAG system</p></li>
+<li><p><strong>retrieved_contexts</strong> – List of retrieved context chunks</p></li>
+<li><p><strong>ground_truth_answer</strong> – Optional ground truth answer for context recall evaluation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Complete evaluation results</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.print_evaluation_summary">
+<span class="sig-name descname"><span class="pre">print_evaluation_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult" title="dllmforge.rag_evaluation.RAGEvaluationResult"><span class="pre">RAGEvaluationResult</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.print_evaluation_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.print_evaluation_summary" title="Link to this definition">¶</a></dt>
+<dd><p>Print a formatted summary of the evaluation results.
+:param result: The evaluation results to summarize</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.RAGEvaluator.save_evaluation_results">
+<span class="sig-name descname"><span class="pre">save_evaluation_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult" title="dllmforge.rag_evaluation.RAGEvaluationResult"><span class="pre">RAGEvaluationResult</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_evaluation.html#RAGEvaluator.save_evaluation_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.RAGEvaluator.save_evaluation_results" title="Link to this definition">¶</a></dt>
+<dd><p>Save evaluation results to a JSON file.
+:param result: The evaluation results to save
+:param output_file: Path to the output JSON file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">AnthropicAPI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'claude-3-7-sonnet-20250219'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_claude37</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_claude35</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI" title="Link to this definition">¶</a></dt>
+<dd><p>Class to interact with Anthropic’s Claude API.</p>
+<p>Initialize the Anthropic API client with configuration.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'claude-3-7-sonnet-20250219'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_claude37</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_claude35</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the Anthropic API client with configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI.check_server_status">
+<span class="sig-name descname"><span class="pre">check_server_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI.check_server_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI.check_server_status" title="Link to this definition">¶</a></dt>
+<dd><p>Check if the Anthropic API service is accessible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI.list_available_models">
+<span class="sig-name descname"><span class="pre">list_available_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI.list_available_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI.list_available_models" title="Link to this definition">¶</a></dt>
+<dd><p>List available models from Anthropic.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI.send_test_message">
+<span class="sig-name descname"><span class="pre">send_test_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hello,</span> <span class="pre">how</span> <span class="pre">are</span> <span class="pre">you?'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI.send_test_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI.send_test_message" title="Link to this definition">¶</a></dt>
+<dd><p>Send a test message to the model and get a response.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.AnthropicAPI.chat_completion">
+<span class="sig-name descname"><span class="pre">chat_completion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tokens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/anthropic_api.html#AnthropicAPI.chat_completion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.AnthropicAPI.chat_completion" title="Link to this definition">¶</a></dt>
+<dd><p>Get a chat completion from the model.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.LlamaIndexAPI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.</span></span><span class="sig-name descname"><span class="pre">LlamaIndexAPI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/llamaindex_api.html#LlamaIndexAPI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LlamaIndexAPI" title="Link to this definition">¶</a></dt>
+<dd><p>Class to interact with various LLM providers using LlamaIndex.</p>
+<p>Initialize the LlamaIndex API client with specified configuration.
+:param model_provider: Provider of model to use. Options are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“azure-openai”: Use Azure OpenAI</p></li>
+<li><p>“openai”: Use OpenAI</p></li>
+<li><p>“mistral”: Use Mistral</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temperature</strong> (<em>float</em>) – Temperature setting for the model (0.0 to 1.0)</p></li>
+<li><p><strong>api_key</strong> (<em>str</em>) – API key for the provider</p></li>
+<li><p><strong>api_base</strong> (<em>str</em>) – API base URL (for Azure)</p></li>
+<li><p><strong>api_version</strong> (<em>str</em>) – API version (for Azure)</p></li>
+<li><p><strong>deployment_name</strong> (<em>str</em>) – Deployment name (for Azure)</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Model name (for OpenAI/Mistral)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LlamaIndexAPI.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/llamaindex_api.html#LlamaIndexAPI.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LlamaIndexAPI.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the LlamaIndex API client with specified configuration.
+:param model_provider: Provider of model to use. Options are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“azure-openai”: Use Azure OpenAI</p></li>
+<li><p>“openai”: Use OpenAI</p></li>
+<li><p>“mistral”: Use Mistral</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temperature</strong> (<em>float</em>) – Temperature setting for the model (0.0 to 1.0)</p></li>
+<li><p><strong>api_key</strong> (<em>str</em>) – API key for the provider</p></li>
+<li><p><strong>api_base</strong> (<em>str</em>) – API base URL (for Azure)</p></li>
+<li><p><strong>api_version</strong> (<em>str</em>) – API version (for Azure)</p></li>
+<li><p><strong>deployment_name</strong> (<em>str</em>) – Deployment name (for Azure)</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Model name (for OpenAI/Mistral)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LlamaIndexAPI.check_server_status">
+<span class="sig-name descname"><span class="pre">check_server_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/llamaindex_api.html#LlamaIndexAPI.check_server_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LlamaIndexAPI.check_server_status" title="Link to this definition">¶</a></dt>
+<dd><p>Check if the LLM service is accessible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LlamaIndexAPI.send_test_message">
+<span class="sig-name descname"><span class="pre">send_test_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hello,</span> <span class="pre">how</span> <span class="pre">are</span> <span class="pre">you?'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/llamaindex_api.html#LlamaIndexAPI.send_test_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LlamaIndexAPI.send_test_message" title="Link to this definition">¶</a></dt>
+<dd><p>Send a test message to the model and get a response.
+:param prompt: The prompt string to send.
+:type prompt: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing the response and metadata.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.LlamaIndexAPI.chat_completion">
+<span class="sig-name descname"><span class="pre">chat_completion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tokens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/llamaindex_api.html#LlamaIndexAPI.chat_completion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.LlamaIndexAPI.chat_completion" title="Link to this definition">¶</a></dt>
+<dd><p>Get a chat completion from the model.
+:param messages: List of message dicts or tuples (role, content)
+:type messages: list
+:param temperature: Optional temperature override
+:type temperature: float
+:param max_tokens: Optional max tokens override
+:type max_tokens: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing the response and metadata.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p class="rubric">Modules</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="dllmforge.IE_agent_config.html#module-dllmforge.IE_agent_config" title="dllmforge.IE_agent_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IE_agent_config</span></code></a></p></td>
+<td><p>Configuration module for Information Extraction Agent.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#module-dllmforge.IE_agent_document_processor" title="dllmforge.IE_agent_document_processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IE_agent_document_processor</span></code></a></p></td>
+<td><p>Document Processor module for preprocessing documents into text or images for LLM processing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#module-dllmforge.IE_agent_extractor" title="dllmforge.IE_agent_extractor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IE_agent_extractor</span></code></a></p></td>
+<td><p>Synchronous Information Extractor module for extracting structured information from documents using LLM.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html#module-dllmforge.IE_agent_extractor_docling" title="dllmforge.IE_agent_extractor_docling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IE_agent_extractor_docling</span></code></a></p></td>
+<td><p>Synchronous Information Extractor module for extracting structured information from documents using LLM with Docling.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#module-dllmforge.IE_agent_schema_generator" title="dllmforge.IE_agent_schema_generator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IE_agent_schema_generator</span></code></a></p></td>
+<td><p>Schema Generator module for automatically generating Pydantic models based on user descriptions and example documents using LLM.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#module-dllmforge.agent_core" title="dllmforge.agent_core"><code class="xref py py-obj docutils literal notranslate"><span class="pre">agent_core</span></code></a></p></td>
+<td><p>Simple agent core for DLLMForge - Clean LangGraph utilities.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.anthropic_api" title="dllmforge.anthropic_api"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anthropic_api</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.langchain_api" title="dllmforge.langchain_api"><code class="xref py py-obj docutils literal notranslate"><span class="pre">langchain_api</span></code></a></p></td>
+<td><p>Create LLM object and api calls from langchain, including Azure and non-Azure models.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.llamaindex_api" title="dllmforge.llamaindex_api"><code class="xref py py-obj docutils literal notranslate"><span class="pre">llamaindex_api</span></code></a></p></td>
+<td><p>Create LLM object and API calls using llama_index, including Azure and non-Azure models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.openai_api" title="dllmforge.openai_api"><code class="xref py py-obj docutils literal notranslate"><span class="pre">openai_api</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.rag_embedding" title="dllmforge.rag_embedding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rag_embedding</span></code></a></p></td>
+<td><p>This module provides embedding functionality for RAG (Retrieval-Augmented Generation) pipelines.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.rag_embedding_open_source" title="dllmforge.rag_embedding_open_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rag_embedding_open_source</span></code></a></p></td>
+<td><p>This module provides embedding functionality for RAG (Retrieval-Augmented Generation) pipelines.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.rag_evaluation" title="dllmforge.rag_evaluation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rag_evaluation</span></code></a></p></td>
+<td><p>RAGAS Evaluation Module for DLLMForge</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.rag_preprocess_documents" title="dllmforge.rag_preprocess_documents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rag_preprocess_documents</span></code></a></p></td>
+<td><p>This module provides document preprocessing functionality for RAG (Retrieval-Augmented Generation) pipelines.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#module-dllmforge.rag_search_and_response" title="dllmforge.rag_search_and_response"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rag_search_and_response</span></code></a></p></td>
+<td><p>This module provides &quot;create index/vector-database&quot;, &quot;search&quot; and &quot;response&quot; functionality for RAG (Retrieval-Augmented Generation) pipelines.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">dllmforge</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.__init__"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.add_tool"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.add_node"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_node()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.add_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_edge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.add_conditional_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_conditional_edge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.create_simple_workflow"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.create_simple_workflow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.compile"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.compile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.process_query"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.process_query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.SimpleAgent.run_interactive"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.run_interactive()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AzureOpenAIEmbeddingModel.__init__"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AzureOpenAIEmbeddingModel.validate_embedding"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.validate_embedding()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AzureOpenAIEmbeddingModel.encode_filename"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.encode_filename()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AzureOpenAIEmbeddingModel.embed"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.embed()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.PDFLoader.load"><code class="docutils literal notranslate"><span class="pre">PDFLoader.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.TextChunker.__init__"><code class="docutils literal notranslate"><span class="pre">TextChunker.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.TextChunker.chunk_text"><code class="docutils literal notranslate"><span class="pre">TextChunker.chunk_text()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IndexManager.__init__"><code class="docutils literal notranslate"><span class="pre">IndexManager.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IndexManager.create_index"><code class="docutils literal notranslate"><span class="pre">IndexManager.create_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IndexManager.upload_documents"><code class="docutils literal notranslate"><span class="pre">IndexManager.upload_documents()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.Retriever.__init__"><code class="docutils literal notranslate"><span class="pre">Retriever.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.Retriever.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Retriever.get_embeddings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.Retriever.invoke"><code class="docutils literal notranslate"><span class="pre">Retriever.invoke()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LLMResponder.__init__"><code class="docutils literal notranslate"><span class="pre">LLMResponder.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LLMResponder.augment_prompt_with_context"><code class="docutils literal notranslate"><span class="pre">LLMResponder.augment_prompt_with_context()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LLMResponder.generate"><code class="docutils literal notranslate"><span class="pre">LLMResponder.generate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.__init__"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_context_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_relevancy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_context_precision"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_precision()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_context_recall"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_recall()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_faithfulness"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_faithfulness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_answer_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_answer_relevancy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.calculate_ragas_score"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.calculate_ragas_score()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.evaluate_rag_pipeline"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_rag_pipeline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.print_evaluation_summary"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.print_evaluation_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.RAGEvaluator.save_evaluation_results"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.save_evaluation_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AnthropicAPI.__init__"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AnthropicAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AnthropicAPI.list_available_models"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.list_available_models()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AnthropicAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.AnthropicAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LlamaIndexAPI.__init__"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LlamaIndexAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LlamaIndexAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.LlamaIndexAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_config.html">dllmforge.IE_agent_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_document_processor.html">dllmforge.IE_agent_document_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor.html">dllmforge.IE_agent_extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html">dllmforge.IE_agent_extractor_docling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_schema_generator.html">dllmforge.IE_agent_schema_generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.agent_core.html">dllmforge.agent_core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.anthropic_api.html">dllmforge.anthropic_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.langchain_api.html">dllmforge.langchain_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.llamaindex_api.html">dllmforge.llamaindex_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.openai_api.html">dllmforge.openai_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding.html">dllmforge.rag_embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding_open_source.html">dllmforge.rag_embedding_open_source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_evaluation.html">dllmforge.rag_evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_preprocess_documents.html">dllmforge.rag_preprocess_documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_search_and_response.html">dllmforge.rag_search_and_response</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../background/RAGS_explained.html" title="previous chapter">Retrieval-Augmented Generation (RAG)</a></li>
+      <li>Next: <a href="dllmforge.IE_agent_config.html" title="next chapter">dllmforge.IE_agent_config</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

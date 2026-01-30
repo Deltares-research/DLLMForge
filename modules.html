@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="dllmforge">
+<h1>dllmforge<a class="headerlink" href="#dllmforge" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dllmforge.html">dllmforge package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.agent_core">dllmforge.agent_core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.tool"><code class="docutils literal notranslate"><span class="pre">tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.__init__"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.add_tool"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_tool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.add_node"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.add_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_edge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.add_conditional_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_conditional_edge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.create_simple_workflow"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.create_simple_workflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.compile"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.compile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.process_query"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.process_query()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.SimpleAgent.run_interactive"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.run_interactive()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.create_echo_tool"><code class="docutils literal notranslate"><span class="pre">create_echo_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.agent_core.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.anthropic_api">dllmforge.anthropic_api module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI.__init__"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI.list_available_models"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.list_available_models()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.langchain_api">dllmforge.langchain_api module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI"><code class="docutils literal notranslate"><span class="pre">LangchainAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI.__init__"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.chat_completion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI.ask_with_retriever"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.ask_with_retriever()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.llamaindex_api">dllmforge.llamaindex_api module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI.__init__"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.openai_api">dllmforge.openai_api module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.__init__"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.list_available_models"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.list_available_models()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.get_embeddings"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.get_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">OpenAIAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.rag_embedding">dllmforge.rag_embedding module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel.__init__"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel.validate_embedding"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.validate_embedding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel.encode_filename"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.encode_filename()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel.embed"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.embed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.rag_embedding_open_source">dllmforge.rag_embedding_open_source module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel.__init__"><code class="docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel.validate_embedding"><code class="docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel.validate_embedding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel.embed"><code class="docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel.embed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.rag_evaluation">dllmforge.rag_evaluation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult"><code class="docutils literal notranslate"><span class="pre">EvaluationResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult.metric_name"><code class="docutils literal notranslate"><span class="pre">EvaluationResult.metric_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult.score"><code class="docutils literal notranslate"><span class="pre">EvaluationResult.score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult.explanation"><code class="docutils literal notranslate"><span class="pre">EvaluationResult.explanation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult.details"><code class="docutils literal notranslate"><span class="pre">EvaluationResult.details</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult.__init__"><code class="docutils literal notranslate"><span class="pre">EvaluationResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.context_precision"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.context_precision</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.context_recall"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.context_recall</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.faithfulness"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.faithfulness</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.answer_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.answer_relevancy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.ragas_score"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.ragas_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.evaluation_time"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.evaluation_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.metadata"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult.__init__"><code class="docutils literal notranslate"><span class="pre">RAGEvaluationResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.__init__"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_context_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_relevancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_context_precision"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_precision()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_context_recall"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_recall()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_faithfulness"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_faithfulness()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_answer_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_answer_relevancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.calculate_ragas_score"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.calculate_ragas_score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.evaluate_rag_pipeline"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_rag_pipeline()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.print_evaluation_summary"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.print_evaluation_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator.save_evaluation_results"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.save_evaluation_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.evaluate_rag_response"><code class="docutils literal notranslate"><span class="pre">evaluate_rag_response()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.rag_preprocess_documents">dllmforge.rag_preprocess_documents module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.DocumentLoader"><code class="docutils literal notranslate"><span class="pre">DocumentLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.DocumentLoader.load"><code class="docutils literal notranslate"><span class="pre">DocumentLoader.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.PDFLoader.load"><code class="docutils literal notranslate"><span class="pre">PDFLoader.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.TextChunker.__init__"><code class="docutils literal notranslate"><span class="pre">TextChunker.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.TextChunker.chunk_text"><code class="docutils literal notranslate"><span class="pre">TextChunker.chunk_text()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge.rag_search_and_response">dllmforge.rag_search_and_response module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.IndexManager.__init__"><code class="docutils literal notranslate"><span class="pre">IndexManager.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.IndexManager.create_index"><code class="docutils literal notranslate"><span class="pre">IndexManager.create_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.IndexManager.upload_documents"><code class="docutils literal notranslate"><span class="pre">IndexManager.upload_documents()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.Retriever.__init__"><code class="docutils literal notranslate"><span class="pre">Retriever.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.Retriever.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Retriever.get_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.Retriever.invoke"><code class="docutils literal notranslate"><span class="pre">Retriever.invoke()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.LLMResponder.__init__"><code class="docutils literal notranslate"><span class="pre">LLMResponder.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.LLMResponder.augment_prompt_with_context"><code class="docutils literal notranslate"><span class="pre">LLMResponder.augment_prompt_with_context()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.LLMResponder.generate"><code class="docutils literal notranslate"><span class="pre">LLMResponder.generate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#module-dllmforge">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.__init__"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.add_tool"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_tool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.add_node"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.add_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_edge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.add_conditional_edge"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.add_conditional_edge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.create_simple_workflow"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.create_simple_workflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.compile"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.compile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.process_query"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.process_query()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent.run_interactive"><code class="docutils literal notranslate"><span class="pre">SimpleAgent.run_interactive()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel.__init__"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel.validate_embedding"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.validate_embedding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel.encode_filename"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.encode_filename()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel.embed"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel.embed()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader.load"><code class="docutils literal notranslate"><span class="pre">PDFLoader.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker.__init__"><code class="docutils literal notranslate"><span class="pre">TextChunker.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker.chunk_text"><code class="docutils literal notranslate"><span class="pre">TextChunker.chunk_text()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager.__init__"><code class="docutils literal notranslate"><span class="pre">IndexManager.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager.create_index"><code class="docutils literal notranslate"><span class="pre">IndexManager.create_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager.upload_documents"><code class="docutils literal notranslate"><span class="pre">IndexManager.upload_documents()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever.__init__"><code class="docutils literal notranslate"><span class="pre">Retriever.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Retriever.get_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever.invoke"><code class="docutils literal notranslate"><span class="pre">Retriever.invoke()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder.__init__"><code class="docutils literal notranslate"><span class="pre">LLMResponder.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder.augment_prompt_with_context"><code class="docutils literal notranslate"><span class="pre">LLMResponder.augment_prompt_with_context()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder.generate"><code class="docutils literal notranslate"><span class="pre">LLMResponder.generate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.__init__"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_relevancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_precision"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_precision()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_recall"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_context_recall()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_faithfulness"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_faithfulness()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_answer_relevancy"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_answer_relevancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.calculate_ragas_score"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.calculate_ragas_score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.evaluate_rag_pipeline"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.evaluate_rag_pipeline()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.print_evaluation_summary"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.print_evaluation_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator.save_evaluation_results"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator.save_evaluation_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI.__init__"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI.list_available_models"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.list_available_models()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI.__init__"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI.chat_completion()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

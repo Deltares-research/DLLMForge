@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dllmforge.agent_core &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dllmforge.agent_core</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Simple agent core for DLLMForge - Clean LangGraph utilities.</span>
+
+<span class="sd">This module provides simple, elegant utilities for creating LangGraph agents</span>
+<span class="sd">following the pattern established in water_management_agent_simple.py.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+
+<span class="c1"># LangChain and LangGraph imports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">tool</span> <span class="k">as</span> <span class="n">langchain_tool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.prebuilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToolNode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateGraph</span><span class="p">,</span> <span class="n">MessagesState</span><span class="p">,</span> <span class="n">START</span><span class="p">,</span> <span class="n">END</span>
+
+<span class="c1"># Configure logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="tool">
+<a class="viewcode-back" href="../../index.html#dllmforge.tool">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tool</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DLLMForge wrapper around LangChain&#39;s @tool decorator.</span>
+<span class="sd">    </span>
+<span class="sd">    This decorator provides a consistent interface for creating tools</span>
+<span class="sd">    within the DLLMForge ecosystem while maintaining compatibility</span>
+<span class="sd">    with LangChain&#39;s tool system.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        func: Function to be converted into a tool</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tool function that can be used with SimpleAgent</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registering DLLMForge tool: </span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Apply the original LangChain decorator</span>
+    <span class="k">return</span> <span class="n">langchain_tool</span><span class="p">(</span><span class="n">func</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SimpleAgent">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleAgent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple agent class for LangGraph workflows.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SimpleAgent.__init__">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">system_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">model_provider</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+                 <span class="n">llm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">enable_text_tool_routing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">max_tool_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a simple LangGraph agent.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            system_message: System message for the agent</span>
+<span class="sd">            temperature: LLM temperature setting</span>
+<span class="sd">            model_provider: LLM provider (&quot;azure-openai&quot;, &quot;openai&quot;, &quot;mistral&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Load environment variables</span>
+        <span class="n">load_dotenv</span><span class="p">()</span>
+
+        <span class="c1"># Initialize LLM (allow custom LLM override)</span>
+        <span class="k">if</span> <span class="n">llm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">llm</span> <span class="o">=</span> <span class="n">llm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.langchain_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainAPI</span>
+            <span class="n">llm_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span><span class="n">model_provider</span><span class="o">=</span><span class="n">model_provider</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">llm</span> <span class="o">=</span> <span class="n">llm_api</span><span class="o">.</span><span class="n">llm</span>
+
+        <span class="c1"># Store system message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_message</span> <span class="o">=</span> <span class="n">system_message</span> <span class="ow">or</span> <span class="s2">&quot;You are a helpful AI assistant.&quot;</span>
+
+        <span class="c1"># Initialize tools and workflow components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">MessagesState</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_text_tool_routing</span> <span class="o">=</span> <span class="n">enable_text_tool_routing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_tool_iterations</span> <span class="o">=</span> <span class="n">max_tool_iterations</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Simple agent initialized&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.add_tool">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.add_tool">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_tool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tool_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a tool to the agent.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tool_func: Function decorated with @tool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tool_func</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added tool: </span><span class="si">{</span><span class="n">tool_func</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.add_node">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.add_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a node to the workflow.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            name: Node name</span>
+<span class="sd">            func: Node function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added node: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.add_edge">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.add_edge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_node</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_node</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a simple edge between nodes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            from_node: Source node</span>
+<span class="sd">            to_node: Target node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">from_node</span><span class="p">,</span> <span class="n">to_node</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added edge: </span><span class="si">{</span><span class="n">from_node</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">to_node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.add_conditional_edge">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.add_conditional_edge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_conditional_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_node</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a conditional edge.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            from_node: Source node</span>
+<span class="sd">            condition_func: Function that determines routing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="n">from_node</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added conditional edge from: </span><span class="si">{</span><span class="n">from_node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.create_simple_workflow">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.create_simple_workflow">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_simple_workflow</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a simple agent -&gt; tools workflow with optional text-based tool routing.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_text_tool_routing</span><span class="p">:</span>
+            <span class="n">tool_node</span> <span class="o">=</span> <span class="n">ToolNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">)</span>
+            <span class="n">llm_with_tools</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">bind_tools</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">call_model</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">MessagesState</span><span class="p">):</span>
+                <span class="n">messages</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">messages</span> <span class="ow">or</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;system&quot;</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemMessage</span>
+                    <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">system_message</span><span class="p">)]</span> <span class="o">+</span> <span class="n">messages</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">llm_with_tools</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="n">messages</span> <span class="o">+</span> <span class="p">[</span><span class="n">response</span><span class="p">]}</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">should_continue</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">MessagesState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">,</span> <span class="n">END</span><span class="p">]:</span>
+                <span class="n">messages</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]</span>
+                <span class="n">last_message</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">last_message</span><span class="p">,</span> <span class="s1">&#39;tool_calls&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">last_message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="s2">&quot;tools&quot;</span>
+                <span class="k">return</span> <span class="n">END</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="n">call_model</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;tools&quot;</span><span class="p">,</span> <span class="n">tool_node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">START</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_conditional_edge</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="n">should_continue</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;tools&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">call_model</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">MessagesState</span><span class="p">):</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemMessage</span><span class="p">,</span> <span class="n">HumanMessage</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">parse_tool_directive</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span>
+                        <span class="n">end</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">end</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">end</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="kc">None</span>
+                        <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;tool&quot;</span> <span class="ow">in</span> <span class="n">obj</span> <span class="ow">or</span> <span class="s2">&quot;final_answer&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">obj</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+
+                <span class="n">messages</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]</span>
+                <span class="n">available_tools</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">]</span>
+                <span class="n">tool_list_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">available_tools</span> <span class="k">if</span> <span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">messages</span> <span class="ow">or</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;system&quot;</span><span class="p">:</span>
+                    <span class="n">routing_instructions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;You can call tools by responding ONLY with a JSON object.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                            <span class="s2">&quot;- To call a tool: {</span><span class="se">\&quot;</span><span class="s2">tool</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">&lt;tool_name&gt;</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">args</span><span class="se">\&quot;</span><span class="s2">: { ... }}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                            <span class="s2">&quot;- To answer: {</span><span class="se">\&quot;</span><span class="s2">final_answer</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">...</span><span class="se">\&quot;</span><span class="s2">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                            <span class="s2">&quot;Use EXACT tool names. Do not invent names like &#39;text&#39; or &#39;pizza_prices&#39;.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                            <span class="sa">f</span><span class="s2">&quot;Available tools (exact names):</span><span class="se">\n</span><span class="si">{</span><span class="n">tool_list_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                            <span class="s2">&quot;Example: {</span><span class="se">\&quot;</span><span class="s2">tool</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">add</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">args</span><span class="se">\&quot;</span><span class="s2">: {</span><span class="se">\&quot;</span><span class="s2">a</span><span class="se">\&quot;</span><span class="s2">: 2, </span><span class="se">\&quot;</span><span class="s2">b</span><span class="se">\&quot;</span><span class="s2">: 3}}&quot;</span><span class="p">)</span>
+                    <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">system_message</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">routing_instructions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)]</span> <span class="o">+</span> <span class="n">messages</span>
+
+                <span class="n">loop_messages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_tool_iterations</span><span class="p">))):</span>
+                    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">loop_messages</span><span class="p">)</span>
+                    <span class="n">content</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">directive</span> <span class="o">=</span> <span class="n">parse_tool_directive</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">directive</span> <span class="ow">and</span> <span class="s2">&quot;tool&quot;</span> <span class="ow">in</span> <span class="n">directive</span> <span class="ow">and</span> <span class="s2">&quot;args&quot;</span> <span class="ow">in</span> <span class="n">directive</span><span class="p">:</span>
+                        <span class="n">tool_name</span> <span class="o">=</span> <span class="n">directive</span><span class="p">[</span><span class="s2">&quot;tool&quot;</span><span class="p">]</span>
+                        <span class="n">tool_name_l</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tool_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                        <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">tool_name</span>
+                        <span class="k">if</span> <span class="n">tool_name_l</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;summary&quot;</span><span class="p">,</span> <span class="s2">&quot;summarise&quot;</span><span class="p">,</span> <span class="s2">&quot;summarize&quot;</span><span class="p">}:</span>
+                            <span class="n">summary_tool</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                                <span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">available_tools</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;summary&quot;</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;summar&quot;</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">lower</span><span class="p">())),</span>
+                                <span class="kc">None</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">summary_tool</span><span class="p">:</span>
+                                <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">summary_tool</span>
+                        <span class="n">args</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                        <span class="n">tool_func</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">resolved_name</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">tool_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">avail_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">available_tools</span><span class="p">)</span>
+                            <span class="n">loop_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="n">HumanMessage</span><span class="p">(</span>
+                                    <span class="n">content</span><span class="o">=</span>
+                                    <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; not found. Available tools: </span><span class="si">{</span><span class="n">avail_str</span><span class="si">}</span><span class="s2">. Use exact names.&quot;</span><span class="p">))</span>
+                            <span class="k">continue</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">result</span> <span class="o">=</span> <span class="n">tool_func</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                            <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Tool error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="n">loop_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">resolved_name</span><span class="si">}</span><span class="s2">&#39; result: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                        <span class="k">continue</span>
+                    <span class="n">loop_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="n">loop_messages</span><span class="p">}</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="n">call_model</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">START</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="n">END</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Simple workflow created with human interaction support&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.compile">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.compile">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checkpointer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compile the workflow.&quot;&quot;&quot;</span>
+        <span class="c1"># Automatically create simple workflow if not already created</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_simple_workflow</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">checkpointer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">checkpointer</span><span class="o">=</span><span class="n">checkpointer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Workflow compiled successfully&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.process_query">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.process_query">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">stream</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process a query with the agent.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            query: User query</span>
+<span class="sd">            stream: Whether to stream the response</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Workflow not compiled. Call compile() first.&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PROCESSING: </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">stream</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">_parse_tool_directive</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">start</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span>
+                        <span class="n">end</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">end</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">end</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="kc">None</span>
+                        <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;tool&quot;</span> <span class="ow">in</span> <span class="n">obj</span> <span class="ow">or</span> <span class="s2">&quot;final_answer&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">obj</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+
+                <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">stream</span><span class="p">({</span><span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="p">[(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">query</span><span class="p">)]},</span> <span class="n">stream_mode</span><span class="o">=</span><span class="s2">&quot;values&quot;</span><span class="p">):</span>
+                    <span class="n">last_msg</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="c1"># Enhanced display for text-based tool routing (Deltares path)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_text_tool_routing</span><span class="p">:</span>
+                        <span class="n">content</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">last_msg</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                        <span class="n">msg_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">last_msg</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="c1"># If the model proposed a tool call as JSON, render a rich section</span>
+                        <span class="k">if</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s2">&quot;ai&quot;</span><span class="p">:</span>
+                            <span class="n">directive</span> <span class="o">=</span> <span class="n">_parse_tool_directive</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">directive</span> <span class="ow">and</span> <span class="s2">&quot;tool&quot;</span> <span class="ow">in</span> <span class="n">directive</span> <span class="ow">and</span> <span class="s2">&quot;args&quot;</span> <span class="ow">in</span> <span class="n">directive</span><span class="p">:</span>
+                                <span class="n">tool_name</span> <span class="o">=</span> <span class="n">directive</span><span class="p">[</span><span class="s2">&quot;tool&quot;</span><span class="p">]</span>
+                                <span class="n">args</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                                <span class="nb">print</span><span class="p">(</span>
+                                    <span class="s2">&quot;================================== Ai Message ==================================&quot;</span><span class="p">)</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tool Calls:&quot;</span><span class="p">)</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2"> (text_routing)&quot;</span><span class="p">)</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Args:&quot;</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="nb">print</span><span class="p">()</span>
+                                <span class="k">continue</span>
+                        <span class="c1"># If a tool result was appended as a human message, render like a Tool Message</span>
+                        <span class="k">if</span> <span class="n">msg_type</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+                                <span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">content</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Tool &#39;&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;&#39; result: &quot;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                            <span class="c1"># Expected format: Tool &#39;&lt;name&gt;&#39; result: &lt;payload&gt;</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">name_part</span><span class="p">,</span> <span class="n">result_part</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&#39; result: &quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="n">tool_name</span> <span class="o">=</span> <span class="n">name_part</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Tool &#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                                <span class="n">tool_name</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+                                <span class="n">result_part</span> <span class="o">=</span> <span class="n">content</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;================================= Tool Message =================================&quot;</span><span class="p">)</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Name: </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="nb">print</span><span class="p">()</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">result_part</span><span class="p">)</span>
+                            <span class="nb">print</span><span class="p">()</span>
+                            <span class="k">continue</span>
+                    <span class="c1"># Default pretty print for all other cases (including Azure/tool-node path)</span>
+                    <span class="n">last_msg</span><span class="o">.</span><span class="n">pretty_print</span><span class="p">()</span>
+                    <span class="nb">print</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="p">[(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">query</span><span class="p">)]})</span>
+                <span class="n">result</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">pretty_print</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.run_interactive">
+<a class="viewcode-back" href="../../index.html#dllmforge.SimpleAgent.run_interactive">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_interactive</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the agent in interactive mode.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🤖 Agent Ready - Type &#39;quit&#39; to exit&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">user_input</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">💬 Your question: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">user_input</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;quit&#39;</span><span class="p">,</span> <span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="s1">&#39;q&#39;</span><span class="p">]:</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="n">user_input</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">process_query</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Goodbye! 🤖&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="create_basic_agent">
+<a class="viewcode-back" href="../../index.html#dllmforge.create_basic_agent">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_basic_agent</span><span class="p">(</span><span class="n">system_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                       <span class="n">model_provider</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;azure-openai&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleAgent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a basic agent with standard setup.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        system_message: System message for the agent</span>
+<span class="sd">        temperature: LLM temperature</span>
+<span class="sd">        model_provider: LLM provider (&quot;azure-openai&quot;, &quot;openai&quot;, &quot;mistral&quot;)</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        SimpleAgent: Configured agent instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">SimpleAgent</span><span class="p">(</span><span class="n">system_message</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">model_provider</span><span class="p">)</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">create_simple_workflow</span><span class="p">()</span>
+    <span class="n">agent</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">agent</span></div>
+
+
+
+<div class="viewcode-block" id="create_echo_tool">
+<a class="viewcode-back" href="../../index.html#dllmforge.create_echo_tool">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_echo_tool</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a simple echo tool for testing.&quot;&quot;&quot;</span>
+
+    <span class="nd">@tool</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">echo</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Echo the input text back to the user.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            text: Text to echo back</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Echo: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="n">echo</span></div>
+
+
+
+<div class="viewcode-block" id="create_basic_tools">
+<a class="viewcode-back" href="../../index.html#dllmforge.create_basic_tools">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_basic_tools</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Callable</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create basic utility tools for testing.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        List of tool functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@tool</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">echo</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Echo the input text back to the user.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            text: Text to echo back</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Echo: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@tool</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">timestamp</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current timestamp.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Current time: </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@tool</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculator</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Safely evaluate simple math expressions.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            expression: Math expression to evaluate (e.g., &quot;2 + 3 * 4&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Only allow safe characters</span>
+            <span class="n">allowed_chars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="s1">&#39;0123456789+-*/.() &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">allowed_chars</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">expression</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;Error: Only basic math operations allowed&quot;</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error calculating &#39;</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">echo</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">calculator</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># Simple usage example</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Create agent with basic tools</span>
+        <span class="n">agent</span> <span class="o">=</span> <span class="n">SimpleAgent</span><span class="p">(</span><span class="s2">&quot;You are a helpful assistant with basic tools.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add tools</span>
+        <span class="n">basic_tools</span> <span class="o">=</span> <span class="n">create_basic_tools</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">basic_tools</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">add_tool</span><span class="p">(</span><span class="n">tool</span><span class="p">)</span>
+
+        <span class="c1"># Create and compile workflow</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">create_simple_workflow</span><span class="p">()</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+        <span class="c1"># Test query</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">process_query</span><span class="p">(</span><span class="s2">&quot;What&#39;s 5 + 3 * 2?&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Interactive mode</span>
+        <span class="c1"># agent.run_interactive()</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
