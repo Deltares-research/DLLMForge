@@ -159,10 +159,7 @@ def run_workflow_with_monitoring(agent, query: str):
         if 'messages' in st.session_state and st.session_state.messages:
             # Convert session messages to LangChain format
             for msg in st.session_state.messages:
-                conversation_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                conversation_messages.append({"role": msg["role"], "content": msg["content"]})
         else:
             # If no history, just add the current query
             conversation_messages = [{"role": "user", "content": query}]
@@ -191,10 +188,10 @@ def run_workflow_with_monitoring(agent, query: str):
             update_workflow_progress("Quality Control", "active", "Performing quality control checks")
 
             # Check for human interaction points
-            needs_human_input = any(
-                ("ask me" in msg.content.lower() or "review" in msg.content.lower() or "qc" in msg.content.lower() or "workflow_paused" in msg.content.lower())
-                for msg in result['messages']
-                if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg)))
+            needs_human_input = any(("ask me" in msg.content.lower() or "review" in msg.content.lower()
+                                     or "qc" in msg.content.lower() or "workflow_paused" in msg.content.lower())
+                                    for msg in result['messages']
+                                    if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg)))
 
             if needs_human_input:
                 update_workflow_progress("Quality Control", "completed", "QC completed - waiting for human input")
@@ -236,7 +233,7 @@ def _execute_inline_matplotlib_blocks_from_text(text: str) -> bool:
                 j = i + 1
                 while j < len(lines) and not lines[j].strip().startswith("```"):
                     j += 1
-                code = "\n".join(lines[i+1:j])
+                code = "\n".join(lines[i + 1:j])
                 if "matplotlib" in code or "plt." in code:
                     blocks.append(code)
                 i = j + 1
@@ -277,7 +274,7 @@ def rag_search_short(query: str) -> str:
                 missing_vars.append(var)
         if not api_base:
             missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
-        
+
         if missing_vars:
             return f"RAG Search (Short): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
 
@@ -286,9 +283,7 @@ def rag_search_short(query: str) -> str:
 
         # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
         api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
-        embedding_model = AzureOpenAIEmbeddingModel(
-            api_base=api_base_for_embeddings
-        )
+        embedding_model = AzureOpenAIEmbeddingModel(api_base=api_base_for_embeddings)
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -331,7 +326,7 @@ def rag_search_medium(query: str) -> str:
                 missing_vars.append(var)
         if not api_base:
             missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
-        
+
         if missing_vars:
             return f"RAG Search (Medium): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
 
@@ -340,9 +335,7 @@ def rag_search_medium(query: str) -> str:
 
         # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
         api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
-        embedding_model = AzureOpenAIEmbeddingModel(
-            api_base=api_base_for_embeddings
-        )
+        embedding_model = AzureOpenAIEmbeddingModel(api_base=api_base_for_embeddings)
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -385,7 +378,7 @@ def rag_search_long(query: str) -> str:
                 missing_vars.append(var)
         if not api_base:
             missing_vars.append('AZURE_OPENAI_API_BASE or AZURE_OPENAI_ENDPOINT')
-        
+
         if missing_vars:
             return f"RAG Search (Long): Missing credentials - {', '.join(missing_vars)}. Please configure Azure credentials."
 
@@ -394,9 +387,7 @@ def rag_search_long(query: str) -> str:
 
         # Use API_BASE for embeddings if it exists, otherwise use ENDPOINT
         api_base_for_embeddings = os.getenv('AZURE_OPENAI_API_BASE') or os.getenv('AZURE_OPENAI_ENDPOINT')
-        embedding_model = AzureOpenAIEmbeddingModel(
-            api_base=api_base_for_embeddings
-        )
+        embedding_model = AzureOpenAIEmbeddingModel(api_base=api_base_for_embeddings)
         retriever = Retriever(embedding_model=embedding_model,
                               index_name=os.getenv('AZURE_SEARCH_INDEX_NAME', 'chunk5000_overlap500'),
                               search_client_endpoint=os.getenv('AZURE_SEARCH_ENDPOINT'),
@@ -490,7 +481,8 @@ def execute_plot_script(script_content: str) -> str:
                 script_content = "\n".join(lines[start:end])
             else:
                 # If only one fence, strip it
-                script_content = "\n".join(ln for ln in lines if not ln.strip().startswith("```") and not ln.strip().startswith("```python"))
+                script_content = "\n".join(
+                    ln for ln in lines if not ln.strip().startswith("```") and not ln.strip().startswith("```python"))
         else:
             script_content = content
 
@@ -1051,8 +1043,7 @@ def process_live_chat_queue(agent):
                     if result and isinstance(result, dict) and 'messages' in result and result['messages']:
                         # Get the most recent AI response only (avoid duplicating previous content)
                         ai_messages = [
-                            str(msg.content)
-                            for msg in result['messages']
+                            str(msg.content) for msg in result['messages']
                             if hasattr(msg, 'content') and msg.content and 'AIMessage' in str(type(msg))
                         ]
                         agent_response = ai_messages[-1].strip() if ai_messages else ""
@@ -1178,13 +1169,13 @@ def main():
             endpoint_set = os.getenv('AZURE_OPENAI_ENDPOINT') or os.getenv('AZURE_OPENAI_API_BASE')
             required_vars = ['AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_DEPLOYMENT_NAME']
             missing_vars = [var for var in required_vars if not os.getenv(var)]
-            
+
             if not endpoint_set:
                 missing_vars.append('AZURE_OPENAI_ENDPOINT or AZURE_OPENAI_API_BASE')
-            
+
             if missing_vars:
                 st.error(f"Missing required credentials: {', '.join(missing_vars)}")
-                
+
                 # Show debug information
                 with st.expander("🔍 Debug: Check loaded environment variables"):
                     all_vars = {
@@ -1196,17 +1187,17 @@ def main():
                     }
                     for key, value in all_vars.items():
                         st.text(f"{key}: {value}")
-                    
+
                     # Check for .env files
                     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     app_dir = os.path.dirname(os.path.abspath(__file__))
-                    
+
                     st.text(f"\nLooking for .env files in:")
                     st.text(f"Base directory: {base_dir}")
                     st.text(f"  .env exists: {os.path.exists(os.path.join(base_dir, '.env'))}")
                     st.text(f"Streamlit directory: {app_dir}")
                     st.text(f"  .env exists: {os.path.exists(os.path.join(app_dir, '.env'))}")
-                
+
                 st.info("""
                 Please set the following environment variables in a `.env` file:
                 **Required:**
@@ -1281,7 +1272,7 @@ def main():
                         st.error(error_msg)
                         st.session_state.messages.append({"role": "assistant", "content": error_msg})
                         result = None
-                
+
                 # Display the response in chat message
                 with st.chat_message("assistant"):
                     if result and isinstance(result, dict) and 'messages' in result and result['messages']:
@@ -1291,7 +1282,8 @@ def main():
                         for message in result['messages']:
                             if hasattr(message, 'content') and message.content and 'AIMessage' in str(type(message)):
                                 all_responses.append(message.content)
-                            elif hasattr(message, 'content') and message.content and 'ToolMessage' in str(type(message)):
+                            elif hasattr(message, 'content') and message.content and 'ToolMessage' in str(
+                                    type(message)):
                                 tool_text_blobs.append(str(message.content))
                             # Collect raw message debug
                             try:
@@ -1344,7 +1336,7 @@ def main():
                                 })
                             except Exception:
                                 st.write("Unable to render raw messages debug.")
-                        
+
                         # If a plot was generated, move it to the gallery for rendering in the Figures panel
                         if 'current_plot_figure' in st.session_state and st.session_state.current_plot_figure is not None:
                             try:
@@ -1368,7 +1360,7 @@ def main():
                                     st.code(st.session_state.last_plot_script, language='python')
                             except Exception:
                                 st.write("Unable to render plot debug.")
-                        
+
                         # Persist in chat history
                         st.session_state.messages.append({"role": "assistant", "content": response})
                     else:

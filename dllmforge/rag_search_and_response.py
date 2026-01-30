@@ -23,7 +23,11 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (SearchField, SearchFieldDataType, VectorSearch,
                                                    HnswAlgorithmConfiguration, VectorSearchProfile,
                                                    AzureOpenAIVectorizer, AzureOpenAIVectorizerParameters, SearchIndex)
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 import os
 from dotenv import load_dotenv
 from .rag_embedding import AzureOpenAIEmbeddingModel
@@ -107,19 +111,6 @@ class Retriever:
         text_vectorized = self.embedding_model.embed(text)
         return text_vectorized
 
-    def search(self, query_text, top_k=5):
-        query_vectorized = self.get_embeddings(query_text)
-        vector_query = VectorizedQuery(vector=query_vectorized, k_nearest_neighbors=top_k, fields="text_vector")
-        results = self.search_client.search(
-            search_text=
-            None,  # pure vector search, no text search. If you want to do text search, set search_text=query_text.
-            vector_queries=[vector_query],
-            select=["chunk_id", "chunk", "page_number", "file_name"],  # The list of fields to retrieve.
-            top=top_k  # The number of auto-completed terms to retrieve.
-            # This must be a value between 1 and 100. The default is 5.
-        )
-        return list(results)
-
     def invoke(self, query_text, top_k=5):
         query_vectorized = self.get_embeddings(query_text)
         vector_query = VectorizedQuery(vector=query_vectorized, k_nearest_neighbors=top_k, fields="text_vector")
@@ -150,55 +141,5 @@ class LLMResponder:
 
     def generate(self, query_text, retrieved_chunks):
         prompt = self.augment_prompt_with_context(query_text, retrieved_chunks)
-        response = self.llm(prompt)
+        response = self.llm.invoke(prompt)
         return response.content.strip()
-
-
-if __name__ == "__main__":
-    # Example demonstration RAGpipeline
-    # step 1: preprocess the documents to chunks and embed the chunks
-    from pathlib import Path
-    from rag_preprocess_documents import *
-    data_dir = Path(r'c:\Users\deng_jg\work\16centralized_agents\test_data')
-    pdfs = list(data_dir.glob("*.pdf"))  # find all PDF files in the directory
-    loader = PDFLoader()  # Load the PDF document
-    chunker = TextChunker(chunk_size=1000, overlap_size=200)  # Create chunks with custom settings
-
-    # initialize the embedding model
-    model = AzureOpenAIEmbeddingModel()
-
-    # embed the chunks
-    global_embeddings = []
-    for pdf_path in pdfs:
-        pages, file_name = loader.load(pdf_path)
-        # Create chunks with custom settings
-        chunks = chunker.chunk_text(pages, file_name)
-        # Embed the document chunks
-        chunk_embeddings = model.embed(chunks)
-        global_embeddings.extend(chunk_embeddings)
-        print(f"Embedded {len(chunk_embeddings)} chunks from {file_name}.")
-    print(f"Total embeddings generated: {len(global_embeddings)}")
-
-    # Index and upload phase
-    embedding_dim = 3072  # Adjust if your embedding model uses a different dimension
-    index_name = "dllmforge_index"
-    index_manager = IndexManager(search_client_endpoint, search_api_key, index_name, embedding_dim)
-    index_manager.create_index()
-    index_manager.upload_documents(global_embeddings)
-
-    # Retrieval phase
-    retriever = Retriever(model, index_name, search_client_endpoint, search_api_key)
-    query = "What is the area of the Rhine basin?"
-    top_k = 5
-    results = retriever.search(query, top_k=top_k)
-    print(results)
-
-    from langchain_openai import AzureChatOpenAI
-    llm = AzureChatOpenAI(azure_endpoint=api_base,
-                          api_key=api_key,
-                          azure_deployment=deployment_name_gpt4o,
-                          api_version=api_version,
-                          temperature=0.1)
-    responder = LLMResponder(llm)
-    answer = responder.generate(query, results)
-    print(answer)

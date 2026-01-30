@@ -6,6 +6,7 @@ Super high-level and simple - demonstrates the power of DLLMForge abstraction
 
 # Load environment variables from .env file for API keys and endpoints
 from dotenv import load_dotenv
+
 load_dotenv()
 import os
 import sys
@@ -96,16 +97,11 @@ def make_summary(question: str, result: str) -> str:
 
         messages = [
             SystemMessage(
-                content=(
-                    "You are a helpful assistant. Create a concise, friendly summary of the provided result "
-                    "in the context of the question. Mention all of the tools that you used"
-                )
-            ),
-            HumanMessage(
-                content=(
-                    f"Question:\n{question}\n\nResult:\n{result}\n\nPlease return a brief, conversational summary (1-3 sentences)."
-                )
-            ),
+                content=("You are a helpful assistant. Create a concise, friendly summary of the provided result "
+                         "in the context of the question. Mention all of the tools that you used")),
+            HumanMessage(content=(
+                f"Question:\n{question}\n\nResult:\n{result}\n\nPlease return a brief, conversational summary (1-3 sentences)."
+            )),
         ]
         response = invoke_fn(messages)
         return getattr(response, "content", str(response))
@@ -136,8 +132,7 @@ if PROVIDER == "deltares":
         routing_system = (
             "You are a helpful assistant that can do math and tell you about pizza prices."
             " When you need a tool, respond ONLY with a JSON object like {\"tool\": \"<name>\", \"args\": {...}}."
-            " Use exact tool names: add, multiply, divide, subtract, get_pizza_price, make_summary."
-        )
+            " Use exact tool names: add, multiply, divide, subtract, get_pizza_price, make_summary.")
         agent = SimpleAgent(
             routing_system,
             temperature=0.1,

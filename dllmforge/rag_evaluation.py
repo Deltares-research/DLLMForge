@@ -5,7 +5,7 @@ This module provides comprehensive evaluation metrics for RAG (Retrieval-Augment
 pipelines using RAGAS-inspired metrics without requiring external dashboards or services.
 
 The module evaluates four key aspects of RAG systems:
-1. Context Relevancy - measures the signal-to-noise ratio in retrieved contexts
+1. Context Precision -
 2. Context Recall - measures the ability to retrieve all necessary information
 3. Faithfulness - measures factual accuracy and absence of hallucinations
 4. Answer Relevancy - measures how relevant and to-the-point answers are
@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from .openai_api import OpenAIAPI
 from .anthropic_api import AnthropicAPI
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
+from .langchain_api import LangchainAPI
 
 # Load environment variables
 load_dotenv()
@@ -32,6 +33,7 @@ load_dotenv()
 @dataclass
 class EvaluationResult:
     """Container for evaluation results."""
+
     metric_name: str
     score: float
     explanation: str
@@ -41,7 +43,8 @@ class EvaluationResult:
 @dataclass
 class RAGEvaluationResult:
     """Container for complete RAG evaluation results."""
-    context_relevancy: EvaluationResult
+
+    context_precision: EvaluationResult
     context_recall: EvaluationResult
     faithfulness: EvaluationResult
     answer_relevancy: EvaluationResult
@@ -55,13 +58,21 @@ class RAGEvaluator:
     RAGAS-inspired evaluator for RAG pipelines.
 
     This evaluator provides four key metrics:
-    - Context Relevancy: Measures the signal-to-noise ratio in retrieved contexts
+    - Context Precision:
     - Context Recall: Measures the ability to retrieve all necessary information
     - Faithfulness: Measures factual accuracy and absence of hallucinations
     - Answer Relevancy: Measures how relevant and to-the-point answers are
     """
 
-    def __init__(self, llm_provider: str = "auto", deltares_llm: Optional[DeltaresOllamaLLM] = None):
+    def __init__(self,
+                 llm_provider: str = "auto",
+                 deltares_llm: Optional[DeltaresOllamaLLM] = None,
+                 temperature: float = 0.1,
+                 api_key: Optional[str] = None,
+                 api_base: Optional[str] = None,
+                 api_version: Optional[str] = None,
+                 deployment_name: Optional[str] = None,
+                 model_name: Optional[str] = None):
         """
         Initialize the RAG evaluator.
 
@@ -72,9 +83,23 @@ class RAGEvaluator:
 
         # Initialize LLM APIs
         if self.llm_provider == "openai":
-            self.openai_api = OpenAIAPI()
+            self.openai_api = LangchainAPI(model_provider="openai",
+                                           temperature=temperature,
+                                           api_key=api_key,
+                                           model_name=model_name,
+                                           api_base=api_base,
+                                           api_version=api_version,
+                                           deployment_name=deployment_name)
         elif self.llm_provider == "anthropic":
-            self.anthropic_api = AnthropicAPI()
+            self.anthropic_api = AnthropicAPI(api_key=api_key, model=model_name)
+        elif self.llm_provider == "azure-openai":
+            self.azure_openai_api = LangchainAPI(model_provider="azure-openai",
+                                                 temperature=temperature,
+                                                 api_key=api_key,
+                                                 model_name=model_name,
+                                                 api_base=api_base,
+                                                 api_version=api_version,
+                                                 deployment_name=deployment_name)
         elif self.llm_provider == "deltares":
             if deltares_llm is None:
                 raise ValueError("Deltares LLM must be provided when using 'deltares' provider")
@@ -87,10 +112,12 @@ class RAGEvaluator:
         """Setup the LLM provider based on available credentials."""
         if self.llm_provider == "auto":
             # Check for available APIs
-            if os.getenv('AZURE_OPENAI_API_KEY') or os.getenv('OPENAI_API_KEY'):
+            if os.getenv("OPENAI_API_KEY"):
                 self.llm_provider = "openai"
-            elif os.getenv('ANTHROPIC_API_KEY'):
+            elif os.getenv("ANTHROPIC_API_KEY"):
                 self.llm_provider = "anthropic"
+            elif os.getenv("AZURE_OPENAI_API_KEY"):
+                self.llm_provider = "azure-openai"
             elif self.deltares_llm is not None:
                 self.llm_provider = "deltares"
             else:
@@ -116,6 +143,11 @@ class RAGEvaluator:
                 response = self.anthropic_api.chat_completion(messages=messages,
                                                               temperature=temperature,
                                                               max_tokens=1000)
+                return response.get("response", "")
+            elif self.llm_provider == "azure-openai":
+                response = self.azure_openai_api.chat_completion(messages=messages,
+                                                                 temperature=temperature,
+                                                                 max_tokens=1000)
                 return response.get("response", "")
             elif self.llm_provider == "deltares":
                 return self.deltares_llm.chat_completion(messages=messages, temperature=temperature, max_tokens=1000)
@@ -165,13 +197,16 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [{
-            "role": "system",
-            "content": "You are a helpful assistant that evaluates the relevancy of text contexts."
-        }, {
-            "role": "user",
-            "content": prompt
-        }]
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the relevancy of text contexts."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ]
 
         response = self._call_llm(messages)
 
@@ -179,7 +214,7 @@ Please respond in the following JSON format:
             # Try to parse JSON response
             # check if this is arleady type dict
             if isinstance(response, dict):
-                response = response['choices'][0]['message']['content']
+                response = response["choices"][0]["message"]["content"]
                 # now remove the empty think
                 response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
@@ -188,12 +223,13 @@ Please respond in the following JSON format:
             details = {
                 "relevant_sentences": result.get("relevant_sentences", []),
                 "total_sentences": result.get("total_sentences", 0),
-                "relevant_count": result.get("relevant_count", 0)
+                "relevant_count": result.get("relevant_count", 0),
             }
         except json.JSONDecodeError:
             # Try to extract JSON from the response using regex
             import re
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 try:
                     result = json.loads(json_match.group())
@@ -202,7 +238,7 @@ Please respond in the following JSON format:
                     details = {
                         "relevant_sentences": result.get("relevant_sentences", []),
                         "total_sentences": result.get("total_sentences", 0),
-                        "relevant_count": result.get("relevant_count", 0)
+                        "relevant_count": result.get("relevant_count", 0),
                     }
                 # not bare except:
                 except json.JSONDecodeError:
@@ -217,6 +253,108 @@ Please respond in the following JSON format:
                 details = {"raw_response": response}
 
         return EvaluationResult(metric_name="context_relevancy", score=score, explanation=explanation, details=details)
+
+    def evaluate_context_precision(self,
+                                   question: str,
+                                   retrieved_contexts: List[str],
+                                   ground_truth_answer: Optional[str],
+                                   top_k: int = 5) -> EvaluationResult:
+        """
+        Evaluate Context Precision@k following the Ragas implementation.
+
+        For each of the top-k retrieved chunks, the LLM judges whether the chunk
+        supports the reference answer. Average Precision (AP) is then computed as:
+            AP = sum(Precision@i * rel_i) / (# relevant chunks)
+
+        Args:
+            question: The question to evaluate.
+            reference_answer: The correct or gold answer.
+            retrieved_contexts: Ranked list of retrieved chunks.
+            top_k: Number of top chunks to evaluate.
+
+        Returns:
+            EvaluationResult with precision@k score and explanation.
+        """
+        import numpy as np
+        import re
+        import json
+
+        top_contexts = retrieved_contexts[:top_k]
+        context_text = "\n\n".join([f"Rank {i+1}: {ctx}" for i, ctx in enumerate(top_contexts)])
+
+        prompt = f"""/no_think You are evaluating the precision of retrieved contexts for a question-answering system.
+
+Original Question: {question}
+
+Reference Answer: {ground_truth_answer}
+
+Retrieved Contexts (Ranked from most to least relevant):
+{context_text}
+
+Your task is to:
+1. Evaluate each retrieved context (Rank 1–{top_k}) and decide if it provides information that directly supports the reference answer.
+2. Assign a binary relevance indicator (1 = relevant, 0 = not relevant) for each ranked context.
+3. Consider the following when deciding relevance:
+   - Does the context contain factual evidence supporting the reference answer?
+   - Is the information directly useful to answer the question?
+   - Avoid marking general background or unrelated text as relevant.
+
+Please respond in the following JSON format:
+{{
+    "relevance_indicators": [0 or 1 for each rank],
+    "precision_at_k": float,
+    "explanation": "Brief explanation of your reasoning"
+}}"""
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a precise evaluator for RAG context precision."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ]
+
+        response = self._call_llm(messages)
+
+        if isinstance(response, dict) and "choices" in response:
+            response_text = response["choices"][0]["message"]["content"]
+        else:
+            response_text = str(response).strip()  # remove leading/trailing whitespace
+
+        try:
+            result = json.loads(response_text)
+            relevance = result.get("relevance_indicators", [])
+            explanation = result.get("explanation", "No explanation provided")
+        except json.JSONDecodeError:
+            # fallback extraction
+            json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+                relevance = result.get("relevance_indicators", [])
+                explanation = result.get("explanation", "Extracted from response")
+            else:
+                relevance = []
+                explanation = "Could not parse LLM response (no JSON found)"
+
+        # --- Compute Average Precision (Ragas logic) ---
+        verdict_list = [1 if r else 0 for r in relevance]
+        denominator = sum(verdict_list) + 1e-10
+        numerator = sum([(sum(verdict_list[:i + 1]) / (i + 1)) * verdict_list[i] for i in range(len(verdict_list))])
+        score = numerator / denominator if denominator > 0 else 0.0
+
+        details = {
+            "relevance_indicators": verdict_list,
+            "relevant_count": int(sum(verdict_list)),
+            "top_contexts": top_contexts,
+        }
+
+        return EvaluationResult(metric_name=f"context_precision@{top_k}",
+                                score=score,
+                                explanation=explanation,
+                                details=details)
 
     def evaluate_context_recall(self, question: str, retrieved_contexts: List[str],
                                 ground_truth_answer: str) -> EvaluationResult:
@@ -264,19 +402,22 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [{
-            "role": "system",
-            "content": "You are a helpful assistant that evaluates the recall of text contexts."
-        }, {
-            "role": "user",
-            "content": prompt
-        }]
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the recall of text contexts."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ]
 
         response = self._call_llm(messages)
 
         try:
             if isinstance(response, dict):
-                response = response['choices'][0]['message']['content']
+                response = response["choices"][0]["message"]["content"]
                 # now remove the empty think
                 response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
@@ -286,12 +427,13 @@ Please respond in the following JSON format:
                 "statements": result.get("statements", []),
                 "supported_statements": result.get("supported_statements", []),
                 "total_statements": result.get("total_statements", 0),
-                "supported_count": result.get("supported_count", 0)
+                "supported_count": result.get("supported_count", 0),
             }
         except json.JSONDecodeError:
             # Try to extract JSON from the response using regex
             import re
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 try:
                     result = json.loads(json_match.group())
@@ -301,7 +443,7 @@ Please respond in the following JSON format:
                         "statements": result.get("statements", []),
                         "supported_statements": result.get("supported_statements", []),
                         "total_statements": result.get("total_statements", 0),
-                        "supported_count": result.get("supported_count", 0)
+                        "supported_count": result.get("supported_count", 0),
                     }
                 except json.JSONDecodeError:
                     score = 0.5
@@ -362,19 +504,22 @@ Please respond in the following JSON format:
     "explanation": "Brief explanation of your reasoning"
 }}"""
 
-        messages = [{
-            "role": "system",
-            "content": "You are a helpful assistant that evaluates the faithfulness of generated answers."
-        }, {
-            "role": "user",
-            "content": prompt
-        }]
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the faithfulness of generated answers.",
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ]
 
         response = self._call_llm(messages)
 
         try:
             if isinstance(response, dict):
-                response = response['choices'][0]['message']['content']
+                response = response["choices"][0]["message"]["content"]
                 # now remove the empty think
                 response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
@@ -385,12 +530,13 @@ Please respond in the following JSON format:
                 "supported_statements": result.get("supported_statements", []),
                 "unsupported_statements": result.get("unsupported_statements", []),
                 "total_statements": result.get("total_statements", 0),
-                "supported_count": result.get("supported_count", 0)
+                "supported_count": result.get("supported_count", 0),
             }
         except json.JSONDecodeError:
             # Try to extract JSON from the response using regex
             import re
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 try:
                     result = json.loads(json_match.group())
@@ -401,7 +547,7 @@ Please respond in the following JSON format:
                         "supported_statements": result.get("supported_statements", []),
                         "unsupported_statements": result.get("unsupported_statements", []),
                         "total_statements": result.get("total_statements", 0),
-                        "supported_count": result.get("supported_count", 0)
+                        "supported_count": result.get("supported_count", 0),
                     }
                 except json.JSONDecodeError:
                     score = 0.5
@@ -449,19 +595,22 @@ Please respond in the following JSON format:
     "weaknesses": ["weakness 1", "weakness 2"]
 }}"""
 
-        messages = [{
-            "role": "system",
-            "content": "You are a helpful assistant that evaluates the relevancy of answers."
-        }, {
-            "role": "user",
-            "content": prompt
-        }]
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that evaluates the relevancy of answers."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ]
 
         response = self._call_llm(messages)
 
         try:
             if isinstance(response, dict):
-                response = response['choices'][0]['message']['content']
+                response = response["choices"][0]["message"]["content"]
                 # now remove the empty think
                 response = response.replace("<think>\n\n</think>\n\n", "")
             result = json.loads(response)
@@ -470,12 +619,13 @@ Please respond in the following JSON format:
             details = {
                 "probable_questions": result.get("probable_questions", []),
                 "strengths": result.get("strengths", []),
-                "weaknesses": result.get("weaknesses", [])
+                "weaknesses": result.get("weaknesses", []),
             }
         except json.JSONDecodeError:
             # Try to extract JSON from the response using regex
             import re
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 try:
                     result = json.loads(json_match.group())
@@ -484,7 +634,7 @@ Please respond in the following JSON format:
                     details = {
                         "probable_questions": result.get("probable_questions", []),
                         "strengths": result.get("strengths", []),
-                        "weaknesses": result.get("weaknesses", [])
+                        "weaknesses": result.get("weaknesses", []),
                     }
                 except json.JSONDecodeError:
                     score = 0.5
@@ -497,19 +647,19 @@ Please respond in the following JSON format:
 
         return EvaluationResult(metric_name="answer_relevancy", score=score, explanation=explanation, details=details)
 
-    def calculate_ragas_score(self, context_relevancy: float, context_recall: float, faithfulness: float,
+    def calculate_ragas_score(self, context_precision: float, context_recall: float, faithfulness: float,
                               answer_relevancy: float) -> float:
         """
         Calculate the RAGAS score as the harmonic mean of all four metrics.
         Args:
-            context_relevancy: Context relevancy score
+            context_precision: Context precision score
             context_recall: Context recall score
             faithfulness: Faithfulness score
             answer_relevancy: Answer relevancy score
         Returns:
             RAGAS score (harmonic mean)
         """
-        scores = [context_relevancy, context_recall, faithfulness, answer_relevancy]
+        scores = [context_precision, context_recall, faithfulness, answer_relevancy]
         # Filter out zero scores to avoid division by zero
         non_zero_scores = [score for score in scores if score > 0]
 
@@ -520,11 +670,13 @@ Please respond in the following JSON format:
         harmonic_mean = len(non_zero_scores) / sum(1 / score for score in non_zero_scores)
         return harmonic_mean
 
-    def evaluate_rag_pipeline(self,
-                              question: str,
-                              generated_answer: str,
-                              retrieved_contexts: List[str],
-                              ground_truth_answer: Optional[str] = None) -> RAGEvaluationResult:
+    def evaluate_rag_pipeline(
+        self,
+        question: str,
+        generated_answer: str,
+        retrieved_contexts: List[str],
+        ground_truth_answer: Optional[str] = None,
+    ) -> RAGEvaluationResult:
         """
         Evaluate a complete RAG pipeline using all four metrics.
 
@@ -540,9 +692,20 @@ Please respond in the following JSON format:
 
         print("🔍 Starting RAG evaluation...")
 
-        # Evaluate context relevancy
-        print("  📊 Evaluating context relevancy...")
-        context_relevancy = self.evaluate_context_relevancy(question, retrieved_contexts)
+        # Evaluate context precision
+        if ground_truth_answer:
+            print("  📊 Evaluating context precision...")
+            context_precision = self.evaluate_context_precision(question, retrieved_contexts, ground_truth_answer)
+        else:
+            # Use context relevancy as a proxy for context precision
+            print("  📊 Evaluating context relevancy as proxy for context precision...")
+            context_relevancy = self.evaluate_context_relevancy(question, retrieved_contexts)
+            context_recall = EvaluationResult(
+                metric_name="context_precision",
+                score=context_relevancy.score,
+                explanation="Using context relevancy as proxy (no ground truth provided)",
+                details={"note": "Ground truth answer not provided"},
+            )
 
         # Evaluate faithfulness
         print("  📊 Evaluating faithfulness...")
@@ -558,13 +721,17 @@ Please respond in the following JSON format:
             context_recall = self.evaluate_context_recall(question, retrieved_contexts, ground_truth_answer)
         else:
             # Use context relevancy as a proxy for context recall
-            context_recall = EvaluationResult(metric_name="context_recall",
-                                              score=context_relevancy.score,
-                                              explanation="Using context relevancy as proxy (no ground truth provided)",
-                                              details={"note": "Ground truth answer not provided"})
+            print("  📊 Evaluating context relevancy as proxy for context recall...")
+            context_relevancy = self.evaluate_context_relevancy(question, retrieved_contexts)
+            context_recall = EvaluationResult(
+                metric_name="context_recall",
+                score=context_relevancy.score,
+                explanation="Using context relevancy as proxy (no ground truth provided)",
+                details={"note": "Ground truth answer not provided"},
+            )
 
         # Calculate RAGAS score
-        ragas_score = self.calculate_ragas_score(context_relevancy.score, context_recall.score, faithfulness.score,
+        ragas_score = self.calculate_ragas_score(context_precision.score, context_recall.score, faithfulness.score,
                                                  answer_relevancy.score)
 
         evaluation_time = time.time() - start_time
@@ -575,16 +742,18 @@ Please respond in the following JSON format:
             "question": question,
             "generated_answer": generated_answer,
             "context_count": len(retrieved_contexts),
-            "has_ground_truth": ground_truth_answer is not None
+            "has_ground_truth": ground_truth_answer is not None,
         }
 
-        return RAGEvaluationResult(context_relevancy=context_relevancy,
-                                   context_recall=context_recall,
-                                   faithfulness=faithfulness,
-                                   answer_relevancy=answer_relevancy,
-                                   ragas_score=ragas_score,
-                                   evaluation_time=evaluation_time,
-                                   metadata=metadata)
+        return RAGEvaluationResult(
+            context_precision=context_precision,
+            context_recall=context_recall,
+            faithfulness=faithfulness,
+            answer_relevancy=answer_relevancy,
+            ragas_score=ragas_score,
+            evaluation_time=evaluation_time,
+            metadata=metadata,
+        )
 
     def print_evaluation_summary(self, result: RAGEvaluationResult):
         """
@@ -601,8 +770,8 @@ Please respond in the following JSON format:
         print()
 
         print("📈 Individual Metrics:")
-        print(f"  • Context Relevancy: {result.context_relevancy.score:.3f}")
-        print(f"    {result.context_relevancy.explanation}")
+        print(f"  • Context Precision: {result.context_precision.score:.3f}")
+        print(f"    {result.context_precision.explanation}")
 
         print(f"  • Context Recall: {result.context_recall.score:.3f}")
         print(f"    {result.context_recall.explanation}")
@@ -628,42 +797,44 @@ Please respond in the following JSON format:
             "evaluation_time": result.evaluation_time,
             "metadata": result.metadata,
             "metrics": {
-                "context_relevancy": {
-                    "score": result.context_relevancy.score,
-                    "explanation": result.context_relevancy.explanation,
-                    "details": result.context_relevancy.details
+                "context_precision": {
+                    "score": result.context_precision.score,
+                    "explanation": result.context_precision.explanation,
+                    "details": result.context_precision.details,
                 },
                 "context_recall": {
                     "score": result.context_recall.score,
                     "explanation": result.context_recall.explanation,
-                    "details": result.context_recall.details
+                    "details": result.context_recall.details,
                 },
                 "faithfulness": {
                     "score": result.faithfulness.score,
                     "explanation": result.faithfulness.explanation,
-                    "details": result.faithfulness.details
+                    "details": result.faithfulness.details,
                 },
                 "answer_relevancy": {
                     "score": result.answer_relevancy.score,
                     "explanation": result.answer_relevancy.explanation,
-                    "details": result.answer_relevancy.details
-                }
-            }
+                    "details": result.answer_relevancy.details,
+                },
+            },
         }
 
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(result_dict, f, indent=2, ensure_ascii=False)
 
         print(f"💾 Evaluation results saved to: {output_file}")
 
 
-def evaluate_rag_response(question: str,
-                          generated_answer: str,
-                          retrieved_contexts: List[str],
-                          ground_truth_answer: Optional[str] = None,
-                          llm_provider: str = "auto",
-                          save_results: bool = True,
-                          output_file: Optional[str] = None) -> RAGEvaluationResult:
+def evaluate_rag_response(
+    question: str,
+    generated_answer: str,
+    retrieved_contexts: List[str],
+    ground_truth_answer: Optional[str] = None,
+    llm_provider: str = "auto",
+    save_results: bool = True,
+    output_file: Optional[str] = None,
+) -> RAGEvaluationResult:
     """
     Convenience function to evaluate a RAG response.
     Args:
@@ -679,16 +850,19 @@ def evaluate_rag_response(question: str,
     """
     evaluator = RAGEvaluator(llm_provider=llm_provider)
 
-    result = evaluator.evaluate_rag_pipeline(question=question,
-                                             generated_answer=generated_answer,
-                                             retrieved_contexts=retrieved_contexts,
-                                             ground_truth_answer=ground_truth_answer)
+    result = evaluator.evaluate_rag_pipeline(
+        question=question,
+        generated_answer=generated_answer,
+        retrieved_contexts=retrieved_contexts,
+        ground_truth_answer=ground_truth_answer,
+    )
 
     evaluator.print_evaluation_summary(result)
 
     if save_results:
         if output_file is None:
             import datetime
+
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = f"rag_evaluation_{timestamp}.json"
 

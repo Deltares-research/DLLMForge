@@ -151,6 +151,7 @@ class SimpleAgent:
             self.add_conditional_edge("agent", should_continue)
             self.add_edge("tools", "agent")
         else:
+
             def call_model(state: MessagesState):
                 import json
                 from langchain_core.messages import SystemMessage, HumanMessage
@@ -172,14 +173,12 @@ class SimpleAgent:
                 available_tools = [getattr(t, "name", "") for t in self.tools]
                 tool_list_str = "\n".join(f"- {name}" for name in available_tools if name)
                 if not messages or messages[0].type != "system":
-                    routing_instructions = (
-                        "You can call tools by responding ONLY with a JSON object.\n"
-                        "- To call a tool: {\"tool\": \"<tool_name>\", \"args\": { ... }}\n"
-                        "- To answer: {\"final_answer\": \"...\"}\n"
-                        "Use EXACT tool names. Do not invent names like 'text' or 'pizza_prices'.\n"
-                        f"Available tools (exact names):\n{tool_list_str}\n"
-                        "Example: {\"tool\": \"add\", \"args\": {\"a\": 2, \"b\": 3}}"
-                    )
+                    routing_instructions = ("You can call tools by responding ONLY with a JSON object.\n"
+                                            "- To call a tool: {\"tool\": \"<tool_name>\", \"args\": { ... }}\n"
+                                            "- To answer: {\"final_answer\": \"...\"}\n"
+                                            "Use EXACT tool names. Do not invent names like 'text' or 'pizza_prices'.\n"
+                                            f"Available tools (exact names):\n{tool_list_str}\n"
+                                            "Example: {\"tool\": \"add\", \"args\": {\"a\": 2, \"b\": 3}}")
                     messages = [SystemMessage(content=f"{self.system_message}\n\n{routing_instructions}")] + messages
 
                 loop_messages = list(messages)
@@ -192,14 +191,19 @@ class SimpleAgent:
                         tool_name_l = str(tool_name).lower()
                         resolved_name = tool_name
                         if tool_name_l in {"text", "summary", "summarise", "summarize"}:
-                            summary_tool = next((n for n in available_tools if n and ("summary" in n.lower() or "summar" in n.lower())), None)
+                            summary_tool = next(
+                                (n for n in available_tools if n and ("summary" in n.lower() or "summar" in n.lower())),
+                                None)
                             if summary_tool:
                                 resolved_name = summary_tool
                         args = directive.get("args", {})
                         tool_func = next((t for t in self.tools if getattr(t, "name", None) == resolved_name), None)
                         if tool_func is None:
                             avail_str = ", ".join(available_tools)
-                            loop_messages.append(HumanMessage(content=f"Tool '{tool_name}' not found. Available tools: {avail_str}. Use exact names."))
+                            loop_messages.append(
+                                HumanMessage(
+                                    content=
+                                    f"Tool '{tool_name}' not found. Available tools: {avail_str}. Use exact names."))
                             continue
                         try:
                             result = tool_func.invoke(args)
@@ -246,6 +250,7 @@ class SimpleAgent:
 
         try:
             if stream:
+
                 def _parse_tool_directive(text: str):
                     import json
                     try:
@@ -272,7 +277,8 @@ class SimpleAgent:
                             if directive and "tool" in directive and "args" in directive:
                                 tool_name = directive["tool"]
                                 args = directive.get("args", {})
-                                print("================================== Ai Message ==================================")
+                                print(
+                                    "================================== Ai Message ==================================")
                                 print("Tool Calls:")
                                 print(f"  {tool_name} (text_routing)")
                                 print("  Args:")
@@ -281,7 +287,8 @@ class SimpleAgent:
                                 print()
                                 continue
                         # If a tool result was appended as a human message, render like a Tool Message
-                        if msg_type == "human" and isinstance(content, str) and content.startswith("Tool '") and "' result: " in content:
+                        if msg_type == "human" and isinstance(
+                                content, str) and content.startswith("Tool '") and "' result: " in content:
                             # Expected format: Tool '<name>' result: <payload>
                             try:
                                 name_part, result_part = content.split("' result: ", 1)

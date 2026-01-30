@@ -76,7 +76,7 @@ def test_process_document_simple(MockParser, mock_config, mock_doc_processor, mo
     doc.content_type = 'text'
     doc.content = 'abc abc abc'
     results = info.process_document(doc)
-    assert results == [{"foo": "bar"}]
+    assert results == [{"foo": "bar", 'metadata': {}}]
     info.chunk_document.assert_called_with(doc)
 
 
