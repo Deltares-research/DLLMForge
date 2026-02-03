@@ -5,15 +5,29 @@ An overview of available langchain chat models: https://python.langchain.com/doc
 """
 import os
 from dotenv import load_dotenv
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
-from langchain_mistralai import ChatMistralAI
+from typing import Any, List, Optional
+import requests
+import json
+
+try:
+    from langchain_openai import AzureChatOpenAI, ChatOpenAI
+    LANGCHAIN_OPENAI_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_OPENAI_AVAILABLE = False
+    AzureChatOpenAI = None
+    ChatOpenAI = None
+
+try:
+    from langchain_mistralai import ChatMistralAI
+    LANGCHAIN_MISTRALAI_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_MISTRALAI_AVAILABLE = False
+    ChatMistralAI = None
+
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.outputs import LLMResult
-from typing import Any, List, Optional
-import requests
-import json
 
 
 class LangchainAPI:

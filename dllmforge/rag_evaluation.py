@@ -21,10 +21,34 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
-from .openai_api import OpenAIAPI
-from .anthropic_api import AnthropicAPI
-from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
-from .langchain_api import LangchainAPI
+# Import optional API components
+try:
+    from .openai_api import OpenAIAPI
+    OPENAI_API_AVAILABLE = True
+except ImportError:
+    OPENAI_API_AVAILABLE = False
+    OpenAIAPI = None
+
+try:
+    from .anthropic_api import AnthropicAPI
+    ANTHROPIC_API_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_API_AVAILABLE = False
+    AnthropicAPI = None
+
+try:
+    from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    DeltaresOllamaLLM = None
+
+try:
+    from .langchain_api import LangchainAPI
+    LANGCHAIN_API_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_API_AVAILABLE = False
+    LangchainAPI = None
 
 # Load environment variables
 load_dotenv()

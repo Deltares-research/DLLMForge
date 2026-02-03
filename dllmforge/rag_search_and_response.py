@@ -16,20 +16,39 @@ The example demonstrates the whole pipeline of RAG, including:
 4. Search the vector database for relevant chunks.
 5. Generate a response to the user query based on the retrieved chunks.
 """
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.models import VectorizedQuery
-from azure.search.documents import SearchClient
-from azure.search.documents.indexes import SearchIndexClient
-from azure.search.documents.indexes.models import (SearchField, SearchFieldDataType, VectorSearch,
-                                                   HnswAlgorithmConfiguration, VectorSearchProfile,
-                                                   AzureOpenAIVectorizer, AzureOpenAIVectorizerParameters, SearchIndex)
+import os
+from dotenv import load_dotenv
+
+try:
+    from azure.core.credentials import AzureKeyCredential
+    from azure.search.documents.models import VectorizedQuery
+    from azure.search.documents import SearchClient
+    from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import (SearchField, SearchFieldDataType, VectorSearch,
+                                                       HnswAlgorithmConfiguration, VectorSearchProfile,
+                                                       AzureOpenAIVectorizer, AzureOpenAIVectorizerParameters,
+                                                       SearchIndex)
+    AZURE_SEARCH_AVAILABLE = True
+except ImportError:
+    AZURE_SEARCH_AVAILABLE = False
+    AzureKeyCredential = None
+    VectorizedQuery = None
+    SearchClient = None
+    SearchIndexClient = None
+    SearchField = None
+    SearchFieldDataType = None
+    VectorSearch = None
+    HnswAlgorithmConfiguration = None
+    VectorSearchProfile = None
+    AzureOpenAIVectorizer = None
+    AzureOpenAIVectorizerParameters = None
+    SearchIndex = None
+
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-import os
-from dotenv import load_dotenv
 from .rag_embedding import AzureOpenAIEmbeddingModel
 
 # Optionally load environment variables from a .env file

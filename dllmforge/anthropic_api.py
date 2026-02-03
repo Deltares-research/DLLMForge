@@ -1,6 +1,12 @@
 import os
 from dotenv import load_dotenv
-from anthropic import Anthropic
+
+try:
+    from anthropic import Anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+    Anthropic = None
 
 
 class AnthropicAPI:

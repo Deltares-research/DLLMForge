@@ -15,7 +15,12 @@ from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig
 import base64
 
 # Docling imports
-from docling.document_converter import DocumentConverter
+try:
+    from docling.document_converter import DocumentConverter
+    DOCLING_AVAILABLE = True
+except ImportError:
+    DOCLING_AVAILABLE = False
+    DocumentConverter = None
 
 
 class DoclingProcessedDocument:
