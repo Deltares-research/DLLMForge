@@ -7,7 +7,6 @@ Azure OpenAI service and a deployed embedding model on Azure to use this module.
 
 from typing import List, Any, Union, Dict
 from langchain_huggingface import HuggingFaceEmbeddings
-from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM
 
 
 class LangchainHFEmbeddingModel:

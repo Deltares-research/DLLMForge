@@ -10,7 +10,12 @@ import base64
 import re
 import os
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAIEmbeddings
+try:
+    from langchain_openai import AzureOpenAIEmbeddings
+    LANGCHAIN_OPENAI_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_OPENAI_AVAILABLE = False
+    AzureOpenAIEmbeddings = None
 
 
 class AzureOpenAIEmbeddingModel:
@@ -31,6 +36,9 @@ class AzureOpenAIEmbeddingModel:
             api_key: Azure OpenAI API key
             api_version: Azure OpenAI API version
         """
+        if not LANGCHAIN_OPENAI_AVAILABLE:
+            raise ImportError("langchain_openai is required for AzureOpenAIEmbeddingModel. "
+                              "Install it with: pip install dllmforge[api]")
         load_dotenv()
         api_base = api_base or os.getenv('AZURE_OPENAI_API_BASE')
         deployment_name_embeddings = deployment_name_embeddings or os.getenv('AZURE_OPENAI_DEPLOYMENT_EMBEDDINGS')
