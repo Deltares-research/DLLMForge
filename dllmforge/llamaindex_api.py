@@ -7,10 +7,18 @@ import os
 from dotenv import load_dotenv
 
 # LlamaIndex LLM imports
-from llama_index.llms.azure_openai import AzureOpenAI
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.mistralai import MistralAI
-from llama_index.core.llms import ChatMessage
+try:
+    from llama_index.llms.azure_openai import AzureOpenAI
+    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.mistralai import MistralAI
+    from llama_index.core.llms import ChatMessage
+    LLAMAINDEX_AVAILABLE = True
+except ImportError:
+    LLAMAINDEX_AVAILABLE = False
+    AzureOpenAI = None
+    OpenAI = None
+    MistralAI = None
+    ChatMessage = None
 
 
 class LlamaIndexAPI:

@@ -1,6 +1,12 @@
 import os
 from dotenv import load_dotenv
-from openai import AzureOpenAI
+
+try:
+    from openai import AzureOpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    AzureOpenAI = None
 
 
 class OpenAIAPI:
