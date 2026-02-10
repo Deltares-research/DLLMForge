@@ -1,0 +1,21 @@
+dllmforge.agent\_core
+=====================
+
+.. automodule:: dllmforge.agent_core
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      create_basic_agent
+      create_basic_tools
+      create_echo_tool
+      tool
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SimpleAgent
+   

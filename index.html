@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>DLLMForge Documentation &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial LLM capabilities of DLLMForge" href="tutorials/LLM_tutorial.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="dllmforge-documentation">
+<h1>DLLMForge Documentation<a class="headerlink" href="#dllmforge-documentation" title="Link to this heading">¶</a></h1>
+<section id="welcome-to-dllmforge">
+<h2>Welcome to DLLMForge<a class="headerlink" href="#welcome-to-dllmforge" title="Link to this heading">¶</a></h2>
+<p>DLLMForge is a repository for LLM (Large Language Model) tools developed at Deltares.
+It provides simple open and closed source tools to interact with various with D-LLMForge
+you can :</p>
+<ul class="simple">
+<li><p>Use an simple LLM to ask questions.</p></li>
+<li><p>Build your RAG with HuggingFace or AZURE embeddings and vector stores.</p></li>
+<li><p>Create agents that can use tools to answer complex questions.</p></li>
+<li><p>Extract structured information from documents using LLMs.</p></li>
+</ul>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<p>DLLMForge provides a modular toolkit for:</p>
+<ul class="simple">
+<li><p><strong>Multi-LLM Support</strong>: Integration with OpenAI, Anthropic, and open-source Deltares hosted models</p></li>
+<li><p><strong>RAG Pipeline</strong>: Complete document ingestion, embedding, and retrieval system</p></li>
+<li><p><strong>Agent Framework</strong>: Simple but extensible agent architecture with tool support</p></li>
+<li><p><strong>Evaluation Tools</strong>: Comprehensive RAG system evaluation using various metrics</p></li>
+<li><p><strong>Flexible Backends</strong>: Support for both cloud (Azure, OpenAI) and local deployments</p></li>
+</ul>
+</section>
+<section id="repository-structure">
+<h2>Repository Structure<a class="headerlink" href="#repository-structure" title="Link to this heading">¶</a></h2>
+<p>DLLMForge is organized into several key components that work together to provide a comprehensive LLM toolkit:</p>
+<section id="core-package-dllmforge">
+<h3>Core Package (<code class="docutils literal notranslate"><span class="pre">dllmforge/</span></code>)<a class="headerlink" href="#core-package-dllmforge" title="Link to this heading">¶</a></h3>
+<p>The main package contains the following modules:</p>
+<dl class="simple">
+<dt><strong>Core Agent Framework</strong></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">agent_core.py</span></code> - Simple agent infrastructure with tool support</p>
+<ul>
+<li><p><a class="reference internal" href="#dllmforge.agent_core.SimpleAgent" title="dllmforge.agent_core.SimpleAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a> - Basic agentic workflows</p></li>
+<li><p><a class="reference internal" href="#dllmforge.agent_core.create_basic_agent" title="dllmforge.agent_core.create_basic_agent"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a> - Agent factory function</p></li>
+<li><p><a class="reference internal" href="#dllmforge.agent_core.create_basic_tools" title="dllmforge.agent_core.create_basic_tools"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a> - Tool creation utilities</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt><strong>Information Extraction Framework</strong></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IE_agent_config.py</span></code> - Configuration management for IE agents</p>
+<ul>
+<li><p><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">IEAgentConfig</span></code></a> - Main configuration class</p></li>
+<li><p><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.SchemaConfig" title="dllmforge.IE_agent_config.SchemaConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">SchemaConfig</span></code></a> - Schema generation configuration</p></li>
+<li><p><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.DocumentConfig" title="dllmforge.IE_agent_config.DocumentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentConfig</span></code></a> - Document processing configuration</p></li>
+<li><p><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.ExtractorConfig" title="dllmforge.IE_agent_config.ExtractorConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtractorConfig</span></code></a> - Information extraction configuration</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IE_agent_schema_generator.py</span></code> - Automatic schema generation for structured extraction</p>
+<ul>
+<li><p><a class="reference internal" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator" title="dllmforge.IE_agent_schema_generator.SchemaGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">SchemaGenerator</span></code></a> - Generate Pydantic schemas from task descriptions</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IE_agent_document_processor.py</span></code> - Document processing for information extraction</p>
+<ul>
+<li><p><a class="reference internal" href="#dllmforge.IE_agent_document_processor.DocumentProcessor" title="dllmforge.IE_agent_document_processor.DocumentProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentProcessor</span></code></a> - Convert documents to LLM-readable format</p></li>
+<li><p><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedDocument</span></code></a> - Processed document container</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IE_agent_extractor.py</span></code> - Main information extraction orchestrator</p>
+<ul>
+<li><p><a class="reference internal" href="#dllmforge.IE_agent_extractor.InfoExtractor" title="dllmforge.IE_agent_extractor.InfoExtractor"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfoExtractor</span></code></a> - Extract structured information from documents</p></li>
+<li><p><a class="reference internal" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="dllmforge.IE_agent_extractor.DocumentChunk"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentChunk</span></code></a> - Document chunk container</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IE_agent_extractor_docling.py</span></code> - Enhanced extraction with Docling preprocessing</p>
+<ul>
+<li><p><a class="reference internal" href="_autosummary/dllmforge.IE_agent_extractor_docling.html#dllmforge.IE_agent_extractor_docling.DoclingInfoExtractor" title="dllmforge.IE_agent_extractor_docling.DoclingInfoExtractor"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoclingInfoExtractor</span></code></a> - Advanced document structure-aware extraction</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt><strong>LLM API Integrations</strong></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">openai_api.py</span></code> - OpenAI API integration</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.openai_api.OpenAIAPI" title="dllmforge.openai_api.OpenAIAPI"><code class="xref py py-class docutils literal notranslate"><span class="pre">OpenAIAPI</span></code></a> - OpenAI API wrapper</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">anthropic_api.py</span></code> - Anthropic Claude API integration</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.anthropic_api.AnthropicAPI" title="dllmforge.anthropic_api.AnthropicAPI"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a> - Anthropic API wrapper</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">langchain_api.py</span></code> - LangChain framework integration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">llamaindex_api.py</span></code> - LlamaIndex framework integration</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.llamaindex_api.LlamaIndexAPI" title="dllmforge.llamaindex_api.LlamaIndexAPI"><code class="xref py py-class docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a> - LlamaIndex API wrapper</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt><strong>RAG (Retrieval-Augmented Generation) Components</strong></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rag_preprocess_documents.py</span></code> - Document loading and chunking</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.DocumentLoader" title="dllmforge.rag_preprocess_documents.DocumentLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentLoader</span></code></a> - Abstract document loader</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.PDFLoader" title="dllmforge.rag_preprocess_documents.PDFLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">PDFLoader</span></code></a> - Load PDF documents</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_preprocess_documents.TextChunker" title="dllmforge.rag_preprocess_documents.TextChunker"><code class="xref py py-class docutils literal notranslate"><span class="pre">TextChunker</span></code></a> - Split text into manageable chunks with overlap</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rag_embedding.py</span></code> - Azure OpenAI embedding models</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding.AzureOpenAIEmbeddingModel" title="dllmforge.rag_embedding.AzureOpenAIEmbeddingModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a> - Generate embeddings for text</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rag_embedding_open_source.py</span></code> - Open-source embedding models</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel" title="dllmforge.rag_embedding_open_source.LangchainHFEmbeddingModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel</span></code></a> - HuggingFace embeddings via LangChain</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rag_search_and_response.py</span></code> - Search and response generation</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.IndexManager" title="dllmforge.rag_search_and_response.IndexManager"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndexManager</span></code></a> - Manage vector indices</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.Retriever" title="dllmforge.rag_search_and_response.Retriever"><code class="xref py py-class docutils literal notranslate"><span class="pre">Retriever</span></code></a> - Retrieve relevant documents</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_search_and_response.LLMResponder" title="dllmforge.rag_search_and_response.LLMResponder"><code class="xref py py-class docutils literal notranslate"><span class="pre">LLMResponder</span></code></a> - Generate responses using LLMs</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rag_evaluation.py</span></code> - RAG system evaluation</p>
+<ul>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluator" title="dllmforge.rag_evaluation.RAGEvaluator"><code class="xref py py-class docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a> - Evaluate RAG system performance</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.EvaluationResult" title="dllmforge.rag_evaluation.EvaluationResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">EvaluationResult</span></code></a> - Store individual evaluation metrics</p></li>
+<li><p><a class="reference internal" href="dllmforge.html#dllmforge.rag_evaluation.RAGEvaluationResult" title="dllmforge.rag_evaluation.RAGEvaluationResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RAGEvaluationResult</span></code></a> - Store comprehensive RAG evaluation results</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt><strong>Specialized Components</strong></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LLMs/Deltares_LLMs.py</span></code> - Deltares-specific LLM implementations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">utils/</span></code> - Utility functions and helpers</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="workflows-workflows">
+<h3>Workflows (<code class="docutils literal notranslate"><span class="pre">workflows/</span></code>)<a class="headerlink" href="#workflows-workflows" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">open_source_RAG.py</span></code> - Example workflow for open-source RAG implementation</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="example-streamlit-based-application-streamlit-apps">
+<h3>Example Streamlit-based Application (<code class="docutils literal notranslate"><span class="pre">streamlit_apps/</span></code>)<a class="headerlink" href="#example-streamlit-based-application-streamlit-apps" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">app.py</span></code> - Streamlit-based RAG application</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">streamlit_water_management_app.py</span></code> - Streamlit-based water management application</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h3>
+<p>To install DLLMForge, you can use pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/Deltares-research/DLLMForge
+</pre></div>
+</div>
+</section>
+<section id="tutorials">
+<h3>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">¶</a></h3>
+<p>The following tutorials are available:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="tutorials/LLM_tutorial.html"><span class="doc">Tutorial LLM capabilities of DLLMForge</span></a></p></li>
+<li><p><a class="reference internal" href="tutorials/RAG_tutorial.html"><span class="doc">Open Source RAG Pipeline Tutorial</span></a></p></li>
+<li><p><a class="reference internal" href="tutorials/tutorial_simple_agent.html"><span class="doc">Building a Simple Agent with DLLMForge</span></a></p></li>
+<li><p><a class="reference internal" href="tutorials/tutorial_advanced_agent.html"><span class="doc">Tutorial: Advanced Water Management Agent</span></a></p></li>
+<li><p><a class="reference internal" href="tutorials/Information_extraction_tutorial.html"><span class="doc">Information Extraction with LLMs Tutorial</span></a></p></li>
+</ul>
+</section>
+</section>
+<section id="background-information">
+<h2>Background Information<a class="headerlink" href="#background-information" title="Link to this heading">¶</a></h2>
+<p>For more information on LLMs and RAG systems, see:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="background/LLM_explained.html"><span class="doc">LLM Explained</span></a></p></li>
+<li><p><a class="reference internal" href="background/RAGS_explained.html"><span class="doc">Retrieval-Augmented Generation (RAG)</span></a></p></li>
+</ul>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/LLM_tutorial.html#environment-setup">Environment Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/LLM_tutorial.html#initialize-llm">Initialize LLM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/LLM_tutorial.html#using-the-llm-to-ask-questions">Using the LLM to ask questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/LLM_tutorial.html#footnote-about-deltares-hosted-models">Footnote about Deltares hosted models</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/RAG_tutorial.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/RAG_tutorial.html#step-by-step-implementation">Step-by-Step Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/RAG_tutorial.html#evaluation-metrics-explained">Evaluation Metrics Explained</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/RAG_tutorial.html#advanced-configuration">Advanced Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_simple_agent.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_simple_agent.html#step-by-step-implementation">Step-by-Step Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#core-concepts-demonstrated">Core Concepts Demonstrated</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#workflow-overview">Workflow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#water-calculation-tools">Water Calculation Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#information-retrieval-tools">Information Retrieval Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#conditional-edge-implementation">Conditional Edge Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#workflow-assembly">Workflow Assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#testing-the-workflow">Testing the Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#additional-examples">Additional Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#running-the-tutorial">Running the Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#testing-with-custom-queries">Testing with Custom Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#key-benefits-for-water-professionals">Key Benefits for Water Professionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html#the-information-extraction-workflow">The Information Extraction Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html#step-by-step-implementation">Step-by-Step Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html#understanding-the-results">Understanding the Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html#advanced-configuration">Advanced Configuration</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background/LLM_explained.html">LLM Explained</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="background/LLM_explained.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/LLM_explained.html#key-concepts">Key Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/LLM_explained.html#applications">Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/LLM_explained.html#limitations">Limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/LLM_explained.html#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="background/RAGS_explained.html#why-rag">Why RAG?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/RAGS_explained.html#how-rag-works">How RAG Works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/RAGS_explained.html#core-components">Core Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background/RAGS_explained.html#benefits-of-rag">Benefits of RAG</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="id1">
+<h1>API Reference<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="dllmforge.html#module-dllmforge" title="dllmforge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dllmforge</span></code></a></p></td>
+<td><p>DLLMForge - Deltares LLM Forge Toolkit</p></td>
+</tr>
+</tbody>
+</table>
+<section id="module-dllmforge.agent_core">
+<span id="modules"></span><h2>Modules<a class="headerlink" href="#module-dllmforge.agent_core" title="Link to this heading">¶</a></h2>
+<p>Simple agent core for DLLMForge - Clean LangGraph utilities.</p>
+<p>This module provides simple, elegant utilities for creating LangGraph agents
+following the pattern established in water_management_agent_simple.py.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.agent_core.tool">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.agent_core.</span></span><span class="sig-name descname"><span class="pre">tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/agent_core.html#tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.tool" title="Link to this definition">¶</a></dt>
+<dd><p>DLLMForge wrapper around LangChain’s &#64;tool decorator.</p>
+<p>This decorator provides a consistent interface for creating tools
+within the DLLMForge ecosystem while maintaining compatibility
+with LangChain’s tool system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – Function to be converted into a tool</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tool function that can be used with SimpleAgent</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.agent_core.</span></span><span class="sig-name descname"><span class="pre">SimpleAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_text_tool_routing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tool_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simple agent class for LangGraph workflows.</p>
+<p>Initialize a simple LangGraph agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature setting</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_text_tool_routing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tool_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize a simple LangGraph agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature setting</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.add_tool">
+<span class="sig-name descname"><span class="pre">add_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.add_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.add_tool" title="Link to this definition">¶</a></dt>
+<dd><p>Add a tool to the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tool_func</strong> – Function decorated with &#64;tool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.add_node">
+<span class="sig-name descname"><span class="pre">add_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.add_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.add_node" title="Link to this definition">¶</a></dt>
+<dd><p>Add a node to the workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Node name</p></li>
+<li><p><strong>func</strong> – Node function</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.add_edge">
+<span class="sig-name descname"><span class="pre">add_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.add_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.add_edge" title="Link to this definition">¶</a></dt>
+<dd><p>Add a simple edge between nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from_node</strong> – Source node</p></li>
+<li><p><strong>to_node</strong> – Target node</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.add_conditional_edge">
+<span class="sig-name descname"><span class="pre">add_conditional_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.add_conditional_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.add_conditional_edge" title="Link to this definition">¶</a></dt>
+<dd><p>Add a conditional edge.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from_node</strong> – Source node</p></li>
+<li><p><strong>condition_func</strong> – Function that determines routing</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.create_simple_workflow">
+<span class="sig-name descname"><span class="pre">create_simple_workflow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.create_simple_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.create_simple_workflow" title="Link to this definition">¶</a></dt>
+<dd><p>Create a simple agent -&gt; tools workflow with optional text-based tool routing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.compile">
+<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checkpointer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.compile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.compile" title="Link to this definition">¶</a></dt>
+<dd><p>Compile the workflow.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.process_query">
+<span class="sig-name descname"><span class="pre">process_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.process_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.process_query" title="Link to this definition">¶</a></dt>
+<dd><p>Process a query with the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> – User query</p></li>
+<li><p><strong>stream</strong> – Whether to stream the response</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.agent_core.SimpleAgent.run_interactive">
+<span class="sig-name descname"><span class="pre">run_interactive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#SimpleAgent.run_interactive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.SimpleAgent.run_interactive" title="Link to this definition">¶</a></dt>
+<dd><p>Run the agent in interactive mode.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.agent_core.create_basic_agent">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.agent_core.</span></span><span class="sig-name descname"><span class="pre">create_basic_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dllmforge.agent_core.SimpleAgent" title="dllmforge.agent_core.SimpleAgent"><span class="pre">SimpleAgent</span></a></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#create_basic_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.create_basic_agent" title="Link to this definition">¶</a></dt>
+<dd><p>Create a basic agent with standard setup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_message</strong> – System message for the agent</p></li>
+<li><p><strong>temperature</strong> – LLM temperature</p></li>
+<li><p><strong>model_provider</strong> – LLM provider (“azure-openai”, “openai”, “mistral”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured agent instance</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dllmforge.agent_core.SimpleAgent" title="dllmforge.agent_core.SimpleAgent">SimpleAgent</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.agent_core.create_echo_tool">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.agent_core.</span></span><span class="sig-name descname"><span class="pre">create_echo_tool</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/agent_core.html#create_echo_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.create_echo_tool" title="Link to this definition">¶</a></dt>
+<dd><p>Create a simple echo tool for testing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.agent_core.create_basic_tools">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.agent_core.</span></span><span class="sig-name descname"><span class="pre">create_basic_tools</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/agent_core.html#create_basic_tools"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.agent_core.create_basic_tools" title="Link to this definition">¶</a></dt>
+<dd><p>Create basic utility tools for testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of tool functions</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-dllmforge.IE_agent_schema_generator">Schema Generator module for automatically generating Pydantic models based on user descriptions
+and example documents using LLM.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.PythonCodeOutputParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_schema_generator.</span></span><span class="sig-name descname"><span class="pre">PythonCodeOutputParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#PythonCodeOutputParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.PythonCodeOutputParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseOutputParser[str]</span></code></p>
+<p>Parse Python code from LLM responses that may contain markdown.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#PythonCodeOutputParser.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.parse" title="Link to this definition">¶</a></dt>
+<dd><p>Parse the output of an LLM call to extract Python code.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.get_format_instructions">
+<span class="sig-name descname"><span class="pre">get_format_instructions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#PythonCodeOutputParser.get_format_instructions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.get_format_instructions" title="Link to this definition">¶</a></dt>
+<dd><p>Instructions on how the LLM output should be formatted.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'ignore',</span> <span class="pre">'protected_namespaces':</span> <span class="pre">()}</span></em><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.PythonCodeOutputParser.name" title="Link to this definition">¶</a></dt>
+<dd><p>The name of the <code class="docutils literal notranslate"><span class="pre">Runnable</span></code>. Used for debugging and tracing.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_schema_generator.</span></span><span class="sig-name descname"><span class="pre">SchemaGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.SchemaConfig" title="dllmforge.IE_agent_config.SchemaConfig"><span class="pre">SchemaConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_api</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI" title="dllmforge.langchain_api.LangchainAPI"><span class="pre">LangchainAPI</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_schema_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for generating Pydantic schemas using LLM</p>
+<p>This class supports two usage modes:</p>
+<ol class="arabic">
+<li><p>CONFIG MODE: Pass a SchemaConfig object
+<a href="#id2"><span class="problematic" id="id3">``</span></a><a href="#id4"><span class="problematic" id="id5">`</span></a>python
+config = SchemaConfig(</p>
+<blockquote>
+<div><p>task_description=”Extract person info”,
+output_path=”schema.py”</p>
+</div></blockquote>
+<p>)
+generator = SchemaGenerator(config=config)
+<a href="#id6"><span class="problematic" id="id7">``</span></a><a href="#id8"><span class="problematic" id="id9">`</span></a></p>
+</li>
+<li><p>DIRECT MODE: Pass arguments directly (no config object)
+<a href="#id10"><span class="problematic" id="id11">``</span></a><a href="#id12"><span class="problematic" id="id13">`</span></a>python
+generator = SchemaGenerator(</p>
+<blockquote>
+<div><p>task_description=”Extract person info”,
+output_path=”schema.py”</p>
+</div></blockquote>
+</li>
+</ol>
+<p>Both modes support all parameters:
+- task_description (REQUIRED in direct mode)
+- example_doc (optional: text or file path)
+- user_schema_path (optional: load existing schema)
+- output_path (optional: where to save generated schema)
+- llm_api (optional: custom LLM configuration)</p>
+<p>Initialize the schema generator.</p>
+<p>You can use either <cite>config</cite> (SchemaConfig), or pass the individual parameters directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> – Schema generation configuration (if provided, individual params are ignored)</p></li>
+<li><p><strong>llm_api</strong> – Optional pre-configured LangchainAPI instance</p></li>
+<li><p><strong>task_description</strong> – Description of the information extraction task (direct mode)</p></li>
+<li><p><strong>example_doc</strong> – Example document to help with schema generation (direct mode)</p></li>
+<li><p><strong>user_schema_path</strong> – Path to user-provided schema Python file (direct mode)</p></li>
+<li><p><strong>output_path</strong> – Path to save generated schema (direct mode)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.SchemaConfig" title="dllmforge.IE_agent_config.SchemaConfig"><span class="pre">SchemaConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_api</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI" title="dllmforge.langchain_api.LangchainAPI"><span class="pre">LangchainAPI</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_schema_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the schema generator.</p>
+<p>You can use either <cite>config</cite> (SchemaConfig), or pass the individual parameters directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> – Schema generation configuration (if provided, individual params are ignored)</p></li>
+<li><p><strong>llm_api</strong> – Optional pre-configured LangchainAPI instance</p></li>
+<li><p><strong>task_description</strong> – Description of the information extraction task (direct mode)</p></li>
+<li><p><strong>example_doc</strong> – Example document to help with schema generation (direct mode)</p></li>
+<li><p><strong>user_schema_path</strong> – Path to user-provided schema Python file (direct mode)</p></li>
+<li><p><strong>output_path</strong> – Path to save generated schema (direct mode)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator.setup_parser">
+<span class="sig-name descname"><span class="pre">setup_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator.setup_parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator.setup_parser" title="Link to this definition">¶</a></dt>
+<dd><p>Setup the Pydantic output parser for structured verification results</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator.create_schema_generation_prompt">
+<span class="sig-name descname"><span class="pre">create_schema_generation_prompt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ChatPromptTemplate</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator.create_schema_generation_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator.create_schema_generation_prompt" title="Link to this definition">¶</a></dt>
+<dd><p>Create prompt template for generating Pydantic schema</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator.generate_schema">
+<span class="sig-name descname"><span class="pre">generate_schema</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator.generate_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator.generate_schema" title="Link to this definition">¶</a></dt>
+<dd><p>Generate Pydantic schema based on task description and optional example document</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_schema_generator.SchemaGenerator.save_schema">
+<span class="sig-name descname"><span class="pre">save_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_schema_generator.html#SchemaGenerator.save_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_schema_generator.SchemaGenerator.save_schema" title="Link to this definition">¶</a></dt>
+<dd><p>Save generated schema to a Python file</p>
+</dd></dl>
+
+</dd></dl>
+
+<p id="module-dllmforge.IE_agent_document_processor">Document Processor module for preprocessing documents into text or images for LLM processing.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.ProcessedDocument">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_document_processor.</span></span><span class="sig-name descname"><span class="pre">ProcessedDocument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#ProcessedDocument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class representing processed document content</p>
+<p>Initialize processed document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>content</strong> – The document content (text string or image bytes)</p></li>
+<li><p><strong>content_type</strong> – Type of content (‘text’ or ‘image’)</p></li>
+<li><p><strong>metadata</strong> – Additional metadata about the document</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.ProcessedDocument.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#ProcessedDocument.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.ProcessedDocument.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize processed document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>content</strong> – The document content (text string or image bytes)</p></li>
+<li><p><strong>content_type</strong> – Type of content (‘text’ or ‘image’)</p></li>
+<li><p><strong>metadata</strong> – Additional metadata about the document</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_document_processor.</span></span><span class="sig-name descname"><span class="pre">DocumentProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.DocumentConfig" title="dllmforge.IE_agent_config.DocumentConfig"><span class="pre">DocumentConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for preprocessing documents into text or images</p>
+<p>Initialize document processor
+:param config: Document processing configuration (DocumentConfig)
+:param input_dir: Input directory (overrides config if given)
+:param file_pattern: File pattern (overrides config if given)
+:param output_type: Processing type (overrides config if given)
+:param output_dir: Output directory (overrides config if given)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.DocumentConfig" title="dllmforge.IE_agent_config.DocumentConfig"><span class="pre">DocumentConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize document processor
+:param config: Document processing configuration (DocumentConfig)
+:param input_dir: Input directory (overrides config if given)
+:param file_pattern: File pattern (overrides config if given)
+:param output_type: Processing type (overrides config if given)
+:param output_dir: Output directory (overrides config if given)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.process_to_text">
+<span class="sig-name descname"><span class="pre">process_to_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.process_to_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.process_to_text" title="Link to this definition">¶</a></dt>
+<dd><p>Process document to text using DocumentLoader</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.process_to_image">
+<span class="sig-name descname"><span class="pre">process_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.process_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.process_to_image" title="Link to this definition">¶</a></dt>
+<dd><p>Process document to list of page images</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.encode_image_base64">
+<span class="sig-name descname"><span class="pre">encode_image_base64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_bytes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.encode_image_base64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.encode_image_base64" title="Link to this definition">¶</a></dt>
+<dd><p>Encode image bytes to base64 string</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.process_file">
+<span class="sig-name descname"><span class="pre">process_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.process_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.process_file" title="Link to this definition">¶</a></dt>
+<dd><p>Process a single file based on configuration (text/image)
+:param file_path: Path to document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Single ProcessedDocument for text or list of ProcessedDocument for images</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_document_processor.DocumentProcessor.process_directory">
+<span class="sig-name descname"><span class="pre">process_directory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_document_processor.html#DocumentProcessor.process_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_document_processor.DocumentProcessor.process_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Process all matching files in the configured directory</p>
+</dd></dl>
+
+</dd></dl>
+
+<p id="module-dllmforge.IE_agent_extractor">Synchronous Information Extractor module for extracting structured information from documents using LLM.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.DocumentChunk">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_extractor.</span></span><span class="sig-name descname"><span class="pre">DocumentChunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#DocumentChunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class representing a chunk of document content</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.DocumentChunk.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#DocumentChunk.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.DocumentChunk.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_extractor.</span></span><span class="sig-name descname"><span class="pre">InfoExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><span class="pre">IEAgentConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseModel</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_api</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI" title="dllmforge.langchain_api.LangchainAPI"><span class="pre">LangchainAPI</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.DocumentProcessor" title="dllmforge.IE_agent_document_processor.DocumentProcessor"><span class="pre">DocumentProcessor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'text'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for extracting information from documents using LLM</p>
+<p>Initialize the information extractor.</p>
+<p>You can use either <cite>config</cite> (IEAgentConfig), or pass the individual parameters directly.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="_autosummary/dllmforge.IE_agent_config.html#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><span class="pre">IEAgentConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseModel</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_api</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dllmforge.html#dllmforge.langchain_api.LangchainAPI" title="dllmforge.langchain_api.LangchainAPI"><span class="pre">LangchainAPI</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.DocumentProcessor" title="dllmforge.IE_agent_document_processor.DocumentProcessor"><span class="pre">DocumentProcessor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'text'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the information extractor.</p>
+<p>You can use either <cite>config</cite> (IEAgentConfig), or pass the individual parameters directly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.refine_system_prompt">
+<span class="sig-name descname"><span class="pre">refine_system_prompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.refine_system_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.refine_system_prompt" title="Link to this definition">¶</a></dt>
+<dd><p>Use LLM to refine user’s task description into a proper system prompt</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.chunk_document">
+<span class="sig-name descname"><span class="pre">chunk_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="dllmforge.IE_agent_extractor.DocumentChunk"><span class="pre">DocumentChunk</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.chunk_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.chunk_document" title="Link to this definition">¶</a></dt>
+<dd><p>Split document into chunks if needed based on thresholds</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.create_text_extraction_prompt">
+<span class="sig-name descname"><span class="pre">create_text_extraction_prompt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ChatPromptTemplate</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.create_text_extraction_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.create_text_extraction_prompt" title="Link to this definition">¶</a></dt>
+<dd><p>Create prompt template for text-based information extraction</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.process_text_chunk">
+<span class="sig-name descname"><span class="pre">process_text_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="dllmforge.IE_agent_extractor.DocumentChunk"><span class="pre">DocumentChunk</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.process_text_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.process_text_chunk" title="Link to this definition">¶</a></dt>
+<dd><p>Process a text document chunk</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.create_image_extraction_prompt">
+<span class="sig-name descname"><span class="pre">create_image_extraction_prompt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ChatPromptTemplate</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.create_image_extraction_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.create_image_extraction_prompt" title="Link to this definition">¶</a></dt>
+<dd><p>Create prompt template for image-based information extraction</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.process_image_chunk">
+<span class="sig-name descname"><span class="pre">process_image_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="dllmforge.IE_agent_extractor.DocumentChunk"><span class="pre">DocumentChunk</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.process_image_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.process_image_chunk" title="Link to this definition">¶</a></dt>
+<dd><p>Process an image document chunk</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.process_chunk">
+<span class="sig-name descname"><span class="pre">process_chunk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_extractor.DocumentChunk" title="dllmforge.IE_agent_extractor.DocumentChunk"><span class="pre">DocumentChunk</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.process_chunk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.process_chunk" title="Link to this definition">¶</a></dt>
+<dd><p>Process a document chunk based on its type</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.process_document">
+<span class="sig-name descname"><span class="pre">process_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dllmforge.IE_agent_document_processor.ProcessedDocument" title="dllmforge.IE_agent_document_processor.ProcessedDocument"><span class="pre">ProcessedDocument</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.process_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.process_document" title="Link to this definition">¶</a></dt>
+<dd><p>Process document and extract information, merging in chunk metadata.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.save_results">
+<span class="sig-name descname"><span class="pre">save_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.save_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.save_results" title="Link to this definition">¶</a></dt>
+<dd><p>Save extraction results to JSON file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_extractor.InfoExtractor.process_all">
+<span class="sig-name descname"><span class="pre">process_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_individual</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combined_output_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all_extracted.json'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dllmforge/IE_agent_extractor.html#InfoExtractor.process_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_extractor.InfoExtractor.process_all" title="Link to this definition">¶</a></dt>
+<dd><p>Process all documents in configured directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>save_individual</strong> – If True, save each document to a separate JSON file (old behavior)</p></li>
+<li><p><strong>combined_output_name</strong> – Name of the combined output file (default: “all_extracted.json”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="tutorials/LLM_tutorial.html" title="next chapter">Tutorial LLM capabilities of DLLMForge</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

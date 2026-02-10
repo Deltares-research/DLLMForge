@@ -1,0 +1,12 @@
+dllmforge.rag\_embedding\_open\_source
+======================================
+
+.. automodule:: dllmforge.rag_embedding_open_source
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LangchainHFEmbeddingModel
+   

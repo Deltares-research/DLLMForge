@@ -1,0 +1,15 @@
+dllmforge.IE\_agent\_config
+===========================
+
+.. automodule:: dllmforge.IE_agent_config
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocumentConfig
+      ExtractorConfig
+      IEAgentConfig
+      SchemaConfig
+   

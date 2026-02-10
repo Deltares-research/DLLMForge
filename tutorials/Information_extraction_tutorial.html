@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Information Extraction with LLMs Tutorial &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="LLM Explained" href="../background/LLM_explained.html" />
+    <link rel="prev" title="Tutorial: Advanced Water Management Agent" href="tutorial_advanced_agent.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="information-extraction-with-llms-tutorial">
+<h1>Information Extraction with LLMs Tutorial<a class="headerlink" href="#information-extraction-with-llms-tutorial" title="Link to this heading">¶</a></h1>
+<p>This tutorial demonstrates how to build a complete information extraction (IE) pipeline using Large Language Models (LLMs) from the DLLMForge library. The pipeline uses LLMs to automatically extract structured data from unstructured documents like PDFs, research papers, and technical reports.</p>
+<p>For a full end-to-end code example, see the Jupyter notebook: <a class="reference external" href="../../workflows/information_extration.ipynb">information_extration.ipynb</a></p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>LLM-based information extraction transforms unstructured documents into structured, queryable data. Instead of manually reading through hundreds of pages to collect specific information, you can use LLMs to automatically identify and extract the data you need into a predefined schema.</p>
+</section>
+<section id="the-information-extraction-workflow">
+<h2>The Information Extraction Workflow<a class="headerlink" href="#the-information-extraction-workflow" title="Link to this heading">¶</a></h2>
+<p>The DLLMForge IE pipeline consists of three main stages, each supported by specialized components:</p>
+<dl>
+<dt><strong>Stage 1: Schema Definition</strong></dt><dd><p>Define what information you want to extract using Pydantic models. You can either define your own schema manually or use <a class="reference internal" href="../index.html#dllmforge.IE_agent_schema_generator.SchemaGenerator" title="dllmforge.IE_agent_schema_generator.SchemaGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">SchemaGenerator</span></code></a> to let LLMs to automatically generate one based on your task description. The schema defines the structure of data you want to extract, including field names, types, and descriptions. If you already have a schema, save it as a .py file and skip to Stage 2.</p>
+</dd>
+<dt><strong>Stage 2: Document Processing</strong></dt><dd><p>Convert documents (currently supported: PDFs, docx, csv, images) into LLM-readable format. The <a class="reference internal" href="../index.html#dllmforge.IE_agent_document_processor.DocumentProcessor" title="dllmforge.IE_agent_document_processor.DocumentProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentProcessor</span></code></a> handles this automatically within the extraction pipeline:</p>
+<ul class="simple">
+<li><p>Text extraction: Converts PDFs and documents to plain text (faster, lower cost)</p></li>
+<li><p>Image extraction: Converts document pages to images (better for complex layouts, diagrams). Note: Requires multimodal LLM.</p></li>
+</ul>
+<p><strong>Note:</strong> Document processing is handled automatically by the <a class="reference internal" href="../index.html#dllmforge.IE_agent_extractor.InfoExtractor" title="dllmforge.IE_agent_extractor.InfoExtractor"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfoExtractor</span></code></a> - you configure it but don’t need to run it separately.</p>
+</dd>
+<dt><strong>Stage 3: LLM Extraction</strong></dt><dd><p>Extract structured data matching your schema using <a class="reference internal" href="../index.html#dllmforge.IE_agent_extractor.InfoExtractor" title="dllmforge.IE_agent_extractor.InfoExtractor"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfoExtractor</span></code></a>. The extractor orchestrates the entire process: it processes documents using the configured <a class="reference internal" href="../index.html#dllmforge.IE_agent_document_processor.DocumentProcessor" title="dllmforge.IE_agent_document_processor.DocumentProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentProcessor</span></code></a>, manages document chunking for large files, and coordinates LLM interactions. For large documents, text is split into chunks and processed separately, with results aggregated at the end.</p>
+</dd>
+</dl>
+<p><strong>When to Use Text vs. Image Extraction:</strong></p>
+<ul class="simple">
+<li><p><strong>Use text extraction when:</strong></p>
+<ul>
+<li><p>Documents have simple, linear text structure</p></li>
+<li><p>You’re extracting primarily textual information</p></li>
+<li><p>Documents are text-based PDFs or docx files</p></li>
+</ul>
+</li>
+<li><p><strong>Use image extraction when:</strong></p>
+<ul>
+<li><p>Documents contain complex tables or diagrams</p></li>
+<li><p>You’re working with scanned documents</p></li>
+<li><p>Text extraction produces poor results</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="step-by-step-implementation">
+<h2>Step-by-Step Implementation<a class="headerlink" href="#step-by-step-implementation" title="Link to this heading">¶</a></h2>
+<section id="import-required-modules">
+<h3>1. Import Required Modules<a class="headerlink" href="#import-required-modules" title="Link to this heading">¶</a></h3>
+<p>Start by importing all necessary components:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_schema_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaGenerator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_document_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocumentProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_extractor</span><span class="w"> </span><span class="kn">import</span> <span class="n">InfoExtractor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.langchain_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainAPI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</pre></div>
+</div>
+</section>
+<section id="initialize-the-llm">
+<h3>2. Initialize the LLM<a class="headerlink" href="#initialize-the-llm" title="Link to this heading">¶</a></h3>
+<p>Configure the LLM that will perform the extraction. DLLMForge supports multiple providers through a unified API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example using Azure OpenAI</span>
+<span class="n">llm_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span>
+    <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span>  <span class="c1"># Low temperature for consistent, factual extraction</span>
+<span class="p">)</span>
+
+<span class="c1"># Example: Using OpenAI</span>
+<span class="c1"># llm_api = LangchainAPI(</span>
+<span class="c1">#     model_provider=&quot;openai&quot;,</span>
+<span class="c1">#     model_name=&quot;gpt-4&quot;,</span>
+<span class="c1">#     temperature=0.1</span>
+<span class="c1"># )</span>
+</pre></div>
+</div>
+<p><strong>Temperature Settings:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0.0-0.2</span></code>: Most deterministic, best for factual extraction</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0.3-0.5</span></code>: Balanced, allows some interpretation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0.6-1.0</span></code>: More creative, may introduce inconsistencies (not recommended for IE)</p></li>
+</ul>
+</section>
+<section id="define-output-schema">
+<h3>3. Define Output Schema<a class="headerlink" href="#define-output-schema" title="Link to this heading">¶</a></h3>
+<p>The first step is to define what information you want to extract. You have two options:</p>
+<p><strong>Option A: Define Your Own Schema</strong></p>
+<p>If you know exactly what structure you need, create a Pydantic schema manually and save it as a .py file.</p>
+<p>Here’s an example schema for extracting machine learning model hyperparameters from research papers. Each field is optional and includes a description:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Save this as: my_custom_schema.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelHyperparameters</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Type of model&quot;</span><span class="p">)</span>
+    <span class="n">num_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of layers&quot;</span><span class="p">)</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Learning rate&quot;</span><span class="p">)</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Batch size&quot;</span><span class="p">)</span>
+    <span class="n">epochs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of epochs&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once you’ve saved your schema, import and use it directly in your extraction code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">my_custom_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelHyperparameters</span>
+<span class="n">SchemaClass</span> <span class="o">=</span> <span class="n">ModelHyperparameters</span>
+</pre></div>
+</div>
+<p>If you use this approach, skip to step 3 (Understanding Document Processing).</p>
+<p><strong>Option B: Automated Schema Generation</strong></p>
+<p>Let the LLM automatically generate a schema based on your task description. This is useful when you’re not sure about the exact structure or want to explore what fields to extract.</p>
+<p>In this example, we’ll use the LLM to generate a schema for extracting machine learning model hyperparameters from research papers:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define your extraction task</span>
+<span class="n">schema_task_description</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Generate a Pydantic schema class named ModelHyperparameters to extract machine learning model hyperparameters from research papers and documentation. &quot;</span>
+    <span class="s2">&quot;The schema should capture: model architecture details (type, layers, neurons, etc.), &quot;</span>
+    <span class="s2">&quot;training parameters (learning rate, batch size, epochs), &quot;</span>
+    <span class="s2">&quot;optimization settings (optimizer, loss function), regularization techniques (dropout, etc.).&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Prepare output directory for the schema</span>
+<span class="n">schema_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;generated_schemas&quot;</span><span class="p">)</span>
+<span class="n">schema_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">schema_file</span> <span class="o">=</span> <span class="n">schema_dir</span> <span class="o">/</span> <span class="s2">&quot;model_hyperparameters.py&quot;</span>
+
+<span class="c1"># Create schema generator with direct arguments (no config object needed)</span>
+<span class="n">schema_generator</span> <span class="o">=</span> <span class="n">SchemaGenerator</span><span class="p">(</span>
+    <span class="n">task_description</span><span class="o">=</span><span class="n">schema_task_description</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">schema_file</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate the schema using LLM</span>
+<span class="n">schema_code</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generated Schema:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">schema_code</span><span class="p">)</span>
+
+<span class="c1"># Save the schema to file</span>
+<span class="n">schema_generator</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="n">schema_code</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated schema will look something like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelHyperparameters</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Type of model (e.g., LSTM, CNN, Transformer)&quot;</span><span class="p">)</span>
+    <span class="n">num_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of layers in the model&quot;</span><span class="p">)</span>
+    <span class="n">hidden_units</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of hidden units/neurons&quot;</span><span class="p">)</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Learning rate for training&quot;</span><span class="p">)</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Batch size for training&quot;</span><span class="p">)</span>
+    <span class="n">epochs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of training epochs&quot;</span><span class="p">)</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optimization algorithm used&quot;</span><span class="p">)</span>
+    <span class="n">loss_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Loss function used&quot;</span><span class="p">)</span>
+    <span class="n">dropout_rate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Dropout rate for regularization&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Load the Generated Schema Dynamically</strong></p>
+<p>After generating the schema, we need to load it as a Python class. This code extracts the class name from the generated schema and dynamically imports it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Extract the class name from the generated code</span>
+<span class="n">class_matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;class\s+(\w+)\s*\(&quot;</span><span class="p">,</span> <span class="n">schema_code</span><span class="p">)</span>
+<span class="n">class_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">class_matches</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">class_names</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not find any class names in generated schema&quot;</span><span class="p">)</span>
+
+<span class="n">schema_class_name</span> <span class="o">=</span> <span class="n">class_names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Get the last class (usually the main one)</span>
+
+<span class="c1"># Dynamically import the schema</span>
+<span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="s2">&quot;model_hyperparameters&quot;</span><span class="p">,</span> <span class="n">schema_file</span><span class="p">)</span>
+<span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+<span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+
+<span class="c1"># Get the schema class</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">schema_class_name</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated schema does not contain class </span><span class="si">{</span><span class="n">schema_class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">SchemaClass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">schema_class_name</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully loaded schema class: </span><span class="si">{</span><span class="n">schema_class_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Alternative: Using Example Documents</strong></p>
+<p>You can improve schema generation by providing an example document. The LLM will analyze the document’s content and structure to create a more tailored schema:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># With example document (text or file path)</span>
+<span class="n">example_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">We trained an LSTM model with 3 layers and 128 hidden units.</span>
+<span class="s2">The learning rate was set to 0.001 with a batch size of 32.</span>
+<span class="s2">Training ran for 50 epochs using the Adam optimizer.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># Create schema generator with example document (no config object needed)</span>
+<span class="n">schema_generator</span> <span class="o">=</span> <span class="n">SchemaGenerator</span><span class="p">(</span>
+    <span class="n">task_description</span><span class="o">=</span><span class="s2">&quot;Extract model hyperparameters from this paper&quot;</span><span class="p">,</span>
+    <span class="n">example_doc</span><span class="o">=</span><span class="n">example_text</span><span class="p">,</span>  <span class="c1"># Can also be a file path to PDF</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;generated_schemas/hyperparameters_from_example.py&quot;</span>
+<span class="p">)</span>
+
+<span class="n">schema_code</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">()</span>
+<span class="n">schema_generator</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="n">schema_code</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="understanding-document-processing">
+<h3>4. Understanding Document Processing<a class="headerlink" href="#understanding-document-processing" title="Link to this heading">¶</a></h3>
+<p>Before extraction can begin, documents must be converted into a format that LLMs can process. The <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code> component handles this conversion, supporting both text and image extraction modes.</p>
+<p><strong>Important:</strong> The <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> (covered in Section 5) handles document processing automatically. You configure the <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code> and pass it to the <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code>, which then uses it internally. You typically don’t need to call document processing methods directly.</p>
+<p><strong>How Document Processing Works</strong></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code> can convert documents in two ways:</p>
+<ol class="arabic simple">
+<li><p><strong>Text extraction</strong>: Extracts text from PDFs, docx, csv files (faster, lower cost)</p></li>
+<li><p><strong>Image extraction</strong>: Converts document pages to images (better for complex layouts, requires multimodal LLM)</p></li>
+</ol>
+<p><strong>Configuring Document Processing</strong></p>
+<p>You configure the <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code> by passing parameters directly (no config object needed):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define your document directories</span>
+<span class="n">document_input_dir</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;path/to/your/documents&quot;</span>
+<span class="n">document_output_dir</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;path/to/output&quot;</span>
+
+<span class="c1"># Configure document processor for text or image extraction (direct arguments)</span>
+<span class="n">doc_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="n">document_input_dir</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>              <span class="c1"># Pattern to match files</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>                <span class="c1"># &quot;text&quot; or &quot;image&quot; extraction, default is &quot;text&quot;</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">document_output_dir</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>You’ll pass this configured processor to the <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> in Section 5, where it will be used automatically during extraction.</p>
+</section>
+<section id="extract-information">
+<h3>5. Extract Information<a class="headerlink" href="#extract-information" title="Link to this heading">¶</a></h3>
+<p>Now we can create the <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> to orchestrate the entire extraction pipeline. The <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> will use the <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code> we configured in Step 3 to automatically handle document processing, then perform the LLM-based extraction.</p>
+<p><strong>Create InfoExtractor</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define extraction parameters</span>
+<span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;Extract model hyperparameters from research paper.&quot;</span>
+<span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">80000</span>      <span class="c1"># Maximum characters per chunk</span>
+<span class="n">chunk_overlap</span> <span class="o">=</span> <span class="mi">10000</span>   <span class="c1"># Overlap between chunks to preserve context</span>
+
+<span class="c1"># Create InfoExtractor - it will use doc_processor internally</span>
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">SchemaClass</span><span class="p">,</span>              <span class="c1"># The Pydantic schema we generated</span>
+    <span class="n">llm_api</span><span class="o">=</span><span class="n">llm_api</span><span class="p">,</span>                        <span class="c1"># The LLM instance</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>            <span class="c1"># Instruction for the LLM</span>
+    <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>                  <span class="c1"># For splitting large documents</span>
+    <span class="n">chunk_overlap</span><span class="o">=</span><span class="n">chunk_overlap</span><span class="p">,</span>            <span class="c1"># Context preservation</span>
+    <span class="n">doc_processor</span><span class="o">=</span><span class="n">doc_processor</span><span class="p">,</span>            <span class="c1"># Document processor from Step 3</span>
+    <span class="n">document_output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span>             <span class="c1"># Must match doc_processor output_type</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> now has everything it needs: a schema to structure the data, an LLM to do the extraction, and a document processor to convert files into LLM-readable format.</p>
+<p><strong>Understanding Chunk Parameters:</strong></p>
+<p>When documents exceed the LLM’s context window, they’re split into chunks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_size</span></code>: Maximum characters per chunk (80,000 is typical for GPT-4. For other models, check with LLM provider)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_overlap</span></code>: Characters shared between consecutive chunks (preserves context across boundaries)</p></li>
+</ul>
+<p><strong>Extract from Single Document</strong></p>
+<p>Now you can extract information with a single call. The <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> handles document processing automatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the document path</span>
+<span class="n">single_doc_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">document_input_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;lstm_low_flow.pdf&quot;</span>
+
+<span class="c1"># Process and extract in one step - InfoExtractor handles everything</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">doc_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">single_doc_path</span><span class="p">)</span>  <span class="c1"># Converts PDF to text</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>                     <span class="c1"># Extracts information</span>
+
+<span class="c1"># View results</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="si">}</span><span class="s2"> result(s)&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">First result:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="c1"># Save results to JSON</span>
+<span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">document_output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;lstm_low_flow_extracted.json&quot;</span>
+<span class="n">extractor</span><span class="o">.</span><span class="n">save_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Results saved to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Behind the scenes, the <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">doc_processor.process_file()</span></code> to convert the PDF to text</p></li>
+<li><p>Chunks the text if it’s too large for the LLM</p></li>
+<li><p>Sends each chunk to the LLM with the extraction prompt</p></li>
+<li><p>Validates results against your Pydantic schema</p></li>
+<li><p>Aggregates and returns all extracted data</p></li>
+</ol>
+<p><strong>Expected Output:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;num_layers&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;hidden_units&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;learning_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;batch_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;epochs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;optimizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Adam&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_function&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MSE&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;dropout_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Batch Processing Multiple Documents</strong></p>
+<p>To extract from all documents in a directory:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process all documents in the directory</span>
+<span class="n">extractor</span><span class="o">.</span><span class="n">process_all</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Batch extraction complete! Check output directory: </span><span class="si">{</span><span class="n">document_output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">process_all()</span></code> method automatically:</p>
+<ol class="arabic simple">
+<li><p>Finds all files matching the pattern</p></li>
+<li><p>Processes each document</p></li>
+<li><p>Extracts information using the schema</p></li>
+<li><p>Saves individual JSON files for each document</p></li>
+</ol>
+</section>
+</section>
+<section id="understanding-the-results">
+<h2>Understanding the Results<a class="headerlink" href="#understanding-the-results" title="Link to this heading">¶</a></h2>
+<p><strong>Result Structure</strong></p>
+<p>Each extraction result is a dictionary that matches your Pydantic schema. The structure includes:</p>
+<ul class="simple">
+<li><p><strong>Field names</strong>: As defined in your schema</p></li>
+<li><p><strong>Values</strong>: Extracted from the document</p></li>
+<li><p><strong>None values</strong>: For optional fields not found in the document</p></li>
+</ul>
+<p><strong>Handling Missing or Optional Fields</strong></p>
+<p>The LLM will return <code class="docutils literal notranslate"><span class="pre">None</span></code> for optional fields it cannot find:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if a field was found</span>
+<span class="k">if</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dropout_rate&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dropout rate: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;dropout_rate&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dropout rate not mentioned in document&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Validation and Error Handling</strong></p>
+<p>Pydantic automatically validates the extracted data against your schema:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Results are already validated against the schema</span>
+    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="c1"># Access fields with confidence they match the schema</span>
+        <span class="n">model_type</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model_type&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">)</span>
+        <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model: </span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">, LR: </span><span class="si">{</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Exporting to Different Formats</strong></p>
+<p>Convert results to CSV for analysis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Convert results to DataFrame</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+<span class="c1"># Save to CSV</span>
+<span class="n">csv_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">document_output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;extracted_hyperparameters.csv&quot;</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Results exported to CSV: </span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="advanced-configuration">
+<h2>Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Link to this heading">¶</a></h2>
+<section id="manual-document-processing-advanced">
+<h3>Manual Document Processing (Advanced)<a class="headerlink" href="#manual-document-processing-advanced" title="Link to this heading">¶</a></h3>
+<p>In most cases, you’ll let <code class="docutils literal notranslate"><span class="pre">InfoExtractor</span></code> handle document processing automatically. However, for advanced use cases, you can process documents manually for more control.</p>
+<p><strong>When to Use Manual Processing:</strong></p>
+<ul class="simple">
+<li><p>You need to inspect processed documents before extraction</p></li>
+<li><p>You want to cache processed documents for multiple extraction runs</p></li>
+<li><p>You’re building a custom pipeline with additional processing steps</p></li>
+</ul>
+<p><strong>Manual Text Processing Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.IE_agent_document_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocumentProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Create document processor (direct arguments, no config object needed)</span>
+<span class="n">doc_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="n">document_input_dir</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">document_output_dir</span>
+<span class="p">)</span>
+
+<span class="c1"># Process a single document manually</span>
+<span class="n">single_doc_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">document_input_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;research_paper.pdf&quot;</span>
+<span class="n">processed_doc</span> <span class="o">=</span> <span class="n">doc_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">single_doc_path</span><span class="p">)</span>
+
+<span class="c1"># Inspect the processed document</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Document processed: </span><span class="si">{</span><span class="n">processed_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source_file&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Content type: </span><span class="si">{</span><span class="n">processed_doc</span><span class="o">.</span><span class="n">content_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text length: </span><span class="si">{</span><span class="n">processed_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;text_length&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">First 500 characters:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">processed_doc</span><span class="o">.</span><span class="n">content</span><span class="p">[:</span><span class="mi">500</span><span class="p">])</span>
+
+<span class="c1"># Now use it with InfoExtractor</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">processed_doc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Process Multiple Documents Manually</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process all PDFs in the directory</span>
+<span class="n">all_processed_docs</span> <span class="o">=</span> <span class="n">doc_processor</span><span class="o">.</span><span class="n">process_directory</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_processed_docs</span><span class="p">)</span><span class="si">}</span><span class="s2"> documents&quot;</span><span class="p">)</span>
+
+<span class="c1"># Inspect each document</span>
+<span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">all_processed_docs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;source_file&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;text_length&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> chars&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract from each document</span>
+<span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">all_processed_docs</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+    <span class="c1"># Save results...</span>
+</pre></div>
+</div>
+<p><strong>Manual Image Processing</strong></p>
+<p>For documents with complex layouts, you can process to images manually:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create image processor (direct arguments, no config object needed)</span>
+<span class="n">image_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="n">document_input_dir</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;image&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">document_output_dir</span>
+<span class="p">)</span>
+
+<span class="c1"># Process PDF to images (one image per page)</span>
+<span class="n">processed_images</span> <span class="o">=</span> <span class="n">image_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">single_doc_path</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of pages: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">processed_images</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Inspect each page</span>
+<span class="k">for</span> <span class="n">img_doc</span> <span class="ow">in</span> <span class="n">processed_images</span><span class="p">:</span>
+    <span class="n">page_num</span> <span class="o">=</span> <span class="n">img_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;page_number&#39;</span><span class="p">]</span>
+    <span class="n">size_kb</span> <span class="o">=</span> <span class="n">img_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;image_size_bytes&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1024</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Page </span><span class="si">{</span><span class="n">page_num</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">size_kb</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> KB&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract from images using multimodal LLM</span>
+<span class="n">multimodal_extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">SchemaClass</span><span class="p">,</span>
+    <span class="n">llm_api</span><span class="o">=</span><span class="n">multimodal_llm</span><span class="p">,</span>  <span class="c1"># Must support vision</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;Extract information from document images.&quot;</span><span class="p">,</span>
+    <span class="n">doc_processor</span><span class="o">=</span><span class="n">image_processor</span><span class="p">,</span>
+    <span class="n">document_output_type</span><span class="o">=</span><span class="s2">&quot;image&quot;</span>
+<span class="p">)</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">multimodal_extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">processed_images</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Understanding Document Metadata</strong></p>
+<p>Each processed document includes metadata for tracking:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">source_file</span></code>: Original file path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file_type</span></code>: File extension (.pdf, .docx, etc.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">text_length</span></code>: Number of characters extracted (text mode)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">page_number</span></code>: Page number (image mode)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">image_size_bytes</span></code>: Image size in bytes (image mode)</p></li>
+</ul>
+</section>
+<section id="improving-extraction-quality">
+<h3>Improving Extraction Quality<a class="headerlink" href="#improving-extraction-quality" title="Link to this heading">¶</a></h3>
+<p><strong>Crafting Effective System Prompts</strong></p>
+<p>The system prompt guides the LLM’s extraction behavior. Be specific and clear:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic prompt</span>
+<span class="n">basic_prompt</span> <span class="o">=</span> <span class="s2">&quot;Extract model hyperparameters.&quot;</span>
+
+<span class="c1"># Better: More specific prompt</span>
+<span class="n">better_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Extract machine learning model hyperparameters from the research paper.</span>
+<span class="s2">Focus on: model architecture, training parameters, and optimization settings.</span>
+<span class="s2">Only extract explicitly stated values, do not infer or estimate.&quot;&quot;&quot;</span>
+
+<span class="c1"># Best: Very detailed prompt with examples</span>
+<span class="n">detailed_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are extracting model hyperparameters from a research paper.</span>
+
+<span class="s2">Extract the following information:</span>
+<span class="s2">- Model architecture: type, number of layers, hidden units</span>
+<span class="s2">- Training: learning rate, batch size, number of epochs</span>
+<span class="s2">- Optimization: optimizer name, loss function</span>
+<span class="s2">- Regularization: dropout rate, weight decay</span>
+
+<span class="s2">Rules:</span>
+<span class="s2">1. Only extract values explicitly mentioned in the text</span>
+<span class="s2">2. Use None for fields not found</span>
+<span class="s2">3. Preserve exact numeric values and units</span>
+<span class="s2">4. Use standard naming conventions (e.g., &quot;Adam&quot; not &quot;adam optimizer&quot;)</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">SchemaClass</span><span class="p">,</span>
+    <span class="n">llm_api</span><span class="o">=</span><span class="n">llm_api</span><span class="p">,</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="n">detailed_prompt</span><span class="p">,</span>  <span class="c1"># Use the detailed prompt</span>
+    <span class="n">chunk_size</span><span class="o">=</span><span class="mi">80000</span><span class="p">,</span>
+    <span class="n">chunk_overlap</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="n">doc_processor</span><span class="o">=</span><span class="n">doc_processor</span><span class="p">,</span>
+    <span class="n">document_output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Using Example Documents for Schema Generation</strong></p>
+<p>Provide example documents to help the LLM understand the data structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load an example document</span>
+<span class="n">example_pdf_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;examples/sample_paper.pdf&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create schema generator with example PDF (direct arguments, no config object needed)</span>
+<span class="n">schema_generator</span> <span class="o">=</span> <span class="n">SchemaGenerator</span><span class="p">(</span>
+    <span class="n">task_description</span><span class="o">=</span><span class="s2">&quot;Extract model hyperparameters from ML research papers&quot;</span><span class="p">,</span>
+    <span class="n">example_doc</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">example_pdf_path</span><span class="p">),</span>  <span class="c1"># Provide example PDF</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;generated_schemas/ml_hyperparameters.py&quot;</span>
+<span class="p">)</span>
+
+<span class="n">schema_code</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The LLM will analyze the example document’s structure and create a more tailored schema.</p>
+<p><strong>Adjusting LLM Temperature</strong></p>
+<p>Temperature affects extraction consistency:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Very deterministic (recommended for most IE tasks)</span>
+<span class="n">strict_llm</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span>
+    <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span>
+<span class="p">)</span>
+
+<span class="c1"># Slightly more flexible (for nuanced interpretation)</span>
+<span class="n">flexible_llm</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span>
+    <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="choosing-between-text-and-image-extraction">
+<h3>Choosing Between Text and Image Extraction<a class="headerlink" href="#choosing-between-text-and-image-extraction" title="Link to this heading">¶</a></h3>
+<p>The choice between text and image extraction depends on your documents and what information you need to extract. You configure this choice in Step 3 when setting up the <code class="docutils literal notranslate"><span class="pre">DocumentProcessor</span></code>.</p>
+<p><strong>Text Extraction Workflow</strong></p>
+<p>Best for documents with linear text structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 3: Configure for text extraction (direct arguments, no config object needed)</span>
+<span class="n">text_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;documents/research_papers&quot;</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>              <span class="c1"># Key configuration</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;output/text&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 4: Initialize LLM</span>
+<span class="n">llm_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span>
+    <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 5: Create extractor</span>
+<span class="n">text_extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">SchemaClass</span><span class="p">,</span>
+    <span class="n">llm_api</span><span class="o">=</span><span class="n">llm_api</span><span class="p">,</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;Extract information from the text.&quot;</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="o">=</span><span class="mi">80000</span><span class="p">,</span>
+    <span class="n">chunk_overlap</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="n">doc_processor</span><span class="o">=</span><span class="n">text_processor</span><span class="p">,</span>
+    <span class="n">document_output_type</span><span class="o">=</span><span class="s2">&quot;text&quot;</span>      <span class="c1"># Must match processor</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Use text extraction for:</strong></p>
+<ul class="simple">
+<li><p>Research papers with standard formatting</p></li>
+<li><p>Technical reports without complex layouts</p></li>
+<li><p>Documents where text is the primary content</p></li>
+<li><p>When you need faster, lower-cost processing</p></li>
+</ul>
+<p><strong>Image Extraction Workflow</strong></p>
+<p>Best for documents with complex visual elements:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 3: Configure for image extraction (direct arguments, no config object needed)</span>
+<span class="n">image_processor</span> <span class="o">=</span> <span class="n">DocumentProcessor</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;documents/forms_and_tables&quot;</span><span class="p">,</span>
+    <span class="n">file_pattern</span><span class="o">=</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;image&quot;</span><span class="p">,</span>             <span class="c1"># Key configuration</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;output/images&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 4: Initialize multimodal LLM (REQUIRED for images)</span>
+<span class="n">multimodal_llm</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span>
+    <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 5: Create extractor</span>
+<span class="n">image_extractor</span> <span class="o">=</span> <span class="n">InfoExtractor</span><span class="p">(</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">SchemaClass</span><span class="p">,</span>
+    <span class="n">llm_api</span><span class="o">=</span><span class="n">multimodal_llm</span><span class="p">,</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;Extract information from the document images.&quot;</span><span class="p">,</span>
+    <span class="n">doc_processor</span><span class="o">=</span><span class="n">image_processor</span><span class="p">,</span>
+    <span class="n">document_output_type</span><span class="o">=</span><span class="s2">&quot;image&quot;</span>     <span class="c1"># Must match processor</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Use image extraction for:</strong></p>
+<ul class="simple">
+<li><p>Documents with complex tables and charts</p></li>
+<li><p>Scanned documents or poor-quality PDFs</p></li>
+<li><p>Forms with specific visual layouts</p></li>
+<li><p>When text extraction misses critical information</p></li>
+</ul>
+<p><strong>Important:</strong> Image extraction requires a multimodal LLM that supports vision and incurs higher API costs.</p>
+<p><strong>Hybrid Approach: Try Text First, Then Images</strong></p>
+<p>For challenging documents, you can try text extraction first and fall back to images if needed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># First attempt: text extraction (faster, cheaper)</span>
+<span class="n">text_doc</span> <span class="o">=</span> <span class="n">text_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">document_path</span><span class="p">)</span>
+<span class="n">text_results</span> <span class="o">=</span> <span class="n">text_extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">text_doc</span><span class="p">)</span>
+
+<span class="c1"># Check if results are satisfactory</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">results_complete</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if critical fields were extracted&quot;&quot;&quot;</span>
+    <span class="n">critical_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;model_type&#39;</span><span class="p">,</span> <span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="s1">&#39;batch_size&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">critical_fields</span><span class="p">)</span>
+
+<span class="c1"># If incomplete, try image extraction</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">results_complete</span><span class="p">(</span><span class="n">text_results</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text extraction incomplete, trying image extraction...&quot;</span><span class="p">)</span>
+    <span class="n">image_doc</span> <span class="o">=</span> <span class="n">image_processor</span><span class="o">.</span><span class="n">process_file</span><span class="p">(</span><span class="n">document_path</span><span class="p">)</span>
+    <span class="n">image_results</span> <span class="o">=</span> <span class="n">image_extractor</span><span class="o">.</span><span class="n">process_document</span><span class="p">(</span><span class="n">image_doc</span><span class="p">)</span>
+
+    <span class="c1"># Use image results if better</span>
+    <span class="n">final_results</span> <span class="o">=</span> <span class="n">image_results</span> <span class="k">if</span> <span class="n">results_complete</span><span class="p">(</span><span class="n">image_results</span><span class="p">)</span> <span class="k">else</span> <span class="n">text_results</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">final_results</span> <span class="o">=</span> <span class="n">text_results</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Information Extraction with LLMs Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-information-extraction-workflow">The Information Extraction Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-by-step-implementation">Step-by-Step Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#understanding-the-results">Understanding the Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-configuration">Advanced Configuration</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="tutorial_advanced_agent.html" title="previous chapter">Tutorial: Advanced Water Management Agent</a></li>
+      <li>Next: <a href="../background/LLM_explained.html" title="next chapter">LLM Explained</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

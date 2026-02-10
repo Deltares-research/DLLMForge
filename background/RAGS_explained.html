@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Retrieval-Augmented Generation (RAG) &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dllmforge" href="../_autosummary/dllmforge.html" />
+    <link rel="prev" title="LLM Explained" href="LLM_explained.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="retrieval-augmented-generation-rag">
+<h1>Retrieval-Augmented Generation (RAG)<a class="headerlink" href="#retrieval-augmented-generation-rag" title="Link to this heading">¶</a></h1>
+<p>Retrieval-Augmented Generation, commonly known as RAG, is an architectural pattern that
+enhances the capabilities of Large Language Models (LLMs) by connecting them to external,
+up-to-date knowledge sources. It combines a retrieval system with a generative model to
+produce more accurate, factual, and contextually relevant responses.</p>
+<section id="why-rag">
+<h2>Why RAG?<a class="headerlink" href="#why-rag" title="Link to this heading">¶</a></h2>
+<p>Standard LLMs are trained on vast but static datasets. This leads to several limitations:</p>
+<ul class="simple">
+<li><p><strong>Knowledge Cutoff:</strong> The model’s knowledge is frozen at the time of its last training, making it unaware of recent events or information.</p></li>
+<li><p><strong>Hallucinations:</strong> LLMs can “hallucinate” or generate plausible but incorrect information when they don’t know the answer.</p></li>
+<li><p><strong>Lack of Transparency:</strong> It’s difficult to trace the source of the information an LLM provides, making it hard to verify its accuracy.</p></li>
+<li><p><strong>Generic Responses:</strong> Without specific context, responses can be too general and not tailored to a user’s specific domain or private documents.</p></li>
+</ul>
+<p>RAG addresses these issues by grounding the LLM’s response in relevant, retrieved information.</p>
+</section>
+<section id="how-rag-works">
+<h2>How RAG Works<a class="headerlink" href="#how-rag-works" title="Link to this heading">¶</a></h2>
+<p>The RAG process can be broken down into two main stages: <strong>Retrieval</strong> and <strong>Generation</strong>.</p>
+<figure class="align-center" id="id1">
+<img alt="RAG Workflow Diagram" src="../_images/generic_workflows-RAG-generic-workflow.jpg" />
+<figcaption>
+<p><span class="caption-text">A simplified RAG workflow.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt><strong>Retrieval Stage</strong></dt><dd><p>When a user submits a query, the RAG system doesn’t immediately send it to the LLM. Instead, the query is first sent to a <strong>retriever</strong>. The retriever’s job is to search a knowledge base (like a collection of documents, articles, or a database) and find the most relevant snippets of information related to the query. This is often done using vector search techniques.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Generation Stage</strong></dt><dd><p>The original query and the retrieved context are then combined into a new, augmented prompt. This enriched prompt is sent to the <strong>generator</strong> (the LLM). The LLM uses the provided context as its source of truth to synthesize a final, coherent answer.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Link to this heading">¶</a></h2>
+<p>A typical RAG pipeline involves several key components:</p>
+<section id="indexing">
+<h3>Indexing<a class="headerlink" href="#indexing" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Data Loading:</strong> Loading your documents from various sources.</p></li>
+<li><p><strong>Chunking:</strong> Splitting large documents into smaller, manageable chunks.</p></li>
+<li><p><strong>Embedding:</strong> Using an embedding model to convert these chunks into numerical vectors.</p></li>
+<li><p><strong>Vector Store:</strong> Storing these vectors in a specialized database (a vector store) for efficient searching.</p></li>
+</ul>
+</section>
+<section id="retrieval">
+<h3>Retrieval<a class="headerlink" href="#retrieval" title="Link to this heading">¶</a></h3>
+<p>The retriever searches the vector store to find the document chunks whose embeddings are most similar to the user query’s embedding.</p>
+</section>
+<section id="generation">
+<h3>Generation<a class="headerlink" href="#generation" title="Link to this heading">¶</a></h3>
+<p>The LLM receives the query and the retrieved chunks. It is instructed to generate an answer based <em>only</em> on the provided context, which significantly reduces the chance of hallucination.</p>
+</section>
+</section>
+<section id="benefits-of-rag">
+<h2>Benefits of RAG<a class="headerlink" href="#benefits-of-rag" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Access to Current Information:</strong> RAG models can provide answers based on the latest information by simply updating their knowledge base, without needing to be retrained.</p></li>
+<li><p><strong>Reduced Hallucinations:</strong> By grounding the model in factual, retrieved documents, RAG significantly reduces the likelihood of generating incorrect information.</p></li>
+<li><p><strong>Improved Transparency:</strong> Since the model’s response is based on specific retrieved documents, the system can cite its sources, allowing users to verify the information.</p></li>
+<li><p><strong>Cost-Effective:</strong> Augmenting an LLM with a knowledge base is far more economical than fine-tuning or retraining the entire model for new knowledge.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Retrieval-Augmented Generation (RAG)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-rag">Why RAG?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-rag-works">How RAG Works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-components">Core Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#benefits-of-rag">Benefits of RAG</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="LLM_explained.html" title="previous chapter">LLM Explained</a></li>
+      <li>Next: <a href="../_autosummary/dllmforge.html" title="next chapter">dllmforge</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

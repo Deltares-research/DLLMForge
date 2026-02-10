@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Open Source RAG Pipeline Tutorial &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building a Simple Agent with DLLMForge" href="tutorial_simple_agent.html" />
+    <link rel="prev" title="Tutorial LLM capabilities of DLLMForge" href="LLM_tutorial.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="open-source-rag-pipeline-tutorial">
+<h1>Open Source RAG Pipeline Tutorial<a class="headerlink" href="#open-source-rag-pipeline-tutorial" title="Link to this heading">¶</a></h1>
+<p>This tutorial demonstrates how to build a complete Retrieval-Augmented Generation (RAG) pipeline using open source components from the DLLMForge library. The pipeline includes document preprocessing, open source embeddings, vector storage, and RAG evaluation.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The RAG pipeline consists of several key components:</p>
+<ol class="arabic simple">
+<li><p><strong>Document Loading</strong>: Load PDF documents and extract text</p></li>
+<li><p><strong>Text Chunking</strong>: Split documents into manageable chunks</p></li>
+<li><p><strong>Embedding Generation</strong>: Create vector embeddings using open source models</p></li>
+<li><p><strong>Vector Storage</strong>: Store embeddings in a FAISS vector database</p></li>
+<li><p><strong>Retrieval</strong>: Find relevant document chunks for queries</p></li>
+<li><p><strong>Generation</strong>: Generate answers using an open source LLM</p></li>
+<li><p><strong>Evaluation</strong>: Assess the quality of the RAG system</p></li>
+</ol>
+</section>
+<section id="step-by-step-implementation">
+<h2>Step-by-Step Implementation<a class="headerlink" href="#step-by-step-implementation" title="Link to this heading">¶</a></h2>
+<section id="import-required-modules">
+<h3>1. Import Required Modules<a class="headerlink" href="#import-required-modules" title="Link to this heading">¶</a></h3>
+<p>Start by importing all necessary components:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.rag_embedding_open_source</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainHFEmbeddingModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.rag_evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">RAGEvaluator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.LLMs.Deltares_LLMs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeltaresOllamaLLM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.rag_preprocess_documents</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDFLoader</span><span class="p">,</span> <span class="n">TextChunker</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_community.vectorstores</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAISS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_community.docstore.in_memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryDocstore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">faiss</span>
+</pre></div>
+</div>
+</section>
+<section id="initialize-the-embedding-model">
+<h3>2. Initialize the Embedding Model<a class="headerlink" href="#initialize-the-embedding-model" title="Link to this heading">¶</a></h3>
+<p>Create an embedding model using open source HuggingFace transformers:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize the embedding model</span>
+<span class="c1"># Default model: &quot;sentence-transformers/all-MiniLM-L6-v2&quot;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LangchainHFEmbeddingModel</span><span class="p">(</span><span class="s2">&quot;intfloat/multilingual-e5-large&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">LangchainHFEmbeddingModel</span></code> class supports any HuggingFace sentence transformer model and provides:</p>
+<ul class="simple">
+<li><p>Automatic model downloading and caching</p></li>
+<li><p>Batch embedding for efficient processing</p></li>
+<li><p>Input validation for embeddings</p></li>
+</ul>
+<p>We recommend starting with the default model and experimenting with others based on your use case.
+The ranked list of popular models can be found at: <a class="reference external" href="https://huggingface.co/spaces/mteb/leaderboard">https://huggingface.co/spaces/mteb/leaderboard</a>.
+Note that the bigger the number of parameters, the better the performance, but also the higher the resource requirements.
+Which implies that the model might not fit into memory on smaller machines and take a long time to download.</p>
+</section>
+<section id="load-and-process-documents">
+<h3>3. Load and Process Documents<a class="headerlink" href="#load-and-process-documents" title="Link to this heading">¶</a></h3>
+<p>First, you will need to download some PDF documents to use as your knowledge base.
+In this example, we use the schemaGAN paper from science direct (<a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0266352X25001260">https://www.sciencedirect.com/science/article/pii/S0266352X25001260</a>).
+Download this pdf into a local directory and update the path below.
+In our case, we copy the pdf into a folder named “documents” in the root of the repository.</p>
+<p>Two important parameters to consider when chunking documents are <code class="docutils literal notranslate"><span class="pre">chunk_size</span></code> and <code class="docutils literal notranslate"><span class="pre">overlap_size</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_size</span></code>: The maximum size of each text chunk (in characters). Smaller chunks may improve retrieval performance but increase the number of chunks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">overlap_size</span></code>: The number of overlapping characters between chunks. Overlapping chunks can help preserve context but may increase redundancy.</p></li>
+</ul>
+<p>Load PDF documents and create text chunks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the directory containing PDF documents</span>
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;documents&#39;</span><span class="p">)</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">))</span>
+
+<span class="c1"># Initialize document loader and chunker</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">PDFLoader</span><span class="p">()</span>
+<span class="n">chunker</span> <span class="o">=</span> <span class="n">TextChunker</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">overlap_size</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">global_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">metadatas</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Process each PDF file</span>
+<span class="k">for</span> <span class="n">pdf_path</span> <span class="ow">in</span> <span class="n">pdfs</span><span class="p">:</span>
+    <span class="c1"># Load the PDF document</span>
+    <span class="n">pages</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+
+    <span class="c1"># Create chunks with overlap for better context preservation</span>
+    <span class="n">chunks</span> <span class="o">=</span> <span class="n">chunker</span><span class="o">.</span><span class="n">chunk_text</span><span class="p">(</span><span class="n">pages</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+
+    <span class="c1"># Generate embeddings for chunks</span>
+    <span class="n">chunk_embeddings</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">embed</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
+
+    <span class="c1"># Store embeddings and metadata</span>
+    <span class="n">global_embeddings</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunk_embeddings</span><span class="p">)</span>
+    <span class="n">metadatas</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">chunk</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Embedded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk_embeddings</span><span class="p">)</span><span class="si">}</span><span class="s2"> chunks from </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total embeddings generated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">global_embeddings</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After running this code, you should see output indicating the number of chunks embedded from each PDF and the total embeddings generated.
+In this example, you will see the following output:</p>
+<blockquote>
+<div><p>Embedded 107 chunks from 1-s2.0-S0266352X25001260-main.pdf.
+Total embeddings generated: 107</p>
+</div></blockquote>
+</section>
+<section id="create-vector-store">
+<h3>4. Create Vector Store<a class="headerlink" href="#create-vector-store" title="Link to this heading">¶</a></h3>
+<p>Set up a FAISS vector store for efficient similarity search:
+In this example, the FAISS index was used but other index types can be used as well, like MongoDB or Weaviate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get embedding dimension</span>
+<span class="n">embedding_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">global_embeddings</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;text_vector&quot;</span><span class="p">])</span>
+
+<span class="c1"># Create FAISS index for L2 (Euclidean) distance</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">IndexFlatL2</span><span class="p">(</span><span class="n">embedding_dim</span><span class="p">)</span>
+
+<span class="c1"># Initialize vector store</span>
+<span class="n">vector_store</span> <span class="o">=</span> <span class="n">FAISS</span><span class="p">(</span>
+    <span class="n">embedding_function</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">embeddings</span><span class="p">,</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">docstore</span><span class="o">=</span><span class="n">InMemoryDocstore</span><span class="p">(),</span>
+    <span class="n">index_to_docstore_id</span><span class="o">=</span><span class="p">{},</span>
+<span class="p">)</span>
+
+<span class="c1"># Add embeddings to the vector store</span>
+<span class="k">for</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">meta</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">global_embeddings</span><span class="p">,</span> <span class="n">metadatas</span><span class="p">):</span>
+    <span class="n">vector_store</span><span class="o">.</span><span class="n">add_texts</span><span class="p">(</span>
+        <span class="n">texts</span><span class="o">=</span><span class="p">[</span><span class="n">chunk</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">]],</span>
+        <span class="n">metadatas</span><span class="o">=</span><span class="p">[</span><span class="n">meta</span><span class="p">],</span>
+        <span class="n">ids</span><span class="o">=</span><span class="p">[</span><span class="n">chunk</span><span class="p">[</span><span class="s2">&quot;chunk_id&quot;</span><span class="p">]],</span>
+        <span class="n">embeddings</span><span class="o">=</span><span class="p">[</span><span class="n">chunk</span><span class="p">[</span><span class="s2">&quot;text_vector&quot;</span><span class="p">]]</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Alternative Index Types:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IndexFlatL2</span></code>: Exact L2 distance (slower but accurate)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IndexFlatIP</span></code>: Inner product similarity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IndexIVFFlat</span></code>: Faster approximate search for large datasets</p></li>
+</ul>
+</section>
+<section id="test-retrieval">
+<h3>5. Test Retrieval<a class="headerlink" href="#test-retrieval" title="Link to this heading">¶</a></h3>
+<p>Test the vector store with a sample query:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Query the vector store directly</span>
+<span class="n">query_embedding</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">similarity_search_with_score</span><span class="p">(</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;Size of images for schema GAN&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Query result:&quot;</span><span class="p">,</span> <span class="n">query_embedding</span><span class="p">)</span>
+
+<span class="c1"># Each result contains (Document, similarity_score)</span>
+<span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">query_embedding</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Content: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">page_content</span><span class="p">[:</span><span class="mi">200</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metadata: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="initialize-the-llm">
+<h3>6. Initialize the LLM<a class="headerlink" href="#initialize-the-llm" title="Link to this heading">¶</a></h3>
+<p>Set up the open source language model using Ollama, in this case the Qwen3 model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize Ollama LLM</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">DeltaresOllamaLLM</span><span class="p">(</span>
+    <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://chat-api.directory.intra&quot;</span><span class="p">,</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;qwen3:latest&quot;</span><span class="p">,</span>  <span class="c1"># Or another available model</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.8</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="create-retriever-and-generate-answers">
+<h3>7. Create Retriever and Generate Answers<a class="headerlink" href="#create-retriever-and-generate-answers" title="Link to this heading">¶</a></h3>
+<p>Set up the retriever and generate answers to questions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create retriever with similarity threshold</span>
+<span class="n">retriever</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">as_retriever</span><span class="p">(</span>
+    <span class="n">search_type</span><span class="o">=</span><span class="s2">&quot;similarity_score_threshold&quot;</span><span class="p">,</span>
+    <span class="n">search_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;score_threshold&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># Minimum similarity score</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mi">10</span>  <span class="c1"># Maximum number of documents to retrieve</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="c1"># Generate answer using RAG</span>
+<span class="n">question</span> <span class="o">=</span> <span class="s2">&quot;Size of images produced by schemaGAN? give me the answer in axb format&quot;</span>
+<span class="n">chat_result</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">ask_with_retriever</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retriever</span><span class="p">)</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="n">chat_result</span><span class="o">.</span><span class="n">generations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Answer:&quot;</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The answer should be relevant to the question based on the retrieved documents.
+If the answer is not satisfactory, consider refining the query or adjusting the retriever and/or embedding model.</p>
+</section>
+<section id="evaluate-the-rag-system">
+<h3>8. Evaluate the RAG System<a class="headerlink" href="#evaluate-the-rag-system" title="Link to this heading">¶</a></h3>
+<p>Use the built-in evaluation framework to assess RAG performance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define test questions with ground truth answers</span>
+<span class="n">TEST_QUESTIONS</span> <span class="o">=</span> <span class="p">[{</span>
+    <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="s2">&quot;Size of images produced by schemaGAN?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ground_truth&quot;</span><span class="p">:</span> <span class="s2">&quot;The images produced by schemaGAN have a size of **512 × 32 pixels**.&quot;</span>
+<span class="p">},</span> <span class="p">{</span>
+    <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="s2">&quot;What is the network architecture based on?&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ground_truth&quot;</span><span class="p">:</span> <span class="s2">&quot;the pix2pix method from Isola et al. (2017)&quot;</span>
+<span class="p">}]</span>
+
+<span class="c1"># Initialize evaluator</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">RAGEvaluator</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="s2">&quot;deltares&quot;</span><span class="p">,</span> <span class="n">deltares_llm</span><span class="o">=</span><span class="n">llm</span><span class="p">)</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">q_data</span> <span class="ow">in</span> <span class="n">TEST_QUESTIONS</span><span class="p">:</span>
+    <span class="n">question</span> <span class="o">=</span> <span class="n">q_data</span><span class="p">[</span><span class="s2">&quot;question&quot;</span><span class="p">]</span>
+    <span class="n">ground_truth</span> <span class="o">=</span> <span class="n">q_data</span><span class="p">[</span><span class="s2">&quot;ground_truth&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Generate answer</span>
+    <span class="n">chat_result</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">ask_with_retriever</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retriever</span><span class="p">)</span>
+    <span class="n">answer</span> <span class="o">=</span> <span class="n">chat_result</span><span class="o">.</span><span class="n">generations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+    <span class="n">answer</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&lt;/think&gt;&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c1"># Clean up response</span>
+
+    <span class="c1"># Get retrieved contexts</span>
+    <span class="n">retrieved_contexts</span> <span class="o">=</span> <span class="n">retriever</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate the RAG pipeline</span>
+    <span class="n">evaluation</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate_rag_pipeline</span><span class="p">(</span>
+        <span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">,</span>
+        <span class="n">generated_answer</span><span class="o">=</span><span class="n">answer</span><span class="p">,</span>
+        <span class="n">retrieved_contexts</span><span class="o">=</span><span class="n">retrieved_contexts</span><span class="p">,</span>
+        <span class="n">ground_truth_answer</span><span class="o">=</span><span class="n">ground_truth</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Store results</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;question&#39;</span><span class="p">:</span> <span class="n">question</span><span class="p">,</span>
+        <span class="s1">&#39;ground_truth&#39;</span><span class="p">:</span> <span class="n">ground_truth</span><span class="p">,</span>
+        <span class="s1">&#39;response&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">retrieved_contexts</span><span class="p">,</span>
+        <span class="s1">&#39;evaluation&#39;</span><span class="p">:</span> <span class="n">evaluation</span>
+    <span class="p">}</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="c1"># Print evaluation metrics</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RAGAS Score: </span><span class="si">{</span><span class="n">evaluation</span><span class="o">.</span><span class="n">ragas_score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Answer Relevancy: </span><span class="si">{</span><span class="n">evaluation</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Faithfulness: </span><span class="si">{</span><span class="n">evaluation</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Context Recall: </span><span class="si">{</span><span class="n">evaluation</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Context Relevancy: </span><span class="si">{</span><span class="n">evaluation</span><span class="o">.</span><span class="n">context_relevancy</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="evaluation-metrics-explained">
+<h2>Evaluation Metrics Explained<a class="headerlink" href="#evaluation-metrics-explained" title="Link to this heading">¶</a></h2>
+<p>The RAG evaluation provides four key metrics:</p>
+<dl class="simple">
+<dt><strong>1. Context Relevancy (0-1)</strong></dt><dd><p>Measures how relevant the retrieved documents are to the question. Higher scores indicate better retrieval.
+If the score is low, it indicates a potential issue with the embedding model or vector store.</p>
+</dd>
+<dt><strong>2. Context Recall (0-1)</strong></dt><dd><p>Measures whether all necessary information was retrieved. Compares retrieved context with ground truth.
+Low scores suggest that important documents may be missing from the retrieval.
+There is possible room for improvement by adjusting chunk size, overlap, or using a different embedding model.</p>
+</dd>
+<dt><strong>3. Faithfulness (0-1)</strong></dt><dd><p>Measures factual accuracy and absence of hallucinations. Checks if the answer is grounded in the retrieved context.
+Low scores indicate that the LLM may be generating information not supported by the context.
+Adjust the LLM temperature or try a different model to improve faithfulness.</p>
+</dd>
+<dt><strong>4. Answer Relevancy (0-1)</strong></dt><dd><p>Measures how directly the answer addresses the question. Penalizes verbose or off-topic responses.
+Low scores suggest that the LLM may not be effectively using the retrieved context.
+Experiment with prompt engineering or different LLMs to enhance answer relevancy.</p>
+</dd>
+<dt><strong>RAGAS Score</strong></dt><dd><p>Overall score combining all metrics, providing a single measure of RAG system quality.</p>
+</dd>
+</dl>
+</section>
+<section id="advanced-configuration">
+<h2>Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Link to this heading">¶</a></h2>
+<section id="optimizing-chunk-size">
+<h3>Optimizing Chunk Size<a class="headerlink" href="#optimizing-chunk-size" title="Link to this heading">¶</a></h3>
+<p>Experiment with different chunk sizes based on your documents:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># For technical documents with detailed information</span>
+<span class="n">chunker</span> <span class="o">=</span> <span class="n">TextChunker</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1500</span><span class="p">,</span> <span class="n">overlap_size</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+
+<span class="c1"># For shorter, conversational content</span>
+<span class="n">chunker</span> <span class="o">=</span> <span class="n">TextChunker</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">overlap_size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+<span class="c1"># For very long documents</span>
+<span class="n">chunker</span> <span class="o">=</span> <span class="n">TextChunker</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">overlap_size</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="using-different-embedding-models">
+<h3>Using Different Embedding Models<a class="headerlink" href="#using-different-embedding-models" title="Link to this heading">¶</a></h3>
+<p>Try different embedding models for better performance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># More capable but larger model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LangchainHFEmbeddingModel</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;sentence-transformers/all-mpnet-base-v2&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Multilingual model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LangchainHFEmbeddingModel</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Domain-specific model (if available)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LangchainHFEmbeddingModel</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;sentence-transformers/allenai-specter&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="improving-retrieval">
+<h3>Improving Retrieval<a class="headerlink" href="#improving-retrieval" title="Link to this heading">¶</a></h3>
+<p>Fine-tune retrieval parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># For high precision (fewer but more relevant results)</span>
+<span class="n">retriever</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">as_retriever</span><span class="p">(</span>
+    <span class="n">search_type</span><span class="o">=</span><span class="s2">&quot;similarity_score_threshold&quot;</span><span class="p">,</span>
+    <span class="n">search_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;score_threshold&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>  <span class="c1"># Higher threshold</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mi">5</span>  <span class="c1"># Fewer results</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="c1"># For high recall (more results, potentially less relevant)</span>
+<span class="n">retriever</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">as_retriever</span><span class="p">(</span>
+    <span class="n">search_type</span><span class="o">=</span><span class="s2">&quot;similarity&quot;</span><span class="p">,</span>
+    <span class="n">search_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mi">20</span>  <span class="c1"># More results</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="c1"># For diverse results using Maximum Marginal Relevance</span>
+<span class="n">retriever</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">as_retriever</span><span class="p">(</span>
+    <span class="n">search_type</span><span class="o">=</span><span class="s2">&quot;mmr&quot;</span><span class="p">,</span>
+    <span class="n">search_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">&quot;lambda_mult&quot;</span><span class="p">:</span> <span class="mf">0.7</span>  <span class="c1"># Balance between relevance and diversity</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="docling-automatic-chunker">
+<h3>Docling Automatic chunker<a class="headerlink" href="#docling-automatic-chunker" title="Link to this heading">¶</a></h3>
+<p>If the documents are not very well structured, you can use the automatic chunker from docling.
+This chunker uses a language model to create chunks based on the content and structure of the document.
+Docling chunks are typically more semantically meaningful than fixed-size chunks, and can improve retrieval performance.</p>
+<p>The following code snippet shows how to use the docling chunker. You should replace the previous chunking code with this code.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">langchain_docling</span><span class="w"> </span><span class="kn">import</span> <span class="n">DoclingLoader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">docling.chunking</span><span class="w"> </span><span class="kn">import</span> <span class="n">HybridChunker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_docling.loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExportType</span>
+
+<span class="c1"># find all PDF files in the directory</span>
+<span class="n">pdfs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.pdf&quot;</span><span class="p">))</span>
+<span class="n">global_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">pdf_path</span> <span class="ow">in</span> <span class="n">pdfs</span><span class="p">:</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">DoclingLoader</span><span class="p">(</span>
+        <span class="n">file_path</span><span class="o">=</span><span class="n">pdf_path</span><span class="p">,</span>
+        <span class="n">export_type</span><span class="o">=</span><span class="n">ExportType</span><span class="o">.</span><span class="n">DOC_CHUNKS</span><span class="p">,</span>
+        <span class="n">chunker</span><span class="o">=</span><span class="n">HybridChunker</span><span class="p">(</span><span class="n">tokenizer</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">model_name</span><span class="p">,</span>
+            <span class="n">chunk_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>        <span class="c1"># Max length supported by MiniLM</span>
+            <span class="n">chunk_overlap</span><span class="o">=</span><span class="mi">50</span>      <span class="c1"># Some overlap for better context</span>
+    <span class="p">))</span>
+    <span class="n">docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+    <span class="n">global_chunks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total embeddings generated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">global_chunks</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># now create the vector store</span>
+
+<span class="c1"># create faiss vector store</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">faiss</span><span class="o">.</span><span class="n">IndexFlatL2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">embed</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">)))</span>
+<span class="n">vector_store</span> <span class="o">=</span> <span class="n">FAISS</span><span class="p">(</span>
+    <span class="n">embedding_function</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">embeddings</span><span class="p">,</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span>
+    <span class="n">docstore</span><span class="o">=</span><span class="n">InMemoryDocstore</span><span class="p">({}),</span>
+    <span class="n">index_to_docstore_id</span><span class="o">=</span><span class="p">{},</span>
+<span class="p">)</span>
+<span class="n">vector_store</span><span class="o">.</span><span class="n">add_documents</span><span class="p">(</span><span class="n">global_chunks</span><span class="p">)</span>
+<span class="c1"># query the vector store directly to check wat is achterland in piping?</span>
+<span class="n">query_embedding</span> <span class="o">=</span> <span class="n">vector_store</span><span class="o">.</span><span class="n">similarity_search_with_score</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;Size of images for schema GAN in pixels&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Query result:&quot;</span><span class="p">,</span> <span class="n">query_embedding</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Open Source RAG Pipeline Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-by-step-implementation">Step-by-Step Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation-metrics-explained">Evaluation Metrics Explained</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-configuration">Advanced Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="LLM_tutorial.html" title="previous chapter">Tutorial LLM capabilities of DLLMForge</a></li>
+      <li>Next: <a href="tutorial_simple_agent.html" title="next chapter">Building a Simple Agent with DLLMForge</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
