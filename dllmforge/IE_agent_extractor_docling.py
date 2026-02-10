@@ -18,9 +18,25 @@ import base64
 try:
     from docling.document_converter import DocumentConverter
     DOCLING_AVAILABLE = True
-except ImportError:
+except Exception:
+    # If docling or its submodules are not importable in this environment,
+    # provide a lightweight fallback DocumentConverter that is callable so
+    # tests and code paths that only instantiate the converter won't crash.
     DOCLING_AVAILABLE = False
-    DocumentConverter = None
+
+    class DocumentConverter:
+        """Fallback stub used when the real `docling` package isn't available.
+
+        The stub is intentionally minimal: it can be instantiated safely but
+        its `convert` method raises a RuntimeError. Test suites can still
+        patch `DocumentConverter` where they need to simulate conversions.
+        """
+
+        def __init__(self, *args, **kwargs):
+            return None
+
+        def convert(self, *args, **kwargs):
+            raise RuntimeError("docling is not available in this environment")
 
 
 class DoclingProcessedDocument:
