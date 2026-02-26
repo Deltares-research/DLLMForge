@@ -48,7 +48,7 @@ pip install -e ".[core]"
 
 or 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[core]"
+pip install "DLLMForge[core] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 #### API Integration
