@@ -60,7 +60,7 @@ pip install -e ".[api]"
 or 
 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[api]"
+pip install "DLLMForge[api] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 #### Local Models
@@ -71,7 +71,7 @@ pip install -e ".[local]"
 
 or 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[local]"
+pip install "DLLMForge[local] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 
@@ -83,7 +83,7 @@ pip install -e ".[dev]"
 
 or 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[dev]"
+pip install "DLLMForge[dev] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 #### Web Applications
@@ -94,7 +94,7 @@ pip install -e ".[web]"
 
 or 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[web]"
+pip install "DLLMForge[web] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 #### Complete Installation
@@ -104,7 +104,7 @@ pip install -e ".[all]"
 ```
 or 
 ```bash
-pip install "git+https://github.com/Deltares-research/DLLMForge.git@main#egg=dllmforge[all]"
+pip install "DLLMForge[all] @ git+https://github.com/Deltares-research/DLLMForge.git"
 ```
 
 ## Environment Variables
