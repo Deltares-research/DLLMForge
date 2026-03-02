@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dllmforge.rag_evaluation &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dllmforge.rag_evaluation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">RAGAS Evaluation Module for DLLMForge</span>
+
+<span class="sd">This module provides comprehensive evaluation metrics for RAG (Retrieval-Augmented Generation)</span>
+<span class="sd">pipelines using RAGAS-inspired metrics without requiring external dashboards or services.</span>
+
+<span class="sd">The module evaluates four key aspects of RAG systems:</span>
+<span class="sd">1. Context Precision -</span>
+<span class="sd">2. Context Recall - measures the ability to retrieve all necessary information</span>
+<span class="sd">3. Faithfulness - measures factual accuracy and absence of hallucinations</span>
+<span class="sd">4. Answer Relevancy - measures how relevant and to-the-point answers are</span>
+
+<span class="sd">All evaluations are performed using LLMs to provide human-like assessment without requiring</span>
+<span class="sd">annotated datasets.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+
+<span class="c1"># Import optional API components</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.openai_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAIAPI</span>
+    <span class="n">OPENAI_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">OPENAI_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">OpenAIAPI</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.anthropic_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnthropicAPI</span>
+    <span class="n">ANTHROPIC_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">ANTHROPIC_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">AnthropicAPI</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dllmforge.LLMs.Deltares_LLMs</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeltaresOllamaLLM</span>
+    <span class="n">OLLAMA_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">OLLAMA_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">DeltaresOllamaLLM</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.langchain_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">LangchainAPI</span>
+    <span class="n">LANGCHAIN_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">LANGCHAIN_API_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">LangchainAPI</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># Load environment variables</span>
+<span class="n">load_dotenv</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="EvaluationResult">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.EvaluationResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvaluationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for evaluation results.&quot;&quot;&quot;</span>
+
+    <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">explanation</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="RAGEvaluationResult">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluationResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RAGEvaluationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for complete RAG evaluation results.&quot;&quot;&quot;</span>
+
+    <span class="n">context_precision</span><span class="p">:</span> <span class="n">EvaluationResult</span>
+    <span class="n">context_recall</span><span class="p">:</span> <span class="n">EvaluationResult</span>
+    <span class="n">faithfulness</span><span class="p">:</span> <span class="n">EvaluationResult</span>
+    <span class="n">answer_relevancy</span><span class="p">:</span> <span class="n">EvaluationResult</span>
+    <span class="n">ragas_score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">evaluation_time</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="RAGEvaluator">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RAGEvaluator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    RAGAS-inspired evaluator for RAG pipelines.</span>
+
+<span class="sd">    This evaluator provides four key metrics:</span>
+<span class="sd">    - Context Precision:</span>
+<span class="sd">    - Context Recall: Measures the ability to retrieve all necessary information</span>
+<span class="sd">    - Faithfulness: Measures factual accuracy and absence of hallucinations</span>
+<span class="sd">    - Answer Relevancy: Measures how relevant and to-the-point answers are</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RAGEvaluator.__init__">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">llm_provider</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+                 <span class="n">deltares_llm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeltaresOllamaLLM</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">api_base</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">api_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">deployment_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">model_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the RAG evaluator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            llm_provider: LLM provider to use (&quot;openai&quot;, &quot;anthropic&quot;, &quot;deltares&quot; or &quot;auto&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">=</span> <span class="n">llm_provider</span>
+
+        <span class="c1"># Initialize LLM APIs</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;openai&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">openai_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span><span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">,</span>
+                                           <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                                           <span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span>
+                                           <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+                                           <span class="n">api_base</span><span class="o">=</span><span class="n">api_base</span><span class="p">,</span>
+                                           <span class="n">api_version</span><span class="o">=</span><span class="n">api_version</span><span class="p">,</span>
+                                           <span class="n">deployment_name</span><span class="o">=</span><span class="n">deployment_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;anthropic&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">anthropic_api</span> <span class="o">=</span> <span class="n">AnthropicAPI</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;azure-openai&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">azure_openai_api</span> <span class="o">=</span> <span class="n">LangchainAPI</span><span class="p">(</span><span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;azure-openai&quot;</span><span class="p">,</span>
+                                                 <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                                                 <span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span>
+                                                 <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+                                                 <span class="n">api_base</span><span class="o">=</span><span class="n">api_base</span><span class="p">,</span>
+                                                 <span class="n">api_version</span><span class="o">=</span><span class="n">api_version</span><span class="p">,</span>
+                                                 <span class="n">deployment_name</span><span class="o">=</span><span class="n">deployment_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;deltares&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">deltares_llm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Deltares LLM must be provided when using &#39;deltares&#39; provider&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deltares_llm</span> <span class="o">=</span> <span class="n">deltares_llm</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="c1"># Automatically determine which LLM to use based on available credentials</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_llm</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_llm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the LLM provider based on available credentials.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="c1"># Check for available APIs</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">=</span> <span class="s2">&quot;openai&quot;</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;ANTHROPIC_API_KEY&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">=</span> <span class="s2">&quot;anthropic&quot;</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AZURE_OPENAI_API_KEY&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">=</span> <span class="s2">&quot;azure-openai&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">deltares_llm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">=</span> <span class="s2">&quot;deltares&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No LLM API credentials found. Please set up OpenAI or Anthropic API keys.&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using LLM provider: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_call_llm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Call the LLM with the specified messages.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            messages: List of message dictionaries</span>
+<span class="sd">            temperature: Temperature for generation</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            LLM response text</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;openai&quot;</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">openai_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;anthropic&quot;</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">anthropic_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+                                                              <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                                                              <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;azure-openai&quot;</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">azure_openai_api</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+                                                                 <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                                                                 <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span> <span class="o">==</span> <span class="s2">&quot;deltares&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">deltares_llm</span><span class="o">.</span><span class="n">chat_completion</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported LLM provider: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calling LLM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_context_relevancy">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_relevancy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_context_relevancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the relevancy of retrieved contexts to the question.</span>
+
+<span class="sd">        This metric measures the signal-to-noise ratio in the retrieved contexts.</span>
+<span class="sd">        It identifies which sentences from the context are actually needed to answer the question.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            question: The user&#39;s question</span>
+<span class="sd">            retrieved_contexts: List of retrieved context chunks</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EvaluationResult with score and explanation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Context </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_contexts</span><span class="p">)])</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;/no_think You are evaluating the relevancy of retrieved contexts for a question-answering system.</span>
+
+<span class="s2">Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span>
+
+<span class="s2">Retrieved Contexts:</span>
+<span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
+
+<span class="s2">Your task is to:</span>
+<span class="s2">1. Identify which sentences from the retrieved contexts are actually needed to answer the question</span>
+<span class="s2">2. Calculate the ratio: (number of relevant sentences) / (total number of sentences)</span>
+
+<span class="s2">Instructions:</span>
+<span class="s2">- A sentence is relevant if it contains information that directly helps answer the question</span>
+<span class="s2">- Ignore sentences that are just background information or don&#39;t contribute to answering the question</span>
+<span class="s2">- Count sentences carefully and provide the exact ratio</span>
+
+<span class="s2">Please respond in the following JSON format:</span>
+<span class="se">{{</span>
+<span class="s2">    &quot;relevant_sentences&quot;: [&quot;sentence 1&quot;, &quot;sentence 2&quot;, ...],</span>
+<span class="s2">    &quot;total_sentences&quot;: number,</span>
+<span class="s2">    &quot;relevant_count&quot;: number,</span>
+<span class="s2">    &quot;ratio&quot;: float,</span>
+<span class="s2">    &quot;explanation&quot;: &quot;Brief explanation of your reasoning&quot;</span>
+<span class="se">}}</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a helpful assistant that evaluates the relevancy of text contexts.&quot;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Try to parse JSON response</span>
+            <span class="c1"># check if this is arleady type dict</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;message&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                <span class="c1"># now remove the empty think</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;think&gt;</span><span class="se">\n\n</span><span class="s2">&lt;/think&gt;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;No explanation provided&quot;</span><span class="p">)</span>
+            <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;relevant_sentences&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevant_sentences&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;total_sentences&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_sentences&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;relevant_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevant_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="c1"># Try to extract JSON from the response using regex</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+            <span class="n">json_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{.*\}&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">json_match</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;Extracted from response&quot;</span><span class="p">)</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;relevant_sentences&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevant_sentences&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;total_sentences&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_sentences&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s2">&quot;relevant_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevant_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="c1"># not bare except:</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="c1"># Fallback: try to extract score from text</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># Default score</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (JSON extraction failed)&quot;</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback: try to extract score from text</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># Default score</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (no JSON found)&quot;</span>
+                <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">EvaluationResult</span><span class="p">(</span><span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;context_relevancy&quot;</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> <span class="n">explanation</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span> <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_context_precision">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_precision">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_context_precision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                                   <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                                   <span class="n">ground_truth_answer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                                   <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate Context Precision@k following the Ragas implementation.</span>
+
+<span class="sd">        For each of the top-k retrieved chunks, the LLM judges whether the chunk</span>
+<span class="sd">        supports the reference answer. Average Precision (AP) is then computed as:</span>
+<span class="sd">            AP = sum(Precision@i * rel_i) / (# relevant chunks)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            question: The question to evaluate.</span>
+<span class="sd">            reference_answer: The correct or gold answer.</span>
+<span class="sd">            retrieved_contexts: Ranked list of retrieved chunks.</span>
+<span class="sd">            top_k: Number of top chunks to evaluate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            EvaluationResult with precision@k score and explanation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+        <span class="n">top_contexts</span> <span class="o">=</span> <span class="n">retrieved_contexts</span><span class="p">[:</span><span class="n">top_k</span><span class="p">]</span>
+        <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Rank </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">top_contexts</span><span class="p">)])</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;/no_think You are evaluating the precision of retrieved contexts for a question-answering system.</span>
+
+<span class="s2">Original Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span>
+
+<span class="s2">Reference Answer: </span><span class="si">{</span><span class="n">ground_truth_answer</span><span class="si">}</span>
+
+<span class="s2">Retrieved Contexts (Ranked from most to least relevant):</span>
+<span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
+
+<span class="s2">Your task is to:</span>
+<span class="s2">1. Evaluate each retrieved context (Rank 1–</span><span class="si">{</span><span class="n">top_k</span><span class="si">}</span><span class="s2">) and decide if it provides information that directly supports the reference answer.</span>
+<span class="s2">2. Assign a binary relevance indicator (1 = relevant, 0 = not relevant) for each ranked context.</span>
+<span class="s2">3. Consider the following when deciding relevance:</span>
+<span class="s2">   - Does the context contain factual evidence supporting the reference answer?</span>
+<span class="s2">   - Is the information directly useful to answer the question?</span>
+<span class="s2">   - Avoid marking general background or unrelated text as relevant.</span>
+
+<span class="s2">Please respond in the following JSON format:</span>
+<span class="se">{{</span>
+<span class="s2">    &quot;relevance_indicators&quot;: [0 or 1 for each rank],</span>
+<span class="s2">    &quot;precision_at_k&quot;: float,</span>
+<span class="s2">    &quot;explanation&quot;: &quot;Brief explanation of your reasoning&quot;</span>
+<span class="se">}}</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a precise evaluator for RAG context precision.&quot;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;choices&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">response_text</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;message&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c1"># remove leading/trailing whitespace</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response_text</span><span class="p">)</span>
+            <span class="n">relevance</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevance_indicators&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;No explanation provided&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="c1"># fallback extraction</span>
+            <span class="n">json_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{.*\}&quot;</span><span class="p">,</span> <span class="n">response_text</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">json_match</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+                <span class="n">relevance</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevance_indicators&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;Extracted from response&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">relevance</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (no JSON found)&quot;</span>
+
+        <span class="c1"># --- Compute Average Precision (Ragas logic) ---</span>
+        <span class="n">verdict_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">if</span> <span class="n">r</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">relevance</span><span class="p">]</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">verdict_list</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-10</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([(</span><span class="nb">sum</span><span class="p">(</span><span class="n">verdict_list</span><span class="p">[:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="n">verdict_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">verdict_list</span><span class="p">))])</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span> <span class="k">if</span> <span class="n">denominator</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;relevance_indicators&quot;</span><span class="p">:</span> <span class="n">verdict_list</span><span class="p">,</span>
+            <span class="s2">&quot;relevant_count&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">verdict_list</span><span class="p">)),</span>
+            <span class="s2">&quot;top_contexts&quot;</span><span class="p">:</span> <span class="n">top_contexts</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">EvaluationResult</span><span class="p">(</span><span class="n">metric_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;context_precision@</span><span class="si">{</span><span class="n">top_k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                                <span class="n">explanation</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span>
+                                <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_context_recall">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_context_recall">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_context_recall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                                <span class="n">ground_truth_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the recall of retrieved contexts against a ground truth answer.</span>
+<span class="sd">        This metric measures the ability of the retriever to retrieve all necessary information</span>
+<span class="sd">        needed to answer the question by checking if each statement from the ground truth</span>
+<span class="sd">        can be found in the retrieved context.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            question: The user&#39;s question</span>
+<span class="sd">            retrieved_contexts: List of retrieved context chunks</span>
+<span class="sd">            ground_truth_answer: The reference answer to compare against</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EvaluationResult with score and explanation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Context </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_contexts</span><span class="p">)])</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot; /no_think You are evaluating the recall of retrieved contexts for a question-answering system.</span>
+
+<span class="s2">Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span>
+
+<span class="s2">Ground Truth Answer: </span><span class="si">{</span><span class="n">ground_truth_answer</span><span class="si">}</span>
+
+<span class="s2">Retrieved Contexts:</span>
+<span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
+
+<span class="s2">Your task is to:</span>
+<span class="s2">1. Break down the ground truth answer into individual factual statements</span>
+<span class="s2">2. Check if each statement can be supported by information in the retrieved contexts</span>
+<span class="s2">3. Calculate the ratio: (number of supported statements) / (total number of statements)</span>
+
+<span class="s2">Instructions:</span>
+<span class="s2">- A statement is supported if the same information appears in the retrieved contexts</span>
+<span class="s2">- Consider paraphrasing and different ways of expressing the same fact</span>
+<span class="s2">- Be strict about factual accuracy - the context must contain the actual information</span>
+
+<span class="s2">Please respond in the following JSON format:</span>
+<span class="se">{{</span>
+<span class="s2">    &quot;statements&quot;: [&quot;statement 1&quot;, &quot;statement 2&quot;, ...],</span>
+<span class="s2">    &quot;supported_statements&quot;: [&quot;statement 1&quot;, &quot;statement 3&quot;, ...],</span>
+<span class="s2">    &quot;total_statements&quot;: number,</span>
+<span class="s2">    &quot;supported_count&quot;: number,</span>
+<span class="s2">    &quot;ratio&quot;: float,</span>
+<span class="s2">    &quot;explanation&quot;: &quot;Brief explanation of your reasoning&quot;</span>
+<span class="se">}}</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a helpful assistant that evaluates the recall of text contexts.&quot;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;message&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                <span class="c1"># now remove the empty think</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;think&gt;</span><span class="se">\n\n</span><span class="s2">&lt;/think&gt;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;No explanation provided&quot;</span><span class="p">)</span>
+            <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;supported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;total_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_statements&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;supported_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="c1"># Try to extract JSON from the response using regex</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+            <span class="n">json_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{.*\}&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">json_match</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;Extracted from response&quot;</span><span class="p">)</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;supported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;total_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_statements&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s2">&quot;supported_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (JSON extraction failed)&quot;</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (no JSON found)&quot;</span>
+                <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">EvaluationResult</span><span class="p">(</span><span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;context_recall&quot;</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> <span class="n">explanation</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span> <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_faithfulness">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_faithfulness">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_faithfulness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">generated_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                              <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the faithfulness of the generated answer to the retrieved contexts.</span>
+
+<span class="sd">        This metric measures the factual accuracy of the generated answer by checking</span>
+<span class="sd">        if all statements in the answer are supported by the retrieved contexts.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            question: The user&#39;s question</span>
+<span class="sd">            generated_answer: The answer generated by the RAG system</span>
+<span class="sd">            retrieved_contexts: List of retrieved context chunks</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EvaluationResult with score and explanation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Context </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ctx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_contexts</span><span class="p">)])</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;/no_think You are evaluating the faithfulness of a generated answer to the provided contexts.</span>
+
+<span class="s2">Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span>
+
+<span class="s2">Generated Answer: </span><span class="si">{</span><span class="n">generated_answer</span><span class="si">}</span>
+
+<span class="s2">Retrieved Contexts:</span>
+<span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
+
+<span class="s2">Your task is to:</span>
+<span class="s2">1. Identify all factual statements made in the generated answer</span>
+<span class="s2">2. Check if each statement is supported by the retrieved contexts</span>
+<span class="s2">3. Calculate the ratio: (number of supported statements) / (total number of statements)</span>
+
+<span class="s2">Instructions:</span>
+<span class="s2">- A statement is supported if the same information appears in the retrieved contexts</span>
+<span class="s2">- Consider paraphrasing and different ways of expressing the same fact</span>
+<span class="s2">- Be strict about factual accuracy - the context must contain the actual information</span>
+<span class="s2">- Ignore statements that are just common knowledge or reasonable inferences</span>
+
+<span class="s2">Please respond in the following JSON format:</span>
+<span class="se">{{</span>
+<span class="s2">    &quot;statements&quot;: [&quot;statement 1&quot;, &quot;statement 2&quot;, ...],</span>
+<span class="s2">    &quot;supported_statements&quot;: [&quot;statement 1&quot;, &quot;statement 3&quot;, ...],</span>
+<span class="s2">    &quot;unsupported_statements&quot;: [&quot;statement 2&quot;, ...],</span>
+<span class="s2">    &quot;total_statements&quot;: number,</span>
+<span class="s2">    &quot;supported_count&quot;: number,</span>
+<span class="s2">    &quot;ratio&quot;: float,</span>
+<span class="s2">    &quot;explanation&quot;: &quot;Brief explanation of your reasoning&quot;</span>
+<span class="se">}}</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a helpful assistant that evaluates the faithfulness of generated answers.&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;message&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                <span class="c1"># now remove the empty think</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;think&gt;</span><span class="se">\n\n</span><span class="s2">&lt;/think&gt;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;No explanation provided&quot;</span><span class="p">)</span>
+            <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;supported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;unsupported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unsupported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;total_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_statements&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;supported_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="c1"># Try to extract JSON from the response using regex</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+            <span class="n">json_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{.*\}&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">json_match</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;Extracted from response&quot;</span><span class="p">)</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;supported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;unsupported_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;unsupported_statements&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;total_statements&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_statements&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                        <span class="s2">&quot;supported_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supported_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (JSON extraction failed)&quot;</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (no JSON found)&quot;</span>
+                <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">EvaluationResult</span><span class="p">(</span><span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;faithfulness&quot;</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> <span class="n">explanation</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span> <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_answer_relevancy">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_answer_relevancy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_answer_relevancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">generated_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the relevancy of the generated answer to the question.</span>
+<span class="sd">        This metric measures how relevant and to-the-point the answer is by generating</span>
+<span class="sd">        probable questions that the answer could answer and computing similarity to the actual question.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            question: The user&#39;s question</span>
+<span class="sd">            generated_answer: The answer generated by the RAG system</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            EvaluationResult with score and explanation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;/no_think You are evaluating the relevancy of a generated answer to a question.</span>
+
+<span class="s2">Original Question: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span>
+
+<span class="s2">Generated Answer: </span><span class="si">{</span><span class="n">generated_answer</span><span class="si">}</span>
+
+<span class="s2">Your task is to:</span>
+<span class="s2">1. Generate 3-5 probable questions that this answer could reasonably answer</span>
+<span class="s2">2. Rate how well the generated answer addresses the original question on a scale of 0.0 to 1.0</span>
+<span class="s2">3. Consider factors like:</span>
+<span class="s2">   - Does the answer directly address the question?</span>
+<span class="s2">   - Is the answer complete and comprehensive?</span>
+<span class="s2">   - Is the answer focused and not overly verbose?</span>
+<span class="s2">   - Does the answer provide the information the question is asking for?</span>
+
+<span class="s2">Please respond in the following JSON format:</span>
+<span class="se">{{</span>
+<span class="s2">    &quot;probable_questions&quot;: [&quot;question 1&quot;, &quot;question 2&quot;, &quot;question 3&quot;],</span>
+<span class="s2">    &quot;relevancy_score&quot;: float,</span>
+<span class="s2">    &quot;explanation&quot;: &quot;Brief explanation of your reasoning&quot;,</span>
+<span class="s2">    &quot;strengths&quot;: [&quot;strength 1&quot;, &quot;strength 2&quot;],</span>
+<span class="s2">    &quot;weaknesses&quot;: [&quot;weakness 1&quot;, &quot;weakness 2&quot;]</span>
+<span class="se">}}</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a helpful assistant that evaluates the relevancy of answers.&quot;</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_llm</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;message&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                <span class="c1"># now remove the empty think</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;think&gt;</span><span class="se">\n\n</span><span class="s2">&lt;/think&gt;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevancy_score&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;No explanation provided&quot;</span><span class="p">)</span>
+            <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;probable_questions&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;probable_questions&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;strengths&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strengths&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;weaknesses&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weaknesses&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="c1"># Try to extract JSON from the response using regex</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+            <span class="n">json_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\{.*\}&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">json_match</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relevancy_score&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;explanation&quot;</span><span class="p">,</span> <span class="s2">&quot;Extracted from response&quot;</span><span class="p">)</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;probable_questions&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;probable_questions&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;strengths&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strengths&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                        <span class="s2">&quot;weaknesses&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weaknesses&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                    <span class="p">}</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                    <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (JSON extraction failed)&quot;</span>
+                    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mf">0.5</span>
+                <span class="n">explanation</span> <span class="o">=</span> <span class="s2">&quot;Could not parse LLM response (no JSON found)&quot;</span>
+                <span class="n">details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;raw_response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">EvaluationResult</span><span class="p">(</span><span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;answer_relevancy&quot;</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span> <span class="n">explanation</span><span class="o">=</span><span class="n">explanation</span><span class="p">,</span> <span class="n">details</span><span class="o">=</span><span class="n">details</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.calculate_ragas_score">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.calculate_ragas_score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_ragas_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context_precision</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">context_recall</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">faithfulness</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                              <span class="n">answer_relevancy</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the RAGAS score as the harmonic mean of all four metrics.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            context_precision: Context precision score</span>
+<span class="sd">            context_recall: Context recall score</span>
+<span class="sd">            faithfulness: Faithfulness score</span>
+<span class="sd">            answer_relevancy: Answer relevancy score</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            RAGAS score (harmonic mean)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">context_precision</span><span class="p">,</span> <span class="n">context_recall</span><span class="p">,</span> <span class="n">faithfulness</span><span class="p">,</span> <span class="n">answer_relevancy</span><span class="p">]</span>
+        <span class="c1"># Filter out zero scores to avoid division by zero</span>
+        <span class="n">non_zero_scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">scores</span> <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">non_zero_scores</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Calculate harmonic mean</span>
+        <span class="n">harmonic_mean</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_zero_scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">score</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">non_zero_scores</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">harmonic_mean</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.evaluate_rag_pipeline">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.evaluate_rag_pipeline">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_rag_pipeline</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">generated_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">ground_truth_answer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAGEvaluationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate a complete RAG pipeline using all four metrics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            question: The user&#39;s question</span>
+<span class="sd">            generated_answer: The answer generated by the RAG system</span>
+<span class="sd">            retrieved_contexts: List of retrieved context chunks</span>
+<span class="sd">            ground_truth_answer: Optional ground truth answer for context recall evaluation</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Complete evaluation results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;🔍 Starting RAG evaluation...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate context precision</span>
+        <span class="k">if</span> <span class="n">ground_truth_answer</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating context precision...&quot;</span><span class="p">)</span>
+            <span class="n">context_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_context_precision</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">,</span> <span class="n">ground_truth_answer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Use context relevancy as a proxy for context precision</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating context relevancy as proxy for context precision...&quot;</span><span class="p">)</span>
+            <span class="n">context_relevancy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_context_relevancy</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">)</span>
+            <span class="n">context_recall</span> <span class="o">=</span> <span class="n">EvaluationResult</span><span class="p">(</span>
+                <span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;context_precision&quot;</span><span class="p">,</span>
+                <span class="n">score</span><span class="o">=</span><span class="n">context_relevancy</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                <span class="n">explanation</span><span class="o">=</span><span class="s2">&quot;Using context relevancy as proxy (no ground truth provided)&quot;</span><span class="p">,</span>
+                <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="s2">&quot;Ground truth answer not provided&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Evaluate faithfulness</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating faithfulness...&quot;</span><span class="p">)</span>
+        <span class="n">faithfulness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_faithfulness</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">generated_answer</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate answer relevancy</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating answer relevancy...&quot;</span><span class="p">)</span>
+        <span class="n">answer_relevancy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_answer_relevancy</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">generated_answer</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate context recall (if ground truth is provided)</span>
+        <span class="k">if</span> <span class="n">ground_truth_answer</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating context recall...&quot;</span><span class="p">)</span>
+            <span class="n">context_recall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_context_recall</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">,</span> <span class="n">ground_truth_answer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Use context relevancy as a proxy for context recall</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  📊 Evaluating context relevancy as proxy for context recall...&quot;</span><span class="p">)</span>
+            <span class="n">context_relevancy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_context_relevancy</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">retrieved_contexts</span><span class="p">)</span>
+            <span class="n">context_recall</span> <span class="o">=</span> <span class="n">EvaluationResult</span><span class="p">(</span>
+                <span class="n">metric_name</span><span class="o">=</span><span class="s2">&quot;context_recall&quot;</span><span class="p">,</span>
+                <span class="n">score</span><span class="o">=</span><span class="n">context_relevancy</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                <span class="n">explanation</span><span class="o">=</span><span class="s2">&quot;Using context relevancy as proxy (no ground truth provided)&quot;</span><span class="p">,</span>
+                <span class="n">details</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="s2">&quot;Ground truth answer not provided&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Calculate RAGAS score</span>
+        <span class="n">ragas_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_ragas_score</span><span class="p">(</span><span class="n">context_precision</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">context_recall</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">faithfulness</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                                                 <span class="n">answer_relevancy</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+
+        <span class="n">evaluation_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="c1"># Compile metadata</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;llm_provider&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_provider</span><span class="p">,</span>
+            <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">question</span><span class="p">,</span>
+            <span class="s2">&quot;generated_answer&quot;</span><span class="p">:</span> <span class="n">generated_answer</span><span class="p">,</span>
+            <span class="s2">&quot;context_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">retrieved_contexts</span><span class="p">),</span>
+            <span class="s2">&quot;has_ground_truth&quot;</span><span class="p">:</span> <span class="n">ground_truth_answer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">RAGEvaluationResult</span><span class="p">(</span>
+            <span class="n">context_precision</span><span class="o">=</span><span class="n">context_precision</span><span class="p">,</span>
+            <span class="n">context_recall</span><span class="o">=</span><span class="n">context_recall</span><span class="p">,</span>
+            <span class="n">faithfulness</span><span class="o">=</span><span class="n">faithfulness</span><span class="p">,</span>
+            <span class="n">answer_relevancy</span><span class="o">=</span><span class="n">answer_relevancy</span><span class="p">,</span>
+            <span class="n">ragas_score</span><span class="o">=</span><span class="n">ragas_score</span><span class="p">,</span>
+            <span class="n">evaluation_time</span><span class="o">=</span><span class="n">evaluation_time</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.print_evaluation_summary">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.print_evaluation_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">print_evaluation_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RAGEvaluationResult</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print a formatted summary of the evaluation results.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            result: The evaluation results to summarize</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;📊 RAG EVALUATION SUMMARY&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🎯 Overall RAGAS Score: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">ragas_score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⏱️  Evaluation Time: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">evaluation_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;📈 Individual Metrics:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • Context Precision: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">context_precision</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">context_precision</span><span class="o">.</span><span class="n">explanation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • Context Recall: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">explanation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • Faithfulness: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">explanation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • Answer Relevancy: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">explanation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGEvaluator.save_evaluation_results">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.RAGEvaluator.save_evaluation_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_evaluation_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">RAGEvaluationResult</span><span class="p">,</span> <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save evaluation results to a JSON file.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            result: The evaluation results to save</span>
+<span class="sd">            output_file: Path to the output JSON file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert dataclass to dictionary</span>
+        <span class="n">result_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ragas_score&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">ragas_score</span><span class="p">,</span>
+            <span class="s2">&quot;evaluation_time&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">evaluation_time</span><span class="p">,</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;context_precision&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_precision</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_precision</span><span class="o">.</span><span class="n">explanation</span><span class="p">,</span>
+                    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_precision</span><span class="o">.</span><span class="n">details</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;context_recall&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">explanation</span><span class="p">,</span>
+                    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">context_recall</span><span class="o">.</span><span class="n">details</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;faithfulness&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">explanation</span><span class="p">,</span>
+                    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">faithfulness</span><span class="o">.</span><span class="n">details</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;answer_relevancy&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">explanation</span><span class="p">,</span>
+                    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">answer_relevancy</span><span class="o">.</span><span class="n">details</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">result_dict</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💾 Evaluation results saved to: </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="evaluate_rag_response">
+<a class="viewcode-back" href="../../dllmforge.html#dllmforge.evaluate_rag_response">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_rag_response</span><span class="p">(</span>
+    <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">generated_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">retrieved_contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">ground_truth_answer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">llm_provider</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">save_results</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">output_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAGEvaluationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convenience function to evaluate a RAG response.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        question: The user&#39;s question</span>
+<span class="sd">        generated_answer: The answer generated by the RAG system</span>
+<span class="sd">        retrieved_contexts: List of retrieved context chunks</span>
+<span class="sd">        ground_truth_answer: Optional ground truth answer for context recall evaluation</span>
+<span class="sd">        llm_provider: LLM provider to use (&quot;openai&quot;, &quot;anthropic&quot;, or &quot;auto&quot;)</span>
+<span class="sd">        save_results: Whether to save results to a file</span>
+<span class="sd">        output_file: Optional output file path</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Complete evaluation results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">evaluator</span> <span class="o">=</span> <span class="n">RAGEvaluator</span><span class="p">(</span><span class="n">llm_provider</span><span class="o">=</span><span class="n">llm_provider</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate_rag_pipeline</span><span class="p">(</span>
+        <span class="n">question</span><span class="o">=</span><span class="n">question</span><span class="p">,</span>
+        <span class="n">generated_answer</span><span class="o">=</span><span class="n">generated_answer</span><span class="p">,</span>
+        <span class="n">retrieved_contexts</span><span class="o">=</span><span class="n">retrieved_contexts</span><span class="p">,</span>
+        <span class="n">ground_truth_answer</span><span class="o">=</span><span class="n">ground_truth_answer</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">evaluator</span><span class="o">.</span><span class="n">print_evaluation_summary</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save_results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+
+            <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
+            <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;rag_evaluation_</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">.json&quot;</span>
+
+        <span class="n">evaluator</span><span class="o">.</span><span class="n">save_evaluation_results</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

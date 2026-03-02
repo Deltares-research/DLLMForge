@@ -1,0 +1,12 @@
+dllmforge.rag\_embedding
+========================
+
+.. automodule:: dllmforge.rag_embedding
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AzureOpenAIEmbeddingModel
+   

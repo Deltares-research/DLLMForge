@@ -1,0 +1,13 @@
+dllmforge.IE\_agent\_extractor
+==============================
+
+.. automodule:: dllmforge.IE_agent_extractor
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocumentChunk
+      InfoExtractor
+   
