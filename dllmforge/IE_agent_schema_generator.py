@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, Union
 from pathlib import Path
 from pydantic import BaseModel
 from langchain_core.output_parsers import BaseOutputParser
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.IE_agent_config import SchemaConfig
 from dllmforge.utils.document_loader import DocumentLoader
