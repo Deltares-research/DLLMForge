@@ -1,9 +1,6 @@
 repos:
-  - repo: local
+  - repo: https://github.com/google/yapf
+    rev: v0.43.0
     hooks:
       - id: yapf
-        name: yapf
-        language: python
-        entry: yapf
         args: [-i]
-        types: [python]
