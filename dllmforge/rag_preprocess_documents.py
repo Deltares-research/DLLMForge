@@ -27,7 +27,7 @@ class DocumentLoader(ABC):
 
 
 class PDFLoader(DocumentLoader):
-    """Loader for PDF documents using PyPDF2."""
+    """Loader for PDF documents using pypdf."""
 
     def load(self, file_path: Path) -> Tuple[List[Tuple[int, str]], str]:
         """
