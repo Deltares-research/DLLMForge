@@ -1,0 +1,12 @@
+dllmforge.openai\_api
+=====================
+
+.. automodule:: dllmforge.openai_api
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      OpenAIAPI
+   

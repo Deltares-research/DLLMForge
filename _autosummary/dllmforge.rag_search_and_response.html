@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge.rag_search_and_response &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="dllmforge.rag_preprocess_documents" href="dllmforge.rag_preprocess_documents.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dllmforge.rag_search_and_response">
+<span id="dllmforge-rag-search-and-response"></span><h1>dllmforge.rag_search_and_response<a class="headerlink" href="#module-dllmforge.rag_search_and_response" title="Link to this heading">¶</a></h1>
+<p>This module provides “create index/vector-database”, “search” and “response”
+functionality for RAG (Retrieval-Augmented Generation) pipelines.
+Three steps are involved:
+1. Create index/vector-database: create an index/vector-database on Azure AI search service.
+1. Search: use Azure AI search service to retrieve relevant chunks from the vector database .
+2. Response: use LLMs to generate a response to the user query based on the retrieved chunks.
+The module uses Azure AI search service and Azure OpenAI service as an example of using hosted search
+APIs and LLMs APIs. Note you need
+Azure AI search service, Azure OpenAI service and a deployed LLM model on Azure to use this module.</p>
+<p>The example demonstrates the whole pipeline of RAG, including:
+1. Preprocess the documents to chunks.
+2. Vectorize the chunks.
+3. Create vector index and store the chunks in the vector database.
+4. Search the vector database for relevant chunks.
+5. Generate a response to the user query based on the retrieved chunks.</p>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#dllmforge.rag_search_and_response.IndexManager" title="dllmforge.rag_search_and_response.IndexManager"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexManager</span></code></a>([search_client_endpoint, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../dllmforge.html#dllmforge.rag_search_and_response.LLMResponder" title="dllmforge.rag_search_and_response.LLMResponder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LLMResponder</span></code></a>(llm)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#dllmforge.rag_search_and_response.Retriever" title="dllmforge.rag_search_and_response.Retriever"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Retriever</span></code></a>(embedding_model[, index_name, ...])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.IndexManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.rag_search_and_response.</span></span><span class="sig-name descname"><span class="pre">IndexManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.IndexManager" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.IndexManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.IndexManager.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.IndexManager.create_index">
+<span class="sig-name descname"><span class="pre">create_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name_embeddings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.create_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.IndexManager.create_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.IndexManager.upload_documents">
+<span class="sig-name descname"><span class="pre">upload_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorized_chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#IndexManager.upload_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.IndexManager.upload_documents" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.Retriever">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.rag_search_and_response.</span></span><span class="sig-name descname"><span class="pre">Retriever</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.Retriever" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.Retriever.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_client_endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.Retriever.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.Retriever.get_embeddings">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.Retriever.get_embeddings" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.Retriever.invoke">
+<span class="sig-name descname"><span class="pre">invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#Retriever.invoke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.Retriever.invoke" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.LLMResponder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.rag_search_and_response.</span></span><span class="sig-name descname"><span class="pre">LLMResponder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.LLMResponder" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.LLMResponder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">llm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.LLMResponder.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.LLMResponder.augment_prompt_with_context">
+<span class="sig-name descname"><span class="pre">augment_prompt_with_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.augment_prompt_with_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.LLMResponder.augment_prompt_with_context" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.rag_search_and_response.LLMResponder.generate">
+<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retrieved_chunks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/rag_search_and_response.html#LLMResponder.generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.rag_search_and_response.LLMResponder.generate" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dllmforge.html">dllmforge</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_config.html">dllmforge.IE_agent_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_document_processor.html">dllmforge.IE_agent_document_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor.html">dllmforge.IE_agent_extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html">dllmforge.IE_agent_extractor_docling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_schema_generator.html">dllmforge.IE_agent_schema_generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.agent_core.html">dllmforge.agent_core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.anthropic_api.html">dllmforge.anthropic_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.langchain_api.html">dllmforge.langchain_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.llamaindex_api.html">dllmforge.llamaindex_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.openai_api.html">dllmforge.openai_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding.html">dllmforge.rag_embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding_open_source.html">dllmforge.rag_embedding_open_source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_evaluation.html">dllmforge.rag_evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_preprocess_documents.html">dllmforge.rag_preprocess_documents</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dllmforge.rag_search_and_response</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.rag_search_and_response.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.IndexManager.__init__"><code class="docutils literal notranslate"><span class="pre">IndexManager.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.IndexManager.create_index"><code class="docutils literal notranslate"><span class="pre">IndexManager.create_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.IndexManager.upload_documents"><code class="docutils literal notranslate"><span class="pre">IndexManager.upload_documents()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.rag_search_and_response.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.Retriever.__init__"><code class="docutils literal notranslate"><span class="pre">Retriever.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.Retriever.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Retriever.get_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.Retriever.invoke"><code class="docutils literal notranslate"><span class="pre">Retriever.invoke()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.rag_search_and_response.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.LLMResponder.__init__"><code class="docutils literal notranslate"><span class="pre">LLMResponder.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.LLMResponder.augment_prompt_with_context"><code class="docutils literal notranslate"><span class="pre">LLMResponder.augment_prompt_with_context()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.rag_search_and_response.LLMResponder.generate"><code class="docutils literal notranslate"><span class="pre">LLMResponder.generate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="dllmforge.html">dllmforge</a><ul>
+      <li>Previous: <a href="dllmforge.rag_preprocess_documents.html" title="previous chapter">dllmforge.rag_preprocess_documents</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

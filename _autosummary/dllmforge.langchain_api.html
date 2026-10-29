@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge.langchain_api &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dllmforge.llamaindex_api" href="dllmforge.llamaindex_api.html" />
+    <link rel="prev" title="dllmforge.anthropic_api" href="dllmforge.anthropic_api.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dllmforge.langchain_api">
+<span id="dllmforge-langchain-api"></span><h1>dllmforge.langchain_api<a class="headerlink" href="#module-dllmforge.langchain_api" title="Link to this heading">¶</a></h1>
+<p>Create LLM object and api calls from langchain, including Azure and non-Azure models.
+We use openai and mistral models for examples.
+An overview of available langchain chat models: <a class="reference external" href="https://python.langchain.com/docs/integrations/chat/">https://python.langchain.com/docs/integrations/chat/</a></p>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../dllmforge.html#dllmforge.langchain_api.LangchainAPI" title="dllmforge.langchain_api.LangchainAPI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LangchainAPI</span></code></a>([model_provider, temperature, ...])</p></td>
+<td><p>Class to interact with various LLM providers using Langchain.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.langchain_api.</span></span><span class="sig-name descname"><span class="pre">LangchainAPI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI" title="Link to this definition">¶</a></dt>
+<dd><p>Class to interact with various LLM providers using Langchain.</p>
+<p>Initialize the Langchain API client with specified configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_provider</strong> (<em>str</em>) – Provider of model to use. Options are:
+- “azure-openai”: Use Azure OpenAI
+- “openai”: Use OpenAI
+- “mistral”: Use Mistral</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – Temperature setting for the model (0.0 to 1.0)</p></li>
+<li><p><strong>api_key</strong> (<em>str</em>) – API key for the provider</p></li>
+<li><p><strong>api_base</strong> (<em>str</em>) – API base URL (for Azure)</p></li>
+<li><p><strong>api_version</strong> (<em>str</em>) – API version (for Azure)</p></li>
+<li><p><strong>deployment_name</strong> (<em>str</em>) – Deployment name (for Azure)</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Model name (for OpenAI/Mistral)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'azure-openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the Langchain API client with specified configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_provider</strong> (<em>str</em>) – Provider of model to use. Options are:
+- “azure-openai”: Use Azure OpenAI
+- “openai”: Use OpenAI
+- “mistral”: Use Mistral</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – Temperature setting for the model (0.0 to 1.0)</p></li>
+<li><p><strong>api_key</strong> (<em>str</em>) – API key for the provider</p></li>
+<li><p><strong>api_base</strong> (<em>str</em>) – API base URL (for Azure)</p></li>
+<li><p><strong>api_version</strong> (<em>str</em>) – API version (for Azure)</p></li>
+<li><p><strong>deployment_name</strong> (<em>str</em>) – Deployment name (for Azure)</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Model name (for OpenAI/Mistral)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI.check_server_status">
+<span class="sig-name descname"><span class="pre">check_server_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI.check_server_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI.check_server_status" title="Link to this definition">¶</a></dt>
+<dd><p>Check if the LLM service is accessible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI.send_test_message">
+<span class="sig-name descname"><span class="pre">send_test_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hello,</span> <span class="pre">how</span> <span class="pre">are</span> <span class="pre">you?'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI.send_test_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI.send_test_message" title="Link to this definition">¶</a></dt>
+<dd><p>Send a test message to the model and get a response.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>prompt</strong> (<em>str</em>) – The prompt string to send.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing the response and metadata.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI.chat_completion">
+<span class="sig-name descname"><span class="pre">chat_completion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tokens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI.chat_completion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI.chat_completion" title="Link to this definition">¶</a></dt>
+<dd><p>Get a chat completion from the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>messages</strong> (<em>list</em>) – List of message tuples (role, content)</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – Optional temperature override</p></li>
+<li><p><strong>max_tokens</strong> (<em>int</em>) – Optional max tokens override</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing the response and metadata.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.langchain_api.LangchainAPI.ask_with_retriever">
+<span class="sig-name descname"><span class="pre">ask_with_retriever</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retriever</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/langchain_api.html#LangchainAPI.ask_with_retriever"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.langchain_api.LangchainAPI.ask_with_retriever" title="Link to this definition">¶</a></dt>
+<dd><p>Ask a question using the retriever to get context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question</strong> (<em>str</em>) – The question to ask.</p></li>
+<li><p><strong>retriever</strong> – A rag retriever object that can retrieve relevant context.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to the LLM (e.g., temperature, max_tokens).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The response from the LLM.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dllmforge.html">dllmforge</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_config.html">dllmforge.IE_agent_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_document_processor.html">dllmforge.IE_agent_document_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor.html">dllmforge.IE_agent_extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html">dllmforge.IE_agent_extractor_docling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_schema_generator.html">dllmforge.IE_agent_schema_generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.agent_core.html">dllmforge.agent_core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.anthropic_api.html">dllmforge.anthropic_api</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dllmforge.langchain_api</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI"><code class="docutils literal notranslate"><span class="pre">LangchainAPI</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI.__init__"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI.check_server_status"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.check_server_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI.send_test_message"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.send_test_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI.chat_completion"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.chat_completion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.langchain_api.LangchainAPI.ask_with_retriever"><code class="docutils literal notranslate"><span class="pre">LangchainAPI.ask_with_retriever()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.llamaindex_api.html">dllmforge.llamaindex_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.openai_api.html">dllmforge.openai_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding.html">dllmforge.rag_embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding_open_source.html">dllmforge.rag_embedding_open_source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_evaluation.html">dllmforge.rag_evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_preprocess_documents.html">dllmforge.rag_preprocess_documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_search_and_response.html">dllmforge.rag_search_and_response</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="dllmforge.html">dllmforge</a><ul>
+      <li>Previous: <a href="dllmforge.anthropic_api.html" title="previous chapter">dllmforge.anthropic_api</a></li>
+      <li>Next: <a href="dllmforge.llamaindex_api.html" title="next chapter">dllmforge.llamaindex_api</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

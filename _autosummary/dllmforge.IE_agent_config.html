@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge.IE_agent_config &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dllmforge.IE_agent_document_processor" href="dllmforge.IE_agent_document_processor.html" />
+    <link rel="prev" title="dllmforge" href="dllmforge.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dllmforge.IE_agent_config">
+<span id="dllmforge-ie-agent-config"></span><h1>dllmforge.IE_agent_config<a class="headerlink" href="#module-dllmforge.IE_agent_config" title="Link to this heading">¶</a></h1>
+<p>Configuration module for Information Extraction Agent.
+Defines configuration classes and utilities for managing user inputs.</p>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig" title="dllmforge.IE_agent_config.DocumentConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DocumentConfig</span></code></a>(*, input_dir[, file_pattern, ...])</p></td>
+<td><p>Configuration for document processing</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig" title="dllmforge.IE_agent_config.ExtractorConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtractorConfig</span></code></a>(*[, chunk_size, chunk_overlap])</p></td>
+<td><p>Configuration for information extraction</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IEAgentConfig</span></code></a>(*, schema, document, extractor)</p></td>
+<td><p>Main configuration class for Information Extraction Agent</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig" title="dllmforge.IE_agent_config.SchemaConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SchemaConfig</span></code></a>(*, task_description[, ...])</p></td>
+<td><p>Configuration for schema generation</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_config.</span></span><span class="sig-name descname"><span class="pre">SchemaConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_doc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_schema_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#SchemaConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for schema generation</p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig.task_description">
+<span class="sig-name descname"><span class="pre">task_description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig.task_description" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig.example_doc">
+<span class="sig-name descname"><span class="pre">example_doc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig.example_doc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig.user_schema_path">
+<span class="sig-name descname"><span class="pre">user_schema_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig.user_schema_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig.output_path">
+<span class="sig-name descname"><span class="pre">output_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig.output_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.SchemaConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.SchemaConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_config.</span></span><span class="sig-name descname"><span class="pre">DocumentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'*.pdf*'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'text'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#DocumentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for document processing</p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig.input_dir">
+<span class="sig-name descname"><span class="pre">input_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig.input_dir" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig.file_pattern">
+<span class="sig-name descname"><span class="pre">file_pattern</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig.file_pattern" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig.output_type">
+<span class="sig-name descname"><span class="pre">output_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig.output_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig.output_dir">
+<span class="sig-name descname"><span class="pre">output_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig.output_dir" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.DocumentConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.DocumentConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.ExtractorConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_config.</span></span><span class="sig-name descname"><span class="pre">ExtractorConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">80000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#ExtractorConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.ExtractorConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for information extraction</p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.ExtractorConfig.chunk_size">
+<span class="sig-name descname"><span class="pre">chunk_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.ExtractorConfig.chunk_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.ExtractorConfig.chunk_overlap">
+<span class="sig-name descname"><span class="pre">chunk_overlap</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.ExtractorConfig.chunk_overlap" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.ExtractorConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.ExtractorConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_config.</span></span><span class="sig-name descname"><span class="pre">IEAgentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema:</span> <span class="pre">~dllmforge.IE_agent_config.SchemaConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document:</span> <span class="pre">~dllmforge.IE_agent_config.DocumentConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extractor:</span> <span class="pre">~dllmforge.IE_agent_config.ExtractorConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#IEAgentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Main configuration class for Information Extraction Agent</p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.document">
+<span class="sig-name descname"><span class="pre">document</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig" title="dllmforge.IE_agent_config.DocumentConfig"><span class="pre">DocumentConfig</span></a></em><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.document" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.extractor">
+<span class="sig-name descname"><span class="pre">extractor</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig" title="dllmforge.IE_agent_config.ExtractorConfig"><span class="pre">ExtractorConfig</span></a></em><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.extractor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.from_dict">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><span class="pre">IEAgentConfig</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#IEAgentConfig.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Create config from dictionary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.load_from_file">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig" title="dllmforge.IE_agent_config.IEAgentConfig"><span class="pre">IEAgentConfig</span></a></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#IEAgentConfig.load_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.load_from_file" title="Link to this definition">¶</a></dt>
+<dd><p>Load config from JSON or YAML file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.save_to_file">
+<span class="sig-name descname"><span class="pre">save_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_config.html#IEAgentConfig.save_to_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.save_to_file" title="Link to this definition">¶</a></dt>
+<dd><p>Save config to JSON or YAML file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_config.IEAgentConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#dllmforge.IE_agent_config.IEAgentConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dllmforge.html">dllmforge</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dllmforge.IE_agent_config</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig"><code class="docutils literal notranslate"><span class="pre">SchemaConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig.task_description"><code class="docutils literal notranslate"><span class="pre">SchemaConfig.task_description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig.example_doc"><code class="docutils literal notranslate"><span class="pre">SchemaConfig.example_doc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig.user_schema_path"><code class="docutils literal notranslate"><span class="pre">SchemaConfig.user_schema_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig.output_path"><code class="docutils literal notranslate"><span class="pre">SchemaConfig.output_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.SchemaConfig.model_config"><code class="docutils literal notranslate"><span class="pre">SchemaConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig"><code class="docutils literal notranslate"><span class="pre">DocumentConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig.input_dir"><code class="docutils literal notranslate"><span class="pre">DocumentConfig.input_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig.file_pattern"><code class="docutils literal notranslate"><span class="pre">DocumentConfig.file_pattern</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig.output_type"><code class="docutils literal notranslate"><span class="pre">DocumentConfig.output_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig.output_dir"><code class="docutils literal notranslate"><span class="pre">DocumentConfig.output_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.DocumentConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DocumentConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig"><code class="docutils literal notranslate"><span class="pre">ExtractorConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig.chunk_size"><code class="docutils literal notranslate"><span class="pre">ExtractorConfig.chunk_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig.chunk_overlap"><code class="docutils literal notranslate"><span class="pre">ExtractorConfig.chunk_overlap</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.ExtractorConfig.model_config"><code class="docutils literal notranslate"><span class="pre">ExtractorConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.document"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.document</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.extractor"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.extractor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.from_dict"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.load_from_file"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.load_from_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.save_to_file"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.save_to_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dllmforge.IE_agent_config.IEAgentConfig.model_config"><code class="docutils literal notranslate"><span class="pre">IEAgentConfig.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_document_processor.html">dllmforge.IE_agent_document_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor.html">dllmforge.IE_agent_extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html">dllmforge.IE_agent_extractor_docling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_schema_generator.html">dllmforge.IE_agent_schema_generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.agent_core.html">dllmforge.agent_core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.anthropic_api.html">dllmforge.anthropic_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.langchain_api.html">dllmforge.langchain_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.llamaindex_api.html">dllmforge.llamaindex_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.openai_api.html">dllmforge.openai_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding.html">dllmforge.rag_embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding_open_source.html">dllmforge.rag_embedding_open_source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_evaluation.html">dllmforge.rag_evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_preprocess_documents.html">dllmforge.rag_preprocess_documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_search_and_response.html">dllmforge.rag_search_and_response</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="dllmforge.html">dllmforge</a><ul>
+      <li>Previous: <a href="dllmforge.html" title="previous chapter">dllmforge</a></li>
+      <li>Next: <a href="dllmforge.IE_agent_document_processor.html" title="next chapter">dllmforge.IE_agent_document_processor</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
