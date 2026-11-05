@@ -6,6 +6,8 @@ An overview of available llama_index LLMs: https://docs.llamaindex.ai/en/stable/
 import os
 from dotenv import load_dotenv
 
+from dllmforge.langchain_api import is_reasoning_model
+
 # LlamaIndex LLM imports
 try:
     from llama_index.llms.azure_openai import AzureOpenAI
@@ -31,7 +33,8 @@ class LlamaIndexAPI:
                  api_base=None,
                  api_version=None,
                  deployment_name=None,
-                 model_name=None):
+                 model_name=None,
+                 reasoning_model=None):
         """
         Initialize the LlamaIndex API client with specified configuration.
         Args:
@@ -45,22 +48,38 @@ class LlamaIndexAPI:
             api_version (str): API version (for Azure)
             deployment_name (str): Deployment name (for Azure)
             model_name (str): Model name (for OpenAI/Mistral)
+            reasoning_model (bool): Force reasoning-model request params. None infers
+                from the Azure deployment or OpenAI model name (gpt-5 / o1 / o3 / o4).
         """
         load_dotenv()
         self.model_provider = model_provider.lower()
         self.temperature = temperature
+        self.deployment_name = deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+        self.model_name = model_name or os.getenv("OPENAI_MODEL_NAME") or os.getenv("AZURE_OPENAI_MODEL_NAME")
+        if reasoning_model is None:
+            self.reasoning_model = is_reasoning_model(self.deployment_name) or is_reasoning_model(self.model_name)
+        else:
+            self.reasoning_model = bool(reasoning_model)
 
         if self.model_provider == "azure-openai":
-            self.llm = AzureOpenAI(engine=deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-                                   model=model_name or os.getenv("AZURE_OPENAI_MODEL_NAME", "gpt-35-turbo"),
-                                   api_key=api_key or os.getenv("AZURE_OPENAI_API_KEY"),
-                                   azure_endpoint=api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                   api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
-                                   temperature=self.temperature)
+            azure_kwargs = {
+                "engine": self.deployment_name,
+                "model": model_name or os.getenv("AZURE_OPENAI_MODEL_NAME", "gpt-35-turbo"),
+                "api_key": api_key or os.getenv("AZURE_OPENAI_API_KEY"),
+                "azure_endpoint": api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
+                "api_version": api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
+            }
+            if not self.reasoning_model:
+                azure_kwargs["temperature"] = self.temperature
+            self.llm = AzureOpenAI(**azure_kwargs)
         elif self.model_provider == "openai":
-            self.llm = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"),
-                              model=model_name or os.getenv("OPENAI_MODEL_NAME", "gpt-3.5-turbo"),
-                              temperature=self.temperature)
+            openai_kwargs = {
+                "api_key": api_key or os.getenv("OPENAI_API_KEY"),
+                "model": self.model_name or "gpt-3.5-turbo",
+            }
+            if not self.reasoning_model:
+                openai_kwargs["temperature"] = self.temperature
+            self.llm = OpenAI(**openai_kwargs)
         elif self.model_provider == "mistral":
             self.llm = MistralAI(api_key=api_key or os.getenv("MISTRAL_API_KEY"),
                                  model=model_name or os.getenv("MISTRAL_MODEL_NAME", "mistral-medium"),
@@ -128,9 +147,13 @@ class LlamaIndexAPI:
                     chat_messages.append(ChatMessage(role=m[0], content=m[1]))
                 else:
                     raise ValueError("Invalid message format")
-            response = self.llm.chat(chat_messages,
-                                     temperature=temperature if temperature is not None else self.temperature,
-                                     max_tokens=max_tokens)
+            chat_kwargs = {}
+            if max_tokens is not None:
+                token_key = "max_completion_tokens" if self.reasoning_model else "max_tokens"
+                chat_kwargs[token_key] = max_tokens
+            if not self.reasoning_model:
+                chat_kwargs["temperature"] = self.temperature if temperature is None else temperature
+            response = self.llm.chat(chat_messages, **chat_kwargs)
             return {
                 "response": response.message.content if hasattr(response, 'message') else str(response),
                 "model": self.model_provider,
