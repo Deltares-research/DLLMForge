@@ -7,9 +7,9 @@ import json
 from typing import List, Dict, Any, Optional, Union, Generator
 from pathlib import Path
 from pydantic import BaseModel
-from langchain.output_parsers import PydanticOutputParser
-from langchain.output_parsers.json import parse_json_markdown
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.utils.json import parse_json_markdown
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig
 from dllmforge.IE_agent_document_processor import ProcessedDocument, DocumentProcessor

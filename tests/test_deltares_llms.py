@@ -2,13 +2,8 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock, Mock
 import requests
-from langchain.schema import (
-    AIMessage,
-    ChatGeneration,
-    ChatResult,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM, Metadata
 

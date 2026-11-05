@@ -3,7 +3,8 @@ import pytest
 import os
 from unittest.mock import patch, MagicMock
 import requests
-from langchain.schema import (AIMessage, ChatResult, HumanMessage, SystemMessage)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatResult
 import base64
 
 from dllmforge.LLMs.Deltares_LLMs import DeltaresOllamaLLM, get_deltares_models

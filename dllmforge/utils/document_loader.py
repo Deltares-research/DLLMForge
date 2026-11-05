@@ -28,7 +28,7 @@ class DocumentLoader:
     @staticmethod
     def _check_pdf_support() -> bool:
         """Check if PDF support is available"""
-        return (importlib.util.find_spec('PyPDF2') is not None and importlib.util.find_spec('pdf2image') is not None
+        return (importlib.util.find_spec('pypdf') is not None and importlib.util.find_spec('pdf2image') is not None
                 and importlib.util.find_spec('pytesseract') is not None)
 
     @staticmethod
@@ -73,7 +73,7 @@ class DocumentLoader:
 
     def _extract_from_pdf(self, file_path: Path) -> str:
         """Extract text from PDF files"""
-        from PyPDF2 import PdfReader
+        from pypdf import PdfReader
         from pdf2image import convert_from_path
         import pytesseract
 

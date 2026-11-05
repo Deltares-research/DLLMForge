@@ -2,18 +2,30 @@ import json
 from typing import Any, List, Optional
 
 import requests
-from langchain.chat_models.base import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import urllib3
 
 urllib3.disable_warnings()
 
 
 class Metadata(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     context_window: int = 4096
+
+    # langchain-core treats ``metadata`` as a mutable mapping, so expose a dict-style interface.
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
+    def __setitem__(self, key: str, value) -> None:
+        setattr(self, key, value)
 
 
 class DeltaresOllamaLLM(BaseChatModel):
