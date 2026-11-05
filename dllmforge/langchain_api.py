@@ -29,6 +29,17 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.outputs import LLMResult
 
+# GPT-5 / o-series reject max_tokens (including JSON null) and custom temperature.
+REASONING_MODEL_PREFIXES = ("gpt-5", "o1", "o3", "o4")
+
+
+def is_reasoning_model(name: Optional[str]) -> bool:
+    """Return True for OpenAI/Azure names that reject max_tokens and temperature."""
+    if not name:
+        return False
+    n = name.strip().lower()
+    return any(n.startswith(prefix) for prefix in REASONING_MODEL_PREFIXES)
+
 
 class LangchainAPI:
     """Class to interact with various LLM providers using Langchain."""
@@ -40,7 +51,8 @@ class LangchainAPI:
                  api_base=None,
                  api_version=None,
                  deployment_name=None,
-                 model_name=None):
+                 model_name=None,
+                 reasoning_model=None):
         """
         Initialize the Langchain API client with specified configuration.
 
@@ -55,24 +67,40 @@ class LangchainAPI:
             api_version (str): API version (for Azure)
             deployment_name (str): Deployment name (for Azure)
             model_name (str): Model name (for OpenAI/Mistral)
+            reasoning_model (bool): Force reasoning-model request params. None infers
+                from the Azure deployment or OpenAI model name (gpt-5 / o1 / o3 / o4).
         """
         # Load environment variables if not provided
         load_dotenv()
 
         self.model_provider = model_provider.lower()
         self.temperature = temperature
+        self.deployment_name = deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+        self.model_name = model_name or os.getenv("OPENAI_MODEL_NAME") or os.getenv("AZURE_OPENAI_MODEL_NAME")
+        if reasoning_model is None:
+            self.reasoning_model = is_reasoning_model(self.deployment_name) or is_reasoning_model(self.model_name)
+        else:
+            self.reasoning_model = bool(reasoning_model)
 
         # Initialize the appropriate LLM based on model_provider
         if self.model_provider == "azure-openai":
-            self.llm = AzureChatOpenAI(azure_endpoint=api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                       api_key=api_key or os.getenv("AZURE_OPENAI_API_KEY"),
-                                       azure_deployment=deployment_name or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-                                       api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
-                                       temperature=self.temperature)
+            azure_kwargs = {
+                "azure_endpoint": api_base or os.getenv("AZURE_OPENAI_ENDPOINT"),
+                "api_key": api_key or os.getenv("AZURE_OPENAI_API_KEY"),
+                "azure_deployment": self.deployment_name,
+                "api_version": api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
+            }
+            if not self.reasoning_model:
+                azure_kwargs["temperature"] = self.temperature
+            self.llm = AzureChatOpenAI(**azure_kwargs)
         elif self.model_provider == "openai":
-            self.llm = ChatOpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"),
-                                  model=model_name or os.getenv("OPENAI_MODEL_NAME"),
-                                  temperature=self.temperature)
+            openai_kwargs = {
+                "api_key": api_key or os.getenv("OPENAI_API_KEY"),
+                "model": self.model_name,
+            }
+            if not self.reasoning_model:
+                openai_kwargs["temperature"] = self.temperature
+            self.llm = ChatOpenAI(**openai_kwargs)
         elif self.model_provider == "mistral":
             self.llm = ChatMistralAI(api_key=api_key or os.getenv("MISTRAL_API_KEY"),
                                      model=model_name or os.getenv("MISTRAL_MODEL_NAME"),
@@ -121,6 +149,16 @@ class LangchainAPI:
             print(f"Error sending test message: {e}")
             return None
 
+    def _completion_invoke_kwargs(self, temperature=None, max_tokens=None):
+        """Build invoke kwargs, omitting values Azure/OpenAI reasoning models reject."""
+        invoke_kwargs = {}
+        if max_tokens is not None:
+            token_key = "max_completion_tokens" if self.reasoning_model else "max_tokens"
+            invoke_kwargs[token_key] = max_tokens
+        if not self.reasoning_model:
+            invoke_kwargs["temperature"] = self.temperature if temperature is None else temperature
+        return invoke_kwargs
+
     def chat_completion(self, messages, temperature=None, max_tokens=None):
         """
         Get a chat completion from the model.
@@ -133,7 +171,8 @@ class LangchainAPI:
             dict: Dictionary containing the response and metadata.
         """
         try:
-            response = self.llm.invoke(messages, temperature=temperature or self.temperature, max_tokens=max_tokens)
+            invoke_kwargs = self._completion_invoke_kwargs(temperature=temperature, max_tokens=max_tokens)
+            response = self.llm.invoke(messages, **invoke_kwargs)
             return {
                 "response": response.content,
                 "model": self.model_provider,

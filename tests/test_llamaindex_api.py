@@ -193,6 +193,41 @@ class TestLlamaIndexAPI:
         mock_instance.chat.side_effect = Exception("API Error")
         assert api.chat_completion(messages) is None
 
+    @patch("dllmforge.llamaindex_api.AzureOpenAI")
+    def test_chat_completion_omits_null_max_tokens_for_gpt4(self, mock_azure):
+        mock_instance = MagicMock()
+        mock_instance.chat.return_value = MagicMock(message=MagicMock(content="ok"), usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LlamaIndexAPI(
+            model_provider="azure-openai",
+            deployment_name="gpt-4o",
+            api_key="test_key",
+            temperature=0.0,
+        )
+        api.chat_completion([("user", "hi")])
+        _, kwargs = mock_instance.chat.call_args
+        assert "max_tokens" not in kwargs
+        assert kwargs["temperature"] == 0.0
+
+    @patch("dllmforge.llamaindex_api.AzureOpenAI")
+    def test_chat_completion_gpt5_omits_max_tokens_and_temperature(self, mock_azure):
+        mock_instance = MagicMock()
+        mock_instance.chat.return_value = MagicMock(message=MagicMock(content="ok"), usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LlamaIndexAPI(
+            model_provider="azure-openai",
+            deployment_name="gpt-5.2",
+            api_key="test_key",
+            temperature=0.1,
+        )
+        assert api.reasoning_model is True
+        api.chat_completion([("user", "hi")])
+        _, kwargs = mock_instance.chat.call_args
+        assert "max_tokens" not in kwargs
+        assert "temperature" not in kwargs
+
     def test_init_invalid_provider(self):
         """Test initialization with invalid provider"""
         with pytest.raises(ValueError, match="Unsupported model provider"):

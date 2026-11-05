@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import os
-from dllmforge.langchain_api import LangchainAPI
+from dllmforge.langchain_api import LangchainAPI, is_reasoning_model
 
 
 class TestLangchainAPI:
@@ -193,6 +193,88 @@ class TestLangchainAPI:
         # Mock failed chat completion
         mock_instance.invoke.side_effect = Exception("API Error")
         assert api.chat_completion(messages) is None
+
+    @pytest.mark.parametrize(
+        "name,expected",
+        [
+            ("gpt-5.2", True),
+            ("gpt-5", True),
+            ("o1-mini", True),
+            ("o3", True),
+            ("o4-mini", True),
+            ("gpt-4o", False),
+            ("gpt-4.1", False),
+            (None, False),
+            ("", False),
+        ],
+    )
+    def test_is_reasoning_model(self, name, expected):
+        assert is_reasoning_model(name) is expected
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_chat_completion_omits_null_max_tokens_for_gpt4(self, mock_azure):
+        """Do not send max_tokens=None; GPT-4-class models still get temperature."""
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="ok", usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LangchainAPI(model_provider="azure-openai", deployment_name="gpt-4o", temperature=0.1)
+        api.chat_completion([("human", "hi")])
+
+        _, kwargs = mock_instance.invoke.call_args
+        assert "max_tokens" not in kwargs
+        assert "max_completion_tokens" not in kwargs
+        assert kwargs["temperature"] == 0.1
+        assert mock_azure.call_args.kwargs.get("temperature") == 0.1
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_chat_completion_gpt5_omits_max_tokens_and_temperature(self, mock_azure):
+        """GPT-5 Azure deployments reject max_tokens (including null) and temperature."""
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="ok", usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LangchainAPI(model_provider="azure-openai", deployment_name="gpt-5.2", temperature=0.1)
+        assert api.reasoning_model is True
+        assert "temperature" not in mock_azure.call_args.kwargs
+
+        api.chat_completion([("human", "hi")])
+        _, kwargs = mock_instance.invoke.call_args
+        assert kwargs == {}
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_chat_completion_gpt4_passes_max_tokens(self, mock_azure):
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="ok", usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LangchainAPI(model_provider="azure-openai", deployment_name="gpt-4o")
+        api.chat_completion([("human", "hi")], max_tokens=128)
+        _, kwargs = mock_instance.invoke.call_args
+        assert kwargs["max_tokens"] == 128
+        assert "max_completion_tokens" not in kwargs
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_chat_completion_gpt5_maps_max_tokens_to_max_completion_tokens(self, mock_azure):
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="ok", usage=None)
+        mock_azure.return_value = mock_instance
+
+        api = LangchainAPI(model_provider="azure-openai", deployment_name="gpt-5.2")
+        api.chat_completion([("human", "hi")], max_tokens=256)
+        _, kwargs = mock_instance.invoke.call_args
+        assert kwargs == {"max_completion_tokens": 256}
+
+    @patch("dllmforge.langchain_api.AzureChatOpenAI")
+    def test_reasoning_model_flag_overrides_deployment_name(self, mock_azure):
+        mock_azure.return_value = MagicMock()
+        api = LangchainAPI(
+            model_provider="azure-openai",
+            deployment_name="custom-prod",
+            reasoning_model=True,
+        )
+        assert api.reasoning_model is True
+        assert "temperature" not in mock_azure.call_args.kwargs
 
     def test_init_invalid_provider(self):
         """Test initialization with invalid provider"""
