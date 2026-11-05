@@ -46,7 +46,7 @@ class DeltaresOllamaLLM(BaseChatModel):
 
         # 2. Call your server
         resp = requests.post(
-            f"{self.base_url}/api/generate",
+            f"{self.base_url}/api/chat",
             json=payload,
             verify=False,
         )
@@ -108,66 +108,36 @@ class DeltaresOllamaLLM(BaseChatModel):
         Returns:
             Dict with completion response
         """
-        has_images = any(msg.get("images") for msg in messages)
+        ollama_messages = []
+        for msg in messages:
+            ollama_msg = {"role": msg.get("role", "user"), "content": msg.get("content", "")}
+            if msg.get("images"):
+                ollama_msg["images"] = msg["images"]
+            ollama_messages.append(ollama_msg)
 
-        if has_images:
-            # For vision models, use the chat API format
-            # Convert to Ollama chat format
-            ollama_messages = []
-            for msg in messages:
-                ollama_msg = {"role": msg.get("role", "user"), "content": msg.get("content", "")}
-                if msg.get("images"):
-                    ollama_msg["images"] = msg["images"]
-                ollama_messages.append(ollama_msg)
-
-            payload = {
-                "model": self.model_name,
-                "messages": ollama_messages,
-                "stream": stream,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,
-                    **kwargs
-                },
-            }
-            endpoint = f"{self.base_url}/api/chat"
-        else:
-            # Convert messages to prompt format expected by Ollama
-            prompt_parts = []
-            for msg in messages:
-                role = msg.get("role", "")
-                content = msg.get("content", "")
-
-                if role == "system":
-                    prompt_parts.append(f"System: {content}")
-                elif role == "user":
-                    prompt_parts.append(f"Human: {content}")
-                elif role == "assistant":
-                    prompt_parts.append(f"Assistant: {content}")
-
-            prompt = "\n".join(prompt_parts) + "\nAssistant:"
-
-            # Build payload for Ollama API
-            payload = {
-                "model": self.model_name,
-                "prompt": prompt,
-                "stream": stream,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,
-                    **kwargs
-                },
-            }
-            endpoint = f"{self.base_url}/api/generate"
+        payload = {
+            "model": self.model_name,
+            "messages": ollama_messages,
+            "stream": stream,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+                **kwargs
+            },
+        }
+        endpoint = f"{self.base_url}/api/chat"
         headers = self.headers or {}
-        # Make request to Ollama API
         resp = requests.post(
             endpoint,
             json=payload,
             headers=headers,
             verify=False,
         )
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            detail = (resp.text or "").strip()
+            raise requests.HTTPError(f"{exc}. Response: {detail}", response=resp) from exc
 
         # Parse response
         if stream:

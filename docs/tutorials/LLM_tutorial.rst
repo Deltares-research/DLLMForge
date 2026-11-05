@@ -71,7 +71,7 @@ Using Deltares hosted models
 
     # Initialize Deltares hosted model
     base_url = "https://chat-api.directory.intra"
-    model_name = "llama3.1:70b"  # or other available models
+    model_name = "llama3.3:latest"  # use llm.get_available_models() for current names
     llm = DeltaresOllamaLLM(base_url=base_url, model_name=model_name)
 
 Using the LLM to ask questions
