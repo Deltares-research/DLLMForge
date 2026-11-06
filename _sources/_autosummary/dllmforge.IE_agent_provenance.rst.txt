@@ -1,0 +1,16 @@
+dllmforge.IE\_agent\_provenance
+===============================
+
+.. automodule:: dllmforge.IE_agent_provenance
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_quote_provenance
+      locate_quote
+      normalize_index
+      normalize_text
+      public_metadata
+   

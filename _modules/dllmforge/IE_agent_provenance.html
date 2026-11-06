@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dllmforge.IE_agent_provenance &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dllmforge.IE_agent_provenance</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Quote-first provenance: recover source_page from source_quote against a Docling index.</span>
+
+<span class="sd">The LLM copies a verbatim quote. Page numbers are assigned in code by locating that</span>
+<span class="sd">quote in page-indexed elements (sections, tables, figures, prose).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">difflib</span><span class="w"> </span><span class="kn">import</span> <span class="n">SequenceMatcher</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="n">FUZZY_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.55</span>
+<span class="n">_WHITESPACE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+"</span><span class="p">)</span>
+<span class="n">_DIGIT_LETTER</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d)([a-zA-Z])"</span><span class="p">)</span>
+<span class="n">_INTERNAL_META_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"element_index"</span><span class="p">,</span> <span class="s2">"page_index"</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="public_metadata">
+<a class="viewcode-back" href="../../_autosummary/dllmforge.IE_agent_provenance.html#dllmforge.IE_agent_provenance.public_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">public_metadata</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Copy processor metadata without the bulky locator index."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_INTERNAL_META_KEYS</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_text">
+<a class="viewcode-back" href="../../_autosummary/dllmforge.IE_agent_provenance.html#dllmforge.IE_agent_provenance.normalize_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_text</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Collapse whitespace, fix OCR units (50m -&gt; 50 m), lowercase."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\ufffd</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"�"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"×"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"·"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"^"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d):(\d)"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"\1.\2"</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">_WHITESPACE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">_DIGIT_LETTER</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\1 \2"</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_index">
+<a class="viewcode-back" href="../../_autosummary/dllmforge.IE_agent_provenance.html#dllmforge.IE_agent_provenance.normalize_index">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_index</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Accept element_index ({page, type, text}) or page_index ({page, text})."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">index</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">continue</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"page"</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"page_no"</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">page</span><span class="p">)</span> <span class="k">if</span> <span class="n">page</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">"page"</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+            <span class="s2">"type"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"type"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"text"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">),</span>
+        <span class="p">})</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_quote_fragments</span><span class="p">(</span><span class="n">quote</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Split a pasted quote into paragraphs, table rows, or sentences."""</span>
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\n\s*\n"</span><span class="p">,</span> <span class="n">quote</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+    <span class="n">fragments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+        <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"|"</span> <span class="ow">in</span> <span class="n">chunk</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">chunk</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"---"</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">cells</span> <span class="o">=</span> <span class="p">[</span><span class="n">cell</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span> <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+                <span class="k">if</span> <span class="n">cells</span><span class="p">:</span>
+                    <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">fragments</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">sent</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">sent</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;=[.!?])\s+"</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sent</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;=</span> <span class="mi">24</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fragments</span> <span class="ow">or</span> <span class="p">[</span><span class="n">quote</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_locate_one</span><span class="p">(</span>
+    <span class="n">needle</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">fuzzy_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">needle</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">needle_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">tok</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">needle</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="n">tok</span><span class="p">]</span>
+    <span class="n">min_contain</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">needle</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.25</span><span class="p">)))</span>
+    <span class="n">best</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">best_score</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+        <span class="n">hay</span> <span class="o">=</span> <span class="n">normalize_text</span><span class="p">(</span><span class="n">el</span><span class="p">[</span><span class="s2">"text"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hay</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">needle</span> <span class="ow">in</span> <span class="n">hay</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">el</span><span class="p">,</span> <span class="s2">"score"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">hay</span> <span class="ow">in</span> <span class="n">needle</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hay</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_contain</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">el</span><span class="p">,</span> <span class="s2">"score"</span><span class="p">:</span> <span class="mf">0.99</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">needle_tokens</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">tok</span> <span class="ow">in</span> <span class="n">hay</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">needle_tokens</span><span class="p">):</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="mf">0.95</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">_windowed_ratio</span><span class="p">(</span><span class="n">needle</span><span class="p">,</span> <span class="n">hay</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+            <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="n">el</span>
+    <span class="k">if</span> <span class="n">best</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">best_score</span> <span class="o">&gt;=</span> <span class="n">fuzzy_threshold</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">best</span><span class="p">,</span> <span class="s2">"score"</span><span class="p">:</span> <span class="n">best_score</span><span class="p">}</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="locate_quote">
+<a class="viewcode-back" href="../../_autosummary/dllmforge.IE_agent_provenance.html#dllmforge.IE_agent_provenance.locate_quote">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">locate_quote</span><span class="p">(</span>
+    <span class="n">quote</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+    <span class="n">fuzzy_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">FUZZY_THRESHOLD</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Return the best matching index element for a quote, or None.</span>
+
+<span class="sd">    Long LLM quotes often concatenate a sentence + a table + more prose. Match</span>
+<span class="sd">    the whole string first, then each paragraph, and prefer a table hit when</span>
+<span class="sd">    the quote contains a markdown table.</span>
+<span class="sd">    """</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="n">normalize_index</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">elements</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">quote</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">quote</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">hits</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">whole</span> <span class="o">=</span> <span class="n">_locate_one</span><span class="p">(</span><span class="n">normalize_text</span><span class="p">(</span><span class="n">quote</span><span class="p">),</span> <span class="n">elements</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">whole</span><span class="p">:</span>
+        <span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">whole</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fragment</span> <span class="ow">in</span> <span class="n">_quote_fragments</span><span class="p">(</span><span class="n">quote</span><span class="p">):</span>
+        <span class="n">hit</span> <span class="o">=</span> <span class="n">_locate_one</span><span class="p">(</span><span class="n">normalize_text</span><span class="p">(</span><span class="n">fragment</span><span class="p">),</span> <span class="n">elements</span><span class="p">,</span> <span class="n">fuzzy_threshold</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hit</span><span class="p">:</span>
+            <span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">hits</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s2">"|"</span> <span class="ow">in</span> <span class="n">quote</span><span class="p">:</span>
+        <span class="n">table_hits</span> <span class="o">=</span> <span class="p">[</span><span class="n">hit</span> <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits</span> <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"table"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">table_hits</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">table_hits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"score"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"score"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_windowed_ratio</span><span class="p">(</span><span class="n">needle</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hay</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Ratio of needle against hay, using a sliding window when hay is longer."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">needle</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">hay</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hay</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">needle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">16</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SequenceMatcher</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">hay</span><span class="p">)</span><span class="o">.</span><span class="n">ratio</span><span class="p">()</span>
+    <span class="n">win</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hay</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">needle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">needle</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">hay</span><span class="p">)</span> <span class="o">-</span> <span class="n">win</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">step</span><span class="p">):</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">best</span><span class="p">,</span> <span class="n">SequenceMatcher</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">hay</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">win</span><span class="p">])</span><span class="o">.</span><span class="n">ratio</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">best</span> <span class="o">&gt;=</span> <span class="mf">0.99</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">best</span>
+
+
+<div class="viewcode-block" id="apply_quote_provenance">
+<a class="viewcode-back" href="../../_autosummary/dllmforge.IE_agent_provenance.html#dllmforge.IE_agent_provenance.apply_quote_provenance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_quote_provenance</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Walk a parsed extraction dict and fill source_page from source_quote.</span>
+
+<span class="sd">    If ``index`` is omitted, ``metadata['element_index']`` or</span>
+<span class="sd">    ``metadata['page_index']`` is used. Unmatched quotes get</span>
+<span class="sd">    ``quote_verified=False`` and ``source_page=None`` (do not keep a guessed page).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"element_index"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"page_index"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">apply_quote_provenance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">quote</span> <span class="o">=</span> <span class="n">new</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source_quote"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quote</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">quote</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">hit</span> <span class="o">=</span> <span class="n">locate_quote</span><span class="p">(</span><span class="n">quote</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">hit</span> <span class="ow">and</span> <span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"page"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">new</span><span class="p">[</span><span class="s2">"source_page"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hit</span><span class="p">[</span><span class="s2">"page"</span><span class="p">]</span>
+                <span class="n">new</span><span class="p">[</span><span class="s2">"quote_verified"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"type"</span><span class="p">):</span>
+                    <span class="n">new</span><span class="p">[</span><span class="s2">"source_type"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hit</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new</span><span class="p">[</span><span class="s2">"source_page"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">new</span><span class="p">[</span><span class="s2">"quote_verified"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">new</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">apply_quote_provenance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/dllmforge.html">dllmforge</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,22 @@
+dllmforge.IE\_agent\_extractor\_docling
+=======================================
+
+.. automodule:: dllmforge.IE_agent_extractor_docling
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      serialize_docling_document
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DoclingDocumentProcessor
+      DoclingInfoExtractor
+      DoclingProcessedDocument
+      DocumentChunk
+      DocumentConverter
+   

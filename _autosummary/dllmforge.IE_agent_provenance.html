@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dllmforge.IE_agent_provenance &#8212; dllmforge  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dllmforge.IE_agent_schema_generator" href="dllmforge.IE_agent_schema_generator.html" />
+    <link rel="prev" title="dllmforge.IE_agent_extractor_docling" href="dllmforge.IE_agent_extractor_docling.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dllmforge.IE_agent_provenance">
+<span id="dllmforge-ie-agent-provenance"></span><h1>dllmforge.IE_agent_provenance<a class="headerlink" href="#module-dllmforge.IE_agent_provenance" title="Link to this heading">¶</a></h1>
+<p>Quote-first provenance: recover source_page from source_quote against a Docling index.</p>
+<p>The LLM copies a verbatim quote. Page numbers are assigned in code by locating that
+quote in page-indexed elements (sections, tables, figures, prose).</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dllmforge.IE_agent_provenance.apply_quote_provenance" title="dllmforge.IE_agent_provenance.apply_quote_provenance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_quote_provenance</span></code></a>(obj[, index, metadata])</p></td>
+<td><p>Walk a parsed extraction dict and fill source_page from source_quote.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dllmforge.IE_agent_provenance.locate_quote" title="dllmforge.IE_agent_provenance.locate_quote"><code class="xref py py-obj docutils literal notranslate"><span class="pre">locate_quote</span></code></a>(quote, index[, fuzzy_threshold])</p></td>
+<td><p>Return the best matching index element for a quote, or None.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dllmforge.IE_agent_provenance.normalize_index" title="dllmforge.IE_agent_provenance.normalize_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_index</span></code></a>(index)</p></td>
+<td><p>Accept element_index ({page, type, text}) or page_index ({page, text}).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dllmforge.IE_agent_provenance.normalize_text" title="dllmforge.IE_agent_provenance.normalize_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_text</span></code></a>(value)</p></td>
+<td><p>Collapse whitespace, fix OCR units (50m -&gt; 50 m), lowercase.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dllmforge.IE_agent_provenance.public_metadata" title="dllmforge.IE_agent_provenance.public_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">public_metadata</span></code></a>(meta)</p></td>
+<td><p>Copy processor metadata without the bulky locator index.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_provenance.public_metadata">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_provenance.</span></span><span class="sig-name descname"><span class="pre">public_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_provenance.html#public_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_provenance.public_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Copy processor metadata without the bulky locator index.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_provenance.normalize_text">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_provenance.</span></span><span class="sig-name descname"><span class="pre">normalize_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_provenance.html#normalize_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_provenance.normalize_text" title="Link to this definition">¶</a></dt>
+<dd><p>Collapse whitespace, fix OCR units (50m -&gt; 50 m), lowercase.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_provenance.normalize_index">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_provenance.</span></span><span class="sig-name descname"><span class="pre">normalize_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_provenance.html#normalize_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_provenance.normalize_index" title="Link to this definition">¶</a></dt>
+<dd><p>Accept element_index ({page, type, text}) or page_index ({page, text}).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_provenance.locate_quote">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_provenance.</span></span><span class="sig-name descname"><span class="pre">locate_quote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quote</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fuzzy_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.55</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_provenance.html#locate_quote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_provenance.locate_quote" title="Link to this definition">¶</a></dt>
+<dd><p>Return the best matching index element for a quote, or None.</p>
+<p>Long LLM quotes often concatenate a sentence + a table + more prose. Match
+the whole string first, then each paragraph, and prefer a table hit when
+the quote contains a markdown table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dllmforge.IE_agent_provenance.apply_quote_provenance">
+<span class="sig-prename descclassname"><span class="pre">dllmforge.IE_agent_provenance.</span></span><span class="sig-name descname"><span class="pre">apply_quote_provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/dllmforge/IE_agent_provenance.html#apply_quote_provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dllmforge.IE_agent_provenance.apply_quote_provenance" title="Link to this definition">¶</a></dt>
+<dd><p>Walk a parsed extraction dict and fill source_page from source_quote.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">index</span></code> is omitted, <code class="docutils literal notranslate"><span class="pre">metadata['element_index']</span></code> or
+<code class="docutils literal notranslate"><span class="pre">metadata['page_index']</span></code> is used. Unmatched quotes get
+<code class="docutils literal notranslate"><span class="pre">quote_verified=False</span></code> and <code class="docutils literal notranslate"><span class="pre">source_page=None</span></code> (do not keep a guessed page).</p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">dllmforge</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/LLM_tutorial.html">Tutorial LLM capabilities of DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/RAG_tutorial.html">Open Source RAG Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_simple_agent.html">Building a Simple Agent with DLLMForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_advanced_agent.html">Tutorial: Advanced Water Management Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/Information_extraction_tutorial.html">Information Extraction with LLMs Tutorial</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Background:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background/LLM_explained.html">LLM Explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/RAGS_explained.html">Retrieval-Augmented Generation (RAG)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="dllmforge.html">dllmforge</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.SimpleAgent"><code class="docutils literal notranslate"><span class="pre">SimpleAgent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_agent"><code class="docutils literal notranslate"><span class="pre">create_basic_agent()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.create_basic_tools"><code class="docutils literal notranslate"><span class="pre">create_basic_tools()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AzureOpenAIEmbeddingModel"><code class="docutils literal notranslate"><span class="pre">AzureOpenAIEmbeddingModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.PDFLoader"><code class="docutils literal notranslate"><span class="pre">PDFLoader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.TextChunker"><code class="docutils literal notranslate"><span class="pre">TextChunker</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.IndexManager"><code class="docutils literal notranslate"><span class="pre">IndexManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.Retriever"><code class="docutils literal notranslate"><span class="pre">Retriever</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LLMResponder"><code class="docutils literal notranslate"><span class="pre">LLMResponder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.RAGEvaluator"><code class="docutils literal notranslate"><span class="pre">RAGEvaluator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.AnthropicAPI"><code class="docutils literal notranslate"><span class="pre">AnthropicAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.html#dllmforge.LlamaIndexAPI"><code class="docutils literal notranslate"><span class="pre">LlamaIndexAPI</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_config.html">dllmforge.IE_agent_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_document_processor.html">dllmforge.IE_agent_document_processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor.html">dllmforge.IE_agent_extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_extractor_docling.html">dllmforge.IE_agent_extractor_docling</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dllmforge.IE_agent_provenance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_provenance.public_metadata"><code class="docutils literal notranslate"><span class="pre">public_metadata()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_provenance.normalize_text"><code class="docutils literal notranslate"><span class="pre">normalize_text()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_provenance.normalize_index"><code class="docutils literal notranslate"><span class="pre">normalize_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_provenance.locate_quote"><code class="docutils literal notranslate"><span class="pre">locate_quote()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dllmforge.IE_agent_provenance.apply_quote_provenance"><code class="docutils literal notranslate"><span class="pre">apply_quote_provenance()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.IE_agent_schema_generator.html">dllmforge.IE_agent_schema_generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.agent_core.html">dllmforge.agent_core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.anthropic_api.html">dllmforge.anthropic_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.langchain_api.html">dllmforge.langchain_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.llamaindex_api.html">dllmforge.llamaindex_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.openai_api.html">dllmforge.openai_api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding.html">dllmforge.rag_embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_embedding_open_source.html">dllmforge.rag_embedding_open_source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_evaluation.html">dllmforge.rag_evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_preprocess_documents.html">dllmforge.rag_preprocess_documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dllmforge.rag_search_and_response.html">dllmforge.rag_search_and_response</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="dllmforge.html">dllmforge</a><ul>
+      <li>Previous: <a href="dllmforge.IE_agent_extractor_docling.html" title="previous chapter">dllmforge.IE_agent_extractor_docling</a></li>
+      <li>Next: <a href="dllmforge.IE_agent_schema_generator.html" title="next chapter">dllmforge.IE_agent_schema_generator</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023-2025, dllmforge team.
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

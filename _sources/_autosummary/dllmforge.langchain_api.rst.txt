@@ -1,0 +1,18 @@
+dllmforge.langchain\_api
+========================
+
+.. automodule:: dllmforge.langchain_api
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      is_reasoning_model
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LangchainAPI
+   
