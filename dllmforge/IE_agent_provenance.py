@@ -9,15 +9,29 @@ import re
 from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, List, Optional
 
-FUZZY_THRESHOLD = 0.6
+FUZZY_THRESHOLD = 0.55
 _WHITESPACE = re.compile(r"\s+")
+_DIGIT_LETTER = re.compile(r"(\d)([a-zA-Z])")
+_INTERNAL_META_KEYS = {"element_index", "page_index"}
+
+
+def public_metadata(meta: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Copy processor metadata without the bulky locator index."""
+    if not isinstance(meta, dict):
+        return {}
+    return {key: value for key, value in meta.items() if key not in _INTERNAL_META_KEYS}
 
 
 def normalize_text(value: str) -> str:
-    """Collapse whitespace and lowercase for quote matching."""
+    """Collapse whitespace, fix OCR units (50m -> 50 m), lowercase."""
     if not value:
         return ""
-    return _WHITESPACE.sub(" ", value).strip().lower()
+    value = value.replace("\ufffd", "x").replace("�", "x")
+    value = value.replace("×", "x").replace("·", "x")
+    value = value.replace("^", " ")
+    value = re.sub(r"(\d):(\d)", r"\1.\2", value)
+    value = _WHITESPACE.sub(" ", value).strip().lower()
+    return _DIGIT_LETTER.sub(r"\1 \2", value)
 
 
 def normalize_index(index: Optional[Iterable[Dict[str, Any]]]) -> List[Dict[str, Any]]:
@@ -44,25 +58,46 @@ def normalize_index(index: Optional[Iterable[Dict[str, Any]]]) -> List[Dict[str,
     return out
 
 
-def locate_quote(
-    quote: str,
-    index: Optional[Iterable[Dict[str, Any]]],
-    fuzzy_threshold: float = FUZZY_THRESHOLD,
+def _quote_fragments(quote: str) -> List[str]:
+    """Split a pasted quote into paragraphs, table rows, or sentences."""
+    chunks = [part.strip() for part in re.split(r"\n\s*\n", quote.strip()) if part.strip()]
+    fragments: List[str] = []
+    for chunk in chunks:
+        fragments.append(chunk)
+        if "|" in chunk:
+            for line in chunk.splitlines():
+                line = line.strip()
+                if not line.startswith("|") or "---" in line:
+                    continue
+                cells = [cell.strip() for cell in line.strip("|").split("|") if cell.strip()]
+                if cells:
+                    fragments.append(line)
+            continue
+        fragments.extend(
+            sent.strip() for sent in re.split(r"(?<=[.!?])\s+", chunk) if len(sent.strip()) >= 24
+        )
+    return fragments or [quote]
+
+
+def _locate_one(
+    needle: str,
+    elements: List[Dict[str, Any]],
+    fuzzy_threshold: float,
 ) -> Optional[Dict[str, Any]]:
-    """Return the best matching index element for a quote, or None."""
-    needle = normalize_text(quote)
     if not needle:
         return None
-    elements = normalize_index(index)
+    needle_tokens = [tok for tok in needle.split() if tok]
+    min_contain = min(80, max(24, int(len(needle) * 0.25)))
     best: Optional[Dict[str, Any]] = None
     best_score = 0.0
-    needle_tokens = [tok for tok in needle.split() if tok]
     for el in elements:
         hay = normalize_text(el["text"])
         if not hay:
             continue
-        if needle in hay or hay in needle:
+        if needle in hay:
             return {**el, "score": 1.0}
+        if hay in needle and len(hay) >= min_contain:
+            return {**el, "score": 0.99}
         if needle_tokens and all(tok in hay for tok in needle_tokens):
             score = 0.95
         else:
@@ -75,16 +110,47 @@ def locate_quote(
     return None
 
 
+def locate_quote(
+    quote: str,
+    index: Optional[Iterable[Dict[str, Any]]],
+    fuzzy_threshold: float = FUZZY_THRESHOLD,
+) -> Optional[Dict[str, Any]]:
+    """Return the best matching index element for a quote, or None.
+
+    Long LLM quotes often concatenate a sentence + a table + more prose. Match
+    the whole string first, then each paragraph, and prefer a table hit when
+    the quote contains a markdown table.
+    """
+    elements = normalize_index(index)
+    if not elements or not quote or not quote.strip():
+        return None
+    hits: List[Dict[str, Any]] = []
+    whole = _locate_one(normalize_text(quote), elements, fuzzy_threshold)
+    if whole:
+        hits.append(whole)
+    for fragment in _quote_fragments(quote):
+        hit = _locate_one(normalize_text(fragment), elements, fuzzy_threshold)
+        if hit:
+            hits.append(hit)
+    if not hits:
+        return None
+    if "|" in quote:
+        table_hits = [hit for hit in hits if hit.get("type") == "table"]
+        if table_hits:
+            return max(table_hits, key=lambda hit: hit.get("score", 0.0))
+    return max(hits, key=lambda hit: (hit.get("score", 0.0), len(hit.get("text") or "")))
+
+
 def _windowed_ratio(needle: str, hay: str) -> float:
     """Ratio of needle against hay, using a sliding window when hay is longer."""
     if not needle or not hay:
         return 0.0
     if len(hay) <= len(needle) + 16:
         return SequenceMatcher(None, needle, hay).ratio()
-    win = len(needle) + 16
+    win = min(len(hay), len(needle) + 16)
     step = max(1, len(needle) // 3)
     best = 0.0
-    for start in range(0, len(hay) - win + 1, step):
+    for start in range(0, max(1, len(hay) - win + 1), step):
         best = max(best, SequenceMatcher(None, needle, hay[start:start + win]).ratio())
         if best >= 0.99:
             break

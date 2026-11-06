@@ -7,6 +7,7 @@ with [PAGE N] tags. The LLM extracts against a Pydantic schema; source_page is r
 from source_quote via IE_agent_provenance.
 """
 import json
+import re
 from typing import List, Dict, Any, Optional, Union, Generator, Tuple
 from pathlib import Path
 from pydantic import BaseModel
@@ -15,7 +16,7 @@ from langchain_core.utils.json import parse_json_markdown
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig
-from dllmforge.IE_agent_provenance import apply_quote_provenance
+from dllmforge.IE_agent_provenance import apply_quote_provenance, public_metadata
 import base64
 
 try:
@@ -38,7 +39,8 @@ DOCLING_PROMPT_ADDENDUM = """
 The input was preprocessed by Docling:
 - Blocks are tagged [PAGE N], [SECTION: ...], [TABLE: ...], [FIGURE: ...].
 - Tables are markdown grids. Prefer table values over rounded prose when they conflict.
-- Copy source_quote verbatim from the table row or sentence that supports the field.
+- Copy source_quote from one table row or one sentence (not several blocks concatenated).
+- Expand table scientific notation to a number (25 × 10^6 m³ → 25000000).
 - Do not set source_page; it is filled after extraction from the quote.
 """
 
@@ -86,16 +88,73 @@ def _item_kind(item: Any) -> str:
     return "text"
 
 
-def _item_text(item: Any, kind: str, document: Any = None) -> str:
-    if kind == "table" and hasattr(item, "export_to_markdown"):
+_SCI_NOTATION = re.compile(
+    r"(\d+(?:[.:]\d+)?)\s*[×xX]\s*10\s*\^?\s*([0-9]+)",
+)
+_COLON_DECIMAL = re.compile(r"(\d+):(\d+)(?=\s*[×xX])")
+
+
+def _clean_table_markdown(text: str) -> str:
+    """Repair common Docling/OCR glitches in scientific table cells."""
+    if not text:
+        return text
+    text = text.replace("\ufffd", "×").replace("�", "×")
+    text = _COLON_DECIMAL.sub(r"\1.\2", text)
+    return _SCI_NOTATION.sub(r"\1 × 10^\2", text)
+
+
+def _export_markdown(item: Any, document: Any = None) -> str:
+    if not hasattr(item, "export_to_markdown"):
+        return ""
+    try:
+        if document is not None:
+            return (item.export_to_markdown(doc=document) or "").strip()
+        return (item.export_to_markdown() or "").strip()
+    except TypeError:
+        return (item.export_to_markdown() or "").strip()
+    except Exception:
+        return ""
+
+
+def _export_dataframe_markdown(item: Any, document: Any = None) -> str:
+    if not hasattr(item, "export_to_dataframe"):
+        return ""
+    try:
+        if document is not None:
+            frame = item.export_to_dataframe(doc=document)
+        else:
+            frame = item.export_to_dataframe()
+        if frame is None:
+            return ""
         try:
-            if document is not None:
-                return (item.export_to_markdown(doc=document) or "").strip()
-            return (item.export_to_markdown() or "").strip()
-        except TypeError:
-            return (item.export_to_markdown() or "").strip()
+            return str(frame.to_markdown(index=False)).strip()
         except Exception:
-            pass
+            return str(frame).strip()
+    except TypeError:
+        try:
+            frame = item.export_to_dataframe()
+            if frame is None:
+                return ""
+            try:
+                return str(frame.to_markdown(index=False)).strip()
+            except Exception:
+                return str(frame).strip()
+        except Exception:
+            return ""
+    except Exception:
+        return ""
+
+
+def _table_markdown(item: Any, document: Any = None) -> str:
+    raw = _export_markdown(item, document) or _export_dataframe_markdown(item, document)
+    return _clean_table_markdown(raw) if raw else ""
+
+
+def _item_text(item: Any, kind: str, document: Any = None) -> str:
+    if kind == "table":
+        md = _table_markdown(item, document)
+        if md:
+            return md
     for attr in ("text", "caption"):
         value = getattr(item, attr, None)
         if isinstance(value, str) and value.strip():
@@ -616,8 +675,9 @@ class DoclingInfoExtractor:
                 schema_dict = self._result_to_dict(result)
                 meta = dict(getattr(d, "metadata", None) or {})
                 chunk_meta = dict(getattr(chunk, "metadata", None) or {})
-                schema_dict = apply_quote_provenance(schema_dict, metadata={**meta, **chunk_meta})
-                all_results.append({**schema_dict, "metadata": {**meta, **chunk_meta}})
+                combined_meta = {**meta, **chunk_meta}
+                schema_dict = apply_quote_provenance(schema_dict, metadata=combined_meta)
+                all_results.append({**schema_dict, "metadata": public_metadata(combined_meta)})
         return all_results
 
     def save_results(self, results: List[Any], output_path: Path) -> None:

@@ -7,6 +7,7 @@ from dllmforge.IE_agent_extractor_docling import (
     DocumentChunk,
     serialize_docling_document,
     DOCLING_PROMPT_ADDENDUM,
+    _clean_table_markdown,
 )
 
 
@@ -224,6 +225,28 @@ def test_process_document_recovers_source_page(mock_parser, dummy_config):
     out = info.process_document(doc)
     assert out[0]["source_page"] == 2
     assert out[0]["quote_verified"] is True
+    assert "element_index" not in out[0]["metadata"]
+    assert "page_index" not in out[0]["metadata"]
+
+
+def test_clean_table_markdown_repairs_scientific_notation():
+    raw = (
+        "| Capacity | 25 � 10 6 hm 3 | 26:4 � 10 6 hm 3 |\n"
+        "| Dam height | 66 m | 68 m |"
+    )
+    cleaned = _clean_table_markdown(raw)
+    assert "25 × 10^6" in cleaned
+    assert "26.4 × 10^6" in cleaned
+    assert "�" not in cleaned
+
+
+def test_serialize_docling_cleans_garbled_table_cells():
+    table_md = "| | Eupen | La Gileppe |\n| Capacity | 25 � 10 6 hm 3 | 26:4 � 10 6 hm 3 |"
+    doc = FakeDocument([FakeTable(table_md, 4)])
+    markdown, index, stats = serialize_docling_document(doc)
+    assert "25 × 10^6" in markdown
+    assert "26.4 × 10^6" in index[-1]["text"]
+    assert stats["num_tables"] == 1
 
 
 @patch("builtins.open", new_callable=mock_open)

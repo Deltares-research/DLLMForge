@@ -13,7 +13,7 @@ from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTempla
 from dllmforge.langchain_api import LangchainAPI
 from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig
 from dllmforge.IE_agent_document_processor import ProcessedDocument, DocumentProcessor
-from dllmforge.IE_agent_provenance import apply_quote_provenance
+from dllmforge.IE_agent_provenance import apply_quote_provenance, public_metadata
 
 
 class DocumentChunk:
@@ -259,7 +259,7 @@ class InfoExtractor:
                     schema_dict = dict(result) if isinstance(result, dict) else {"value": result}
                 chunk_meta = chunk.metadata if isinstance(getattr(chunk, "metadata", None), dict) else {}
                 schema_dict = apply_quote_provenance(schema_dict, metadata=chunk_meta)
-                merged = {**schema_dict, "metadata": chunk_meta}
+                merged = {**schema_dict, "metadata": public_metadata(chunk_meta)}
                 results.append(merged)
         return results
 
