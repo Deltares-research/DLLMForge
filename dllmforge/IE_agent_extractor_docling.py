@@ -86,9 +86,13 @@ def _item_kind(item: Any) -> str:
     return "text"
 
 
-def _item_text(item: Any, kind: str) -> str:
+def _item_text(item: Any, kind: str, document: Any = None) -> str:
     if kind == "table" and hasattr(item, "export_to_markdown"):
         try:
+            if document is not None:
+                return (item.export_to_markdown(doc=document) or "").strip()
+            return (item.export_to_markdown() or "").strip()
+        except TypeError:
             return (item.export_to_markdown() or "").strip()
         except Exception:
             pass
@@ -140,7 +144,7 @@ def serialize_docling_document(document: Any) -> Tuple[str, List[Dict[str, Any]]
         if kind == "skip":
             continue
         page = _page_no(item)
-        text = _item_text(item, kind)
+        text = _item_text(item, kind, document)
         if kind == "caption":
             pending_caption = text
             continue
@@ -153,10 +157,11 @@ def serialize_docling_document(document: Any) -> Tuple[str, List[Dict[str, Any]]
             block = f"[SECTION: {text}]"
         elif kind == "table":
             n_tables += 1
-            caption = pending_caption or getattr(item, "caption", None) or text.split("\n", 1)[0][:80]
-            if not isinstance(caption, str):
-                caption = _item_text(caption, "caption") if caption else ""
-            caption = (pending_caption or caption or "").strip()
+            caption = (pending_caption or "").strip()
+            if not caption:
+                raw_cap = getattr(item, "caption", None)
+                if isinstance(raw_cap, str) and raw_cap.strip() and not raw_cap.lstrip().startswith("|"):
+                    caption = raw_cap.strip()
             header = f"[TABLE: {caption}]" if caption else "[TABLE]"
             block = f"{header}\n{text}"
             pending_caption = None
