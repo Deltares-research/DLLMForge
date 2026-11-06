@@ -11,8 +11,9 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.utils.json import parse_json_markdown
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from dllmforge.langchain_api import LangchainAPI
-from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig
+from dllmforge.IE_agent_config import IEAgentConfig, ExtractorConfig, DocumentConfig
 from dllmforge.IE_agent_document_processor import ProcessedDocument, DocumentProcessor
+from dllmforge.IE_agent_provenance import apply_quote_provenance
 
 
 class DocumentChunk:
@@ -256,7 +257,9 @@ class InfoExtractor:
                     schema_dict = result.dict()
                 else:
                     schema_dict = dict(result) if isinstance(result, dict) else {"value": result}
-                merged = {**schema_dict, "metadata": chunk.metadata}
+                chunk_meta = chunk.metadata if isinstance(getattr(chunk, "metadata", None), dict) else {}
+                schema_dict = apply_quote_provenance(schema_dict, metadata=chunk_meta)
+                merged = {**schema_dict, "metadata": chunk_meta}
                 results.append(merged)
         return results
 
